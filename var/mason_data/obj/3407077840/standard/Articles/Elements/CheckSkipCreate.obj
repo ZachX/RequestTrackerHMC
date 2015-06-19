@@ -1,0 +1,114 @@
+package HTML::Mason::Commands;
+use strict;
+use vars qw($m $DECODED_ARGS $r %session);
+HTML::Mason::Component::FileBased->new(
+'code' => sub {
+HTML::Mason::Exception::Params->throw
+    ( error =>
+      "Odd number of parameters passed to component expecting name/value pairs"
+    ) if @_ % 2;
+my %ARGS = @_;
+my ( $ARGSRef, $skip_create, $checks_failure, $results );
+{
+    my %pos;
+    for ( my $x = 0; $x < @_; $x += 2 )
+    {
+        $pos{ $_[$x] } = $x + 1;
+    }
+#line 71 "/var/www/localhost/htdocs/rt/Articles/Elements/CheckSkipCreate"
+     $ARGSRef = exists $pos{'ARGSRef'} ? $_[ $pos{'ARGSRef'} ] :  undef;
+#line 72 "/var/www/localhost/htdocs/rt/Articles/Elements/CheckSkipCreate"
+     $skip_create = exists $pos{'skip_create'} ? $_[ $pos{'skip_create'} ] :  undef;
+#line 73 "/var/www/localhost/htdocs/rt/Articles/Elements/CheckSkipCreate"
+     $checks_failure = exists $pos{'checks_failure'} ? $_[ $pos{'checks_failure'} ] :  undef;
+#line 74 "/var/www/localhost/htdocs/rt/Articles/Elements/CheckSkipCreate"
+     $results = exists $pos{'results'} ? $_[ $pos{'results'} ] :  undef;
+}
+$m->debug_hook( $m->current_comp->path ) if ( HTML::Mason::Compiler::IN_PERL_DB() );
+
+#line 48 "/var/www/localhost/htdocs/rt/Articles/Elements/CheckSkipCreate"
+
+
+return if $checks_failure; # we're already skipping Create
+return unless RT->Config->Get('ArticleOnTicketCreate');
+
+
+my $article = RT::Article->new($session{'CurrentUser'});
+foreach my $arg ( keys %$ARGSRef) {
+
+    if ( $ARGSRef->{Articles_Content} ||              # search for an article
+         $ARGSRef->{'Articles-Include-Topic'} ||      # using Queue Topics
+         ( $article->LoadByInclude( Field => $arg, Value => $ARGSRef->{$arg} ) &&
+           $article->id ) ) {                     # including an article
+
+        $$skip_create = 1;
+        last;
+    }
+}
+return;
+
+#line 1 "/var/www/localhost/htdocs/rt/Articles/Elements/CheckSkipCreate"
+# BEGIN BPS TAGGED BLOCK {{{
+#
+# COPYRIGHT:
+#
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
+#                                          <sales@bestpractical.com>
+#
+# (Except where explicitly superseded by other copyright notices)
+#
+#
+# LICENSE:
+#
+# This work is made available to you under the terms of Version 2 of
+# the GNU General Public License. A copy of that license should have
+# been provided with this software, but in any event can be snarfed
+# from www.gnu.org.
+#
+# This work is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
+#
+#
+# CONTRIBUTION SUBMISSION POLICY:
+#
+# (The following paragraph is not intended to limit the rights granted
+# to you to modify and distribute this software under the terms of
+# the GNU General Public License and is only of importance to you if
+# you choose to contribute your changes and enhancements to the
+# community by submitting them to Best Practical Solutions, LLC.)
+#
+# By intentionally submitting any modifications, corrections or
+# derivatives to this work, or any other work intended for use with
+# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+# you are the copyright holder for those contributions and you grant
+# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+# royalty-free, perpetual, license to use, copy, create derivative
+# works based on those contributions, and sublicense and distribute
+# those contributions and any derivatives thereof.
+#
+# END BPS TAGGED BLOCK }}}
+$m->print( '
+' );
+#line 76 "/var/www/localhost/htdocs/rt/Articles/Elements/CheckSkipCreate"
+$m->print( '
+' );
+;return;
+},
+'declared_args' => {
+  '$ARGSRef' => { default => ' undef' },
+  '$checks_failure' => { default => ' undef' },
+  '$results' => { default => ' undef' },
+  '$skip_create' => { default => ' undef' }
+},
+'load_time' => 1434737749,
+
+)
+;

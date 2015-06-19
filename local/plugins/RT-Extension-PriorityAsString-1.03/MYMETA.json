@@ -1,0 +1,55 @@
+{
+   "abstract" : "show priorities in RT as strings instead of numbers",
+   "author" : [
+      "Best Practical Solutions, LLC <modules@bestpractical.com>"
+   ],
+   "dynamic_config" : 0,
+   "generated_by" : "Module::Install version 1.12, CPAN::Meta::Converter version 2.140640",
+   "license" : [
+      "perl_5"
+   ],
+   "meta-spec" : {
+      "url" : "http://search.cpan.org/perldoc?CPAN::Meta::Spec",
+      "version" : "2"
+   },
+   "name" : "RT-Extension-PriorityAsString",
+   "no_index" : {
+      "directory" : [
+         "html",
+         "inc"
+      ],
+      "package" : [
+         "RT::Ticket"
+      ]
+   },
+   "prereqs" : {
+      "build" : {
+         "requires" : {
+            "ExtUtils::MakeMaker" : "6.59"
+         }
+      },
+      "configure" : {
+         "requires" : {
+            "ExtUtils::MakeMaker" : "0"
+         }
+      },
+      "runtime" : {
+         "requires" : {
+            "perl" : "5.008003"
+         }
+      }
+   },
+   "release_status" : "stable",
+   "resources" : {
+      "license" : [
+         "http://dev.perl.org/licenses/"
+      ],
+      "repository" : {
+         "url" : "https://github.com/bestpractical/rt-extension-priorityasstring"
+      }
+   },
+   "version" : "1.03",
+   "x_module_install_rtx_version" : "0.36",
+   "x_requires_rt" : "4.0.0",
+   "x_rt_too_new" : "4.4.0"
+}

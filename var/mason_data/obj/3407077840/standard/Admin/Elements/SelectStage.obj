@@ -1,0 +1,122 @@
+package HTML::Mason::Commands;
+use strict;
+use vars qw($m $DECODED_ARGS $r %session);
+HTML::Mason::Component::FileBased->new(
+'code' => sub {
+HTML::Mason::Exception::Params->throw
+    ( error =>
+      "Odd number of parameters passed to component expecting name/value pairs"
+    ) if @_ % 2;
+my ( $Default, $Name );
+{
+    my %pos;
+    for ( my $x = 0; $x < @_; $x += 2 )
+    {
+        $pos{ $_[$x] } = $x + 1;
+    }
+#line 65 "/var/www/localhost/htdocs/rt/Admin/Elements/SelectStage"
+     $Default = exists $pos{'Default'} ? $_[ $pos{'Default'} ] :  'TransactionCreate';
+#line 66 "/var/www/localhost/htdocs/rt/Admin/Elements/SelectStage"
+     $Name = exists $pos{'Name'} ? $_[ $pos{'Name'} ] :  'Stage';
+}
+$m->debug_hook( $m->current_comp->path ) if ( HTML::Mason::Compiler::IN_PERL_DB() );
+
+#line 58 "/var/www/localhost/htdocs/rt/Admin/Elements/SelectStage"
+
+if ( !defined $Default || $Default eq '') {
+    $Default = 'TransactionCreate';
+}
+my @stages = ('TransactionCreate', 'TransactionBatch');
+#line 1 "/var/www/localhost/htdocs/rt/Admin/Elements/SelectStage"
+# BEGIN BPS TAGGED BLOCK {{{
+#
+# COPYRIGHT:
+#
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
+#                                          <sales@bestpractical.com>
+#
+# (Except where explicitly superseded by other copyright notices)
+#
+#
+# LICENSE:
+#
+# This work is made available to you under the terms of Version 2 of
+# the GNU General Public License. A copy of that license should have
+# been provided with this software, but in any event can be snarfed
+# from www.gnu.org.
+#
+# This work is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
+#
+#
+# CONTRIBUTION SUBMISSION POLICY:
+#
+# (The following paragraph is not intended to limit the rights granted
+# to you to modify and distribute this software under the terms of
+# the GNU General Public License and is only of importance to you if
+# you choose to contribute your changes and enhancements to the
+# community by submitting them to Best Practical Solutions, LLC.)
+#
+# By intentionally submitting any modifications, corrections or
+# derivatives to this work, or any other work intended for use with
+# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+# you are the copyright holder for those contributions and you grant
+# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+# royalty-free, perpetual, license to use, copy, create derivative
+# works based on those contributions, and sublicense and distribute
+# those contributions and any derivatives thereof.
+#
+# END BPS TAGGED BLOCK }}}
+$m->print( '<select name="' );
+#line 48 "/var/www/localhost/htdocs/rt/Admin/Elements/SelectStage"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($Name)) );
+#line 48 "/var/www/localhost/htdocs/rt/Admin/Elements/SelectStage"
+$m->print( '">
+' );
+#line 49 "/var/www/localhost/htdocs/rt/Admin/Elements/SelectStage"
+ foreach my $value (@stages) {
+$m->print( '<option value="' );
+#line 50 "/var/www/localhost/htdocs/rt/Admin/Elements/SelectStage"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($value)) );
+#line 50 "/var/www/localhost/htdocs/rt/Admin/Elements/SelectStage"
+$m->print( '"
+' );
+#line 51 "/var/www/localhost/htdocs/rt/Admin/Elements/SelectStage"
+$m->print(  ($value eq $Default) && qq[ selected="selected"] );
+#line 51 "/var/www/localhost/htdocs/rt/Admin/Elements/SelectStage"
+$m->print( '
+' );
+#line 52 "/var/www/localhost/htdocs/rt/Admin/Elements/SelectStage"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( ($value eq 'TransactionBatch' and not RT->Config->Get('UseTransactionBatch')) && qq[ disabled ] )) );
+#line 52 "/var/www/localhost/htdocs/rt/Admin/Elements/SelectStage"
+$m->print( '
+>' );
+#line 53 "/var/www/localhost/htdocs/rt/Admin/Elements/SelectStage"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( loc( RT::Scrip->FriendlyStage($value) ) )) );
+#line 53 "/var/www/localhost/htdocs/rt/Admin/Elements/SelectStage"
+$m->print( '
+</option>
+
+' );
+#line 56 "/var/www/localhost/htdocs/rt/Admin/Elements/SelectStage"
+ }
+$m->print( '</select>
+' );
+;return;
+},
+'declared_args' => {
+  '$Default' => { default => ' \'TransactionCreate\'' },
+  '$Name' => { default => ' \'Stage\'' }
+},
+'load_time' => 1434746412,
+
+)
+;

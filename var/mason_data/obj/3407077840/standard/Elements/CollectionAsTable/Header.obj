@@ -1,0 +1,213 @@
+package HTML::Mason::Commands;
+use strict;
+use vars qw($m $DECODED_ARGS $r %session);
+HTML::Mason::Component::FileBased->new(
+'code' => sub {
+HTML::Mason::Exception::Params->throw
+    ( error =>
+      "Odd number of parameters passed to component expecting name/value pairs"
+    ) if @_ % 2;
+my %ARGS = @_;
+my ( $Class, @Format, $FormatString, @OrderBy, @Order, $Query, $Rows, $Page, $GenericQueryArgs, $maxitems, $AllowSorting, $BaseURL, @PassArguments );
+{
+    my %pos;
+    for ( my $x = 0; $x < @_; $x += 2 )
+    {
+        $pos{ $_[$x] } = $x + 1;
+    }
+#line 49 "/var/www/localhost/htdocs/rt/Elements/CollectionAsTable/Header"
+     $Class = exists $pos{'Class'} ? $_[ $pos{'Class'} ] :  'RT__Ticket';
+#line 51 "/var/www/localhost/htdocs/rt/Elements/CollectionAsTable/Header"
+     @Format = exists $pos{'Format'} ? HTML::Mason::Tools::coerce_to_array( $_[ $pos{'Format'} ], '@Format') :  undef;
+#line 52 "/var/www/localhost/htdocs/rt/Elements/CollectionAsTable/Header"
+     $FormatString = exists $pos{'FormatString'} ? $_[ $pos{'FormatString'} ] :  undef;
+#line 53 "/var/www/localhost/htdocs/rt/Elements/CollectionAsTable/Header"
+     @OrderBy = exists $pos{'OrderBy'} ? HTML::Mason::Tools::coerce_to_array( $_[ $pos{'OrderBy'} ], '@OrderBy') :  ();
+#line 54 "/var/www/localhost/htdocs/rt/Elements/CollectionAsTable/Header"
+     @Order = exists $pos{'Order'} ? HTML::Mason::Tools::coerce_to_array( $_[ $pos{'Order'} ], '@Order') :  ();
+#line 55 "/var/www/localhost/htdocs/rt/Elements/CollectionAsTable/Header"
+     $Query = exists $pos{'Query'} ? $_[ $pos{'Query'} ] :  undef;
+#line 56 "/var/www/localhost/htdocs/rt/Elements/CollectionAsTable/Header"
+     $Rows = exists $pos{'Rows'} ? $_[ $pos{'Rows'} ] :  undef;
+#line 57 "/var/www/localhost/htdocs/rt/Elements/CollectionAsTable/Header"
+     $Page = exists $pos{'Page'} ? $_[ $pos{'Page'} ] :  undef;
+#line 58 "/var/www/localhost/htdocs/rt/Elements/CollectionAsTable/Header"
+     $GenericQueryArgs = exists $pos{'GenericQueryArgs'} ? $_[ $pos{'GenericQueryArgs'} ] :  undef;
+#line 59 "/var/www/localhost/htdocs/rt/Elements/CollectionAsTable/Header"
+     $maxitems = exists $pos{'maxitems'} ? $_[ $pos{'maxitems'} ] :  undef;
+#line 61 "/var/www/localhost/htdocs/rt/Elements/CollectionAsTable/Header"
+     $AllowSorting = exists $pos{'AllowSorting'} ? $_[ $pos{'AllowSorting'} ] :  undef;
+#line 62 "/var/www/localhost/htdocs/rt/Elements/CollectionAsTable/Header"
+     $BaseURL = exists $pos{'BaseURL'} ? $_[ $pos{'BaseURL'} ] :  undef;
+#line 63 "/var/www/localhost/htdocs/rt/Elements/CollectionAsTable/Header"
+     @PassArguments = exists $pos{'PassArguments'} ? HTML::Mason::Tools::coerce_to_array( $_[ $pos{'PassArguments'} ], '@PassArguments') :  qw(Query Format Rows Page Order OrderBy);
+}
+$m->debug_hook( $m->current_comp->path ) if ( HTML::Mason::Compiler::IN_PERL_DB() );
+
+#line 1 "/var/www/localhost/htdocs/rt/Elements/CollectionAsTable/Header"
+# BEGIN BPS TAGGED BLOCK {{{
+#
+# COPYRIGHT:
+#
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
+#                                          <sales@bestpractical.com>
+#
+# (Except where explicitly superseded by other copyright notices)
+#
+#
+# LICENSE:
+#
+# This work is made available to you under the terms of Version 2 of
+# the GNU General Public License. A copy of that license should have
+# been provided with this software, but in any event can be snarfed
+# from www.gnu.org.
+#
+# This work is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
+#
+#
+# CONTRIBUTION SUBMISSION POLICY:
+#
+# (The following paragraph is not intended to limit the rights granted
+# to you to modify and distribute this software under the terms of
+# the GNU General Public License and is only of importance to you if
+# you choose to contribute your changes and enhancements to the
+# community by submitting them to Best Practical Solutions, LLC.)
+#
+# By intentionally submitting any modifications, corrections or
+# derivatives to this work, or any other work intended for use with
+# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+# you are the copyright holder for those contributions and you grant
+# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+# royalty-free, perpetual, license to use, copy, create derivative
+# works based on those contributions, and sublicense and distribute
+# those contributions and any derivatives thereof.
+#
+# END BPS TAGGED BLOCK }}}
+$m->print( '<tr class="collection-as-table">
+' );
+#line 66 "/var/www/localhost/htdocs/rt/Elements/CollectionAsTable/Header"
+
+
+my $generic_query_args = $GenericQueryArgs || {map { $_ => $ARGS{$_} } @PassArguments};
+# backward compatibility workaround
+$generic_query_args->{'Format'} = $FormatString if grep $_ eq 'Format', @PassArguments;
+
+my $item = 0;
+foreach my $col ( @Format ) {
+    my $attr = $col->{'attribute'} || $col->{'last_attribute'};
+
+    my $title = $col->{'title'} || '';
+    if ( $title eq 'NEWLINE' ) {
+        while ( $item < $maxitems ) {
+            $m->out(qq{<th class="collection-as-table">&nbsp;</th>\n});
+            $item++;
+        }
+
+        $item = 0;
+        $m->out(qq{</tr>\n<tr class="collection-as-table">});
+        next;
+    } elsif ( $title eq 'NBSP' ) {
+        $item++;
+        $m->out(qq{<th class="collection-as-table">&nbsp;</th>\n});
+        next;
+    }
+
+    my $span = $col->{'span'};
+    $item += ($span || 1);
+
+    $m->out('<th class="collection-as-table"');
+    $m->out(' colspan="' . $m->interp->apply_escapes($span  => 'h') . '"')
+        if $span;
+
+    my $align = $col->{'align'} || do {
+        my $tmp_columnmap = $m->comp( '/Elements/ColumnMap',
+            Class => $Class,
+            Name => $attr,
+            Attr => 'align',
+        );
+        ProcessColumnMapValue( $tmp_columnmap, Arguments => [ $attr ] );
+    };
+    $m->out(qq{ style="text-align: $align"}) if $align;
+    $m->out('>');
+
+    my $loc_title;
+    # if title is not defined then use defined attribute or last
+    # one we saw in the format
+    unless ( defined $col->{'title'} ) {
+        my $tmp = $m->comp( '/Elements/ColumnMap',
+            Class => $Class,
+            Name  => $attr,
+            Attr  => 'title',
+        );
+        $title = ProcessColumnMapValue( $tmp, Arguments => [ $attr ] );
+
+        # in case title is not defined in ColumnMap 
+        # the following regex changes $attr like from "ReferredToBy" to "Referred To By"
+        $title = join ' ', split /(?<=[a-z])(?=[A-Z])/, $attr unless defined $title;
+        $loc_title = $attr =~ /^(?:CustomField|CF)\./ ? $title : loc($title);
+    } else {
+        $loc_title = loc($m->comp('/Elements/ScrubHTML', Content => $title));
+    }
+
+    if ( $AllowSorting and $col->{'attribute'}
+        and my $attr = $m->comp(
+            "/Elements/ColumnMap",
+            Class => $Class,
+            Name  => $col->{'attribute'},
+            Attr  => 'attribute'
+        )
+      )
+    {
+        $attr = ProcessColumnMapValue( $attr, Arguments => [ $col->{'attribute'} ], Escape => 0 );
+
+        my $new_order = 'ASC';
+        $new_order = $Order[0] eq 'ASC'? 'DESC': 'ASC'
+            if $OrderBy[0] && ($OrderBy[0] eq $attr or "$attr|$OrderBy[0]" =~ /^(Created|id)\|(Created|id)$/);
+
+        $m->out(
+            '<a href="' . $m->interp->apply_escapes($BaseURL
+            . $m->comp( '/Elements/QueryString',
+                %$generic_query_args,
+                OrderBy => $attr, Order => $new_order
+            ), 'h')
+            . '">'. $loc_title .'</a>'
+        );
+    }
+    else {
+        $m->out( $loc_title );
+    }
+    $m->out('</th>');
+}
+#line 159 "/var/www/localhost/htdocs/rt/Elements/CollectionAsTable/Header"
+$m->print( '</tr>
+' );
+;return;
+},
+'declared_args' => {
+  '$AllowSorting' => { default => ' undef' },
+  '$BaseURL' => { default => ' undef' },
+  '$Class' => { default => ' \'RT__Ticket\'' },
+  '$FormatString' => { default => ' undef' },
+  '$GenericQueryArgs' => { default => ' undef' },
+  '$Page' => { default => ' undef' },
+  '$Query' => { default => ' undef' },
+  '$Rows' => { default => ' undef' },
+  '$maxitems' => { default => ' undef' },
+  '@Format' => { default => ' undef' },
+  '@Order' => { default => ' ()' },
+  '@OrderBy' => { default => ' ()' },
+  '@PassArguments' => { default => ' qw(Query Format Rows Page Order OrderBy)' }
+},
+'load_time' => 1434735836,
+
+)
+;

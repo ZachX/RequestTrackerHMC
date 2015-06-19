@@ -1,0 +1,244 @@
+package HTML::Mason::Commands;
+use strict;
+use vars qw($m $DECODED_ARGS $r %session);
+HTML::Mason::Component::FileBased->new(
+'code' => sub {
+HTML::Mason::Exception::Params->throw
+    ( error =>
+      "Odd number of parameters passed to component expecting name/value pairs"
+    ) if @_ % 2;
+my %ARGS = @_;
+my ( $Object, $CustomFields, $Grouping, $AsTable, $InTable, $ShowHints );
+{
+    my %pos;
+    for ( my $x = 0; $x < @_; $x += 2 )
+    {
+        $pos{ $_[$x] } = $x + 1;
+    }
+
+    foreach my $arg ( qw( Object ) )
+    {
+        HTML::Mason::Exception::Params->throw
+            ( error => "no value sent for required parameter '$arg'" )
+                unless exists $pos{$arg};
+    }
+#line 113 "/var/www/localhost/htdocs/rt/Elements/EditCustomFields"
+    $Object = $_[ $pos{'Object'} ];
+#line 114 "/var/www/localhost/htdocs/rt/Elements/EditCustomFields"
+     $CustomFields = exists $pos{'CustomFields'} ? $_[ $pos{'CustomFields'} ] :  undef;
+#line 115 "/var/www/localhost/htdocs/rt/Elements/EditCustomFields"
+     $Grouping = exists $pos{'Grouping'} ? $_[ $pos{'Grouping'} ] :  undef;
+#line 116 "/var/www/localhost/htdocs/rt/Elements/EditCustomFields"
+     $AsTable = exists $pos{'AsTable'} ? $_[ $pos{'AsTable'} ] :  1;
+#line 117 "/var/www/localhost/htdocs/rt/Elements/EditCustomFields"
+     $InTable = exists $pos{'InTable'} ? $_[ $pos{'InTable'} ] :  0;
+#line 118 "/var/www/localhost/htdocs/rt/Elements/EditCustomFields"
+     $ShowHints = exists $pos{'ShowHints'} ? $_[ $pos{'ShowHints'} ] :  1;
+}
+$m->debug_hook( $m->current_comp->path ) if ( HTML::Mason::Compiler::IN_PERL_DB() );
+
+#line 90 "/var/www/localhost/htdocs/rt/Elements/EditCustomFields"
+
+$CustomFields ||= $Object->CustomFields;
+
+$CustomFields->LimitToGrouping( $Object => $Grouping ) if defined $Grouping;
+
+$m->callback( %ARGS, CallbackName => 'MassageCustomFields', CustomFields => $CustomFields );
+
+# don't print anything if there is no custom fields
+return unless $CustomFields->First;
+$CustomFields->GotoFirstItem;
+
+$AsTable ||= $InTable;
+my $FIELD = $AsTable ? 'tr' : 'div';
+my $CELL  = $AsTable ? 'td' : 'div';
+my $WRAP  = '';
+if ( $AsTable ) {
+    $WRAP = 'table' unless $InTable;
+} else {
+    $WRAP = 'div';
+}
+
+#line 1 "/var/www/localhost/htdocs/rt/Elements/EditCustomFields"
+# BEGIN BPS TAGGED BLOCK {{{
+#
+# COPYRIGHT:
+#
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
+#                                          <sales@bestpractical.com>
+#
+# (Except where explicitly superseded by other copyright notices)
+#
+#
+# LICENSE:
+#
+# This work is made available to you under the terms of Version 2 of
+# the GNU General Public License. A copy of that license should have
+# been provided with this software, but in any event can be snarfed
+# from www.gnu.org.
+#
+# This work is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
+#
+#
+# CONTRIBUTION SUBMISSION POLICY:
+#
+# (The following paragraph is not intended to limit the rights granted
+# to you to modify and distribute this software under the terms of
+# the GNU General Public License and is only of importance to you if
+# you choose to contribute your changes and enhancements to the
+# community by submitting them to Best Practical Solutions, LLC.)
+#
+# By intentionally submitting any modifications, corrections or
+# derivatives to this work, or any other work intended for use with
+# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+# you are the copyright holder for those contributions and you grant
+# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+# royalty-free, perpetual, license to use, copy, create derivative
+# works based on those contributions, and sublicense and distribute
+# those contributions and any derivatives thereof.
+#
+# END BPS TAGGED BLOCK }}}
+ $m->callback( CallbackName => 'BeforeCustomFields', Object => $Object,
+               Grouping => $Grouping, ARGSRef => \%ARGS, CustomFields => $CustomFields);
+ if ( $WRAP ) {
+$m->print( '<' );
+#line 51 "/var/www/localhost/htdocs/rt/Elements/EditCustomFields"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $WRAP )) );
+#line 51 "/var/www/localhost/htdocs/rt/Elements/EditCustomFields"
+$m->print( ' class="edit-custom-fields">
+' );
+#line 52 "/var/www/localhost/htdocs/rt/Elements/EditCustomFields"
+ }
+ while ( my $CustomField = $CustomFields->Next ) {
+ next unless $CustomField->CurrentUserHasRight('ModifyCustomField');
+ my $Type = $CustomField->Type || 'Unknown';
+$m->print( '
+  <' );
+#line 57 "/var/www/localhost/htdocs/rt/Elements/EditCustomFields"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $FIELD )) );
+#line 57 "/var/www/localhost/htdocs/rt/Elements/EditCustomFields"
+$m->print( ' class="edit-custom-field cftype-' );
+#line 57 "/var/www/localhost/htdocs/rt/Elements/EditCustomFields"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $Type )) );
+#line 57 "/var/www/localhost/htdocs/rt/Elements/EditCustomFields"
+$m->print( '">
+    <' );
+#line 58 "/var/www/localhost/htdocs/rt/Elements/EditCustomFields"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $CELL )) );
+#line 58 "/var/www/localhost/htdocs/rt/Elements/EditCustomFields"
+$m->print( ' class="cflabel">
+      <span class="name">' );
+#line 59 "/var/www/localhost/htdocs/rt/Elements/EditCustomFields"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $CustomField->Name )) );
+#line 59 "/var/www/localhost/htdocs/rt/Elements/EditCustomFields"
+$m->print( ':</span><br />
+      <span class="type">' );
+#line 60 "/var/www/localhost/htdocs/rt/Elements/EditCustomFields"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $CustomField->FriendlyType )) );
+#line 60 "/var/www/localhost/htdocs/rt/Elements/EditCustomFields"
+$m->print( '</span>
+    </' );
+#line 61 "/var/www/localhost/htdocs/rt/Elements/EditCustomFields"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $CELL )) );
+#line 61 "/var/www/localhost/htdocs/rt/Elements/EditCustomFields"
+$m->print( '>
+    <' );
+#line 62 "/var/www/localhost/htdocs/rt/Elements/EditCustomFields"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $CELL )) );
+#line 62 "/var/www/localhost/htdocs/rt/Elements/EditCustomFields"
+$m->print( ' class="entry">
+' );
+#line 63 "/var/www/localhost/htdocs/rt/Elements/EditCustomFields"
+ my $default = $m->notes('Field-' . $CustomField->Id);
+ $default ||= $ARGS{"CustomField-". $CustomField->Id };
+$m->print( '      ' );
+#line 65 "/var/www/localhost/htdocs/rt/Elements/EditCustomFields"
+$m->comp(   '/Elements/EditCustomField',
+          %ARGS,
+          CustomField => $CustomField,
+          Default => $default,
+          Object => $Object,
+        
+); #line 70 "/var/www/localhost/htdocs/rt/Elements/EditCustomFields"
+$m->print( '
+' );
+#line 71 "/var/www/localhost/htdocs/rt/Elements/EditCustomFields"
+  if (my $msg = $m->notes('InvalidField-' . $CustomField->Id)) {
+$m->print( '        <br />
+        <span class="cfinvalidfield">' );
+#line 73 "/var/www/localhost/htdocs/rt/Elements/EditCustomFields"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $msg )) );
+#line 73 "/var/www/localhost/htdocs/rt/Elements/EditCustomFields"
+$m->print( '</span>
+' );
+#line 74 "/var/www/localhost/htdocs/rt/Elements/EditCustomFields"
+  } elsif ($ShowHints and $CustomField->FriendlyPattern) {
+$m->print( '        <br>
+        <span class="cfhints">
+          ' );
+#line 77 "/var/www/localhost/htdocs/rt/Elements/EditCustomFields"
+$m->comp( { content => sub {
+#line 77 "/var/www/localhost/htdocs/rt/Elements/EditCustomFields"
+$m->print( 'Input must match [_1]' );
+#line 77 "/var/www/localhost/htdocs/rt/Elements/EditCustomFields"
+} }, '/l', $CustomField->FriendlyPattern
+ );
+#line 77 "/var/www/localhost/htdocs/rt/Elements/EditCustomFields"
+$m->print( '
+        </span>
+' );
+#line 79 "/var/www/localhost/htdocs/rt/Elements/EditCustomFields"
+  }
+$m->print( '    </' );
+#line 80 "/var/www/localhost/htdocs/rt/Elements/EditCustomFields"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $CELL )) );
+#line 80 "/var/www/localhost/htdocs/rt/Elements/EditCustomFields"
+$m->print( '>
+' );
+#line 81 "/var/www/localhost/htdocs/rt/Elements/EditCustomFields"
+ $m->callback( CallbackName => 'AfterCustomFieldValue', CustomField => $CustomField, Object => $Object, Grouping => $Grouping );
+$m->print( '  </' );
+#line 82 "/var/www/localhost/htdocs/rt/Elements/EditCustomFields"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $FIELD )) );
+#line 82 "/var/www/localhost/htdocs/rt/Elements/EditCustomFields"
+$m->print( '>
+' );
+#line 83 "/var/www/localhost/htdocs/rt/Elements/EditCustomFields"
+ }
+$m->print( '
+' );
+#line 85 "/var/www/localhost/htdocs/rt/Elements/EditCustomFields"
+ if ( $WRAP ) {
+$m->print( '</' );
+#line 86 "/var/www/localhost/htdocs/rt/Elements/EditCustomFields"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $WRAP )) );
+#line 86 "/var/www/localhost/htdocs/rt/Elements/EditCustomFields"
+$m->print( '>
+' );
+#line 87 "/var/www/localhost/htdocs/rt/Elements/EditCustomFields"
+ }
+ $m->callback( CallbackName => 'AfterCustomFields', Object => $Object,
+               Grouping => $Grouping, ARGSRef => \%ARGS );
+;return;
+},
+'declared_args' => {
+  '$AsTable' => { default => ' 1' },
+  '$CustomFields' => { default => ' undef' },
+  '$Grouping' => { default => ' undef' },
+  '$InTable' => { default => ' 0' },
+  '$Object' => { default => undef },
+  '$ShowHints' => { default => ' 1' }
+},
+'load_time' => 1434737749,
+
+)
+;

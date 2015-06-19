@@ -1,0 +1,205 @@
+package HTML::Mason::Commands;
+use strict;
+use vars qw($m $DECODED_ARGS $r %session);
+HTML::Mason::Component::FileBased->new(
+'code' => sub {
+HTML::Mason::Exception::Params->throw
+    ( error =>
+      "Odd number of parameters passed to component expecting name/value pairs"
+    ) if @_ % 2;
+my ( $class, $bodyclass, $title_href, $title, $title_raw, $title_class, $titleright_href, $titleright, $titleright_raw, $id, $hideable, $rolledup );
+{
+    my %pos;
+    for ( my $x = 0; $x < @_; $x += 2 )
+    {
+        $pos{ $_[$x] } = $x + 1;
+    }
+#line 63 "/var/www/localhost/htdocs/rt/Widgets/TitleBoxStart"
+     $class = exists $pos{'class'} ? $_[ $pos{'class'} ] :  '';
+#line 64 "/var/www/localhost/htdocs/rt/Widgets/TitleBoxStart"
+     $bodyclass = exists $pos{'bodyclass'} ? $_[ $pos{'bodyclass'} ] :  '';
+#line 65 "/var/www/localhost/htdocs/rt/Widgets/TitleBoxStart"
+     $title_href = exists $pos{'title_href'} ? $_[ $pos{'title_href'} ] :  '';
+#line 66 "/var/www/localhost/htdocs/rt/Widgets/TitleBoxStart"
+     $title = exists $pos{'title'} ? $_[ $pos{'title'} ] :  '';
+#line 67 "/var/www/localhost/htdocs/rt/Widgets/TitleBoxStart"
+     $title_raw = exists $pos{'title_raw'} ? $_[ $pos{'title_raw'} ] :  '';
+#line 68 "/var/www/localhost/htdocs/rt/Widgets/TitleBoxStart"
+     $title_class = exists $pos{'title_class'} ? $_[ $pos{'title_class'} ] :  '';
+#line 69 "/var/www/localhost/htdocs/rt/Widgets/TitleBoxStart"
+     $titleright_href = exists $pos{'titleright_href'} ? $_[ $pos{'titleright_href'} ] :  '';
+#line 70 "/var/www/localhost/htdocs/rt/Widgets/TitleBoxStart"
+     $titleright = exists $pos{'titleright'} ? $_[ $pos{'titleright'} ] :  '';
+#line 71 "/var/www/localhost/htdocs/rt/Widgets/TitleBoxStart"
+     $titleright_raw = exists $pos{'titleright_raw'} ? $_[ $pos{'titleright_raw'} ] :  '';
+#line 72 "/var/www/localhost/htdocs/rt/Widgets/TitleBoxStart"
+     $id = exists $pos{'id'} ? $_[ $pos{'id'} ] :  '';
+#line 73 "/var/www/localhost/htdocs/rt/Widgets/TitleBoxStart"
+     $hideable = exists $pos{'hideable'} ? $_[ $pos{'hideable'} ] :  1;
+#line 74 "/var/www/localhost/htdocs/rt/Widgets/TitleBoxStart"
+     $rolledup = exists $pos{'rolledup'} ? $_[ $pos{'rolledup'} ] :  0;
+}
+$m->debug_hook( $m->current_comp->path ) if ( HTML::Mason::Compiler::IN_PERL_DB() );
+
+#line 77 "/var/www/localhost/htdocs/rt/Widgets/TitleBoxStart"
+
+$hideable = 1 if $rolledup;
+#
+# This should be pretty bulletproof
+#
+my $page = $m->request_comp->path;
+
+my $title_b64 = MIME::Base64::encode_base64(Encode::encode( "UTF-8", $title), '');
+
+my $tid  = "TitleBox--$page--" .
+            join '--', ($class, $bodyclass, $title_b64, $id);
+
+# Replace anything that ISN'T alphanumeric, a hyphen, or an underscore
+$tid =~ s{[^A-Za-z0-9\-_]}{_}g;
+
+my $i = 0;
+$i++ while $m->notes("$tid-$i");
+$m->notes("$tid-$i" => 1);
+$tid = "$tid-$i";
+#line 1 "/var/www/localhost/htdocs/rt/Widgets/TitleBoxStart"
+# BEGIN BPS TAGGED BLOCK {{{
+#
+# COPYRIGHT:
+#
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
+#                                          <sales@bestpractical.com>
+#
+# (Except where explicitly superseded by other copyright notices)
+#
+#
+# LICENSE:
+#
+# This work is made available to you under the terms of Version 2 of
+# the GNU General Public License. A copy of that license should have
+# been provided with this software, but in any event can be snarfed
+# from www.gnu.org.
+#
+# This work is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
+#
+#
+# CONTRIBUTION SUBMISSION POLICY:
+#
+# (The following paragraph is not intended to limit the rights granted
+# to you to modify and distribute this software under the terms of
+# the GNU General Public License and is only of importance to you if
+# you choose to contribute your changes and enhancements to the
+# community by submitting them to Best Practical Solutions, LLC.)
+#
+# By intentionally submitting any modifications, corrections or
+# derivatives to this work, or any other work intended for use with
+# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+# you are the copyright holder for those contributions and you grant
+# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+# royalty-free, perpetual, license to use, copy, create derivative
+# works based on those contributions, and sublicense and distribute
+# those contributions and any derivatives thereof.
+#
+# END BPS TAGGED BLOCK }}}
+$m->print( '<div class="titlebox' );
+#line 48 "/var/www/localhost/htdocs/rt/Widgets/TitleBoxStart"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $class ? " $class " : '' )) );
+#line 48 "/var/www/localhost/htdocs/rt/Widgets/TitleBoxStart"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $rolledup ? " rolled-up" : "")) );
+#line 48 "/var/www/localhost/htdocs/rt/Widgets/TitleBoxStart"
+$m->print( '" id="' );
+#line 48 "/var/www/localhost/htdocs/rt/Widgets/TitleBoxStart"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $id )) );
+#line 48 "/var/www/localhost/htdocs/rt/Widgets/TitleBoxStart"
+$m->print( '">
+  <div class="titlebox-title' );
+#line 49 "/var/www/localhost/htdocs/rt/Widgets/TitleBoxStart"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $title_class ? " $title_class" : '')) );
+#line 49 "/var/www/localhost/htdocs/rt/Widgets/TitleBoxStart"
+$m->print( '">
+' );
+#line 50 "/var/www/localhost/htdocs/rt/Widgets/TitleBoxStart"
+ if ($hideable) {
+$m->print( '    <span class="widget"><a href="#" onclick="return rollup(' );
+#line 51 "/var/www/localhost/htdocs/rt/Widgets/TitleBoxStart"
+$m->print( (map {; $m->interp->apply_escapes($_, 'j') } ($tid)) );
+#line 51 "/var/www/localhost/htdocs/rt/Widgets/TitleBoxStart"
+$m->print( ');" title="Toggle visibility"></a></span>
+' );
+#line 52 "/var/www/localhost/htdocs/rt/Widgets/TitleBoxStart"
+ }
+$m->print( '    <span class="left">' );
+#line 55 "/var/www/localhost/htdocs/rt/Widgets/TitleBoxStart"
+$m->print( 
+            $title_href ? qq[<a href="$title_href">] : '' );
+#line 55 "/var/www/localhost/htdocs/rt/Widgets/TitleBoxStart"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $title )) );
+#line 55 "/var/www/localhost/htdocs/rt/Widgets/TitleBoxStart"
+$m->print(  $title_raw );
+#line 55 "/var/www/localhost/htdocs/rt/Widgets/TitleBoxStart"
+$m->print(  $title_href ? "</a>" : '' );
+#line 55 "/var/www/localhost/htdocs/rt/Widgets/TitleBoxStart"
+$m->print( '</span>
+    <span class="right' );
+#line 56 "/var/www/localhost/htdocs/rt/Widgets/TitleBoxStart"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } (($titleright_href || $titleright || $titleright_raw) ? '' : '-empty' )) );
+#line 56 "/var/www/localhost/htdocs/rt/Widgets/TitleBoxStart"
+$m->print( '">' );
+#line 57 "/var/www/localhost/htdocs/rt/Widgets/TitleBoxStart"
+$m->print( '        ' );
+#line 57 "/var/www/localhost/htdocs/rt/Widgets/TitleBoxStart"
+$m->print(  $titleright_href ? qq[<a href="$titleright_href">] : '' );
+#line 58 "/var/www/localhost/htdocs/rt/Widgets/TitleBoxStart"
+$m->print( '        ' );
+#line 58 "/var/www/localhost/htdocs/rt/Widgets/TitleBoxStart"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $titleright  )) );
+#line 58 "/var/www/localhost/htdocs/rt/Widgets/TitleBoxStart"
+$m->print(  $titleright_raw );
+#line 58 "/var/www/localhost/htdocs/rt/Widgets/TitleBoxStart"
+$m->print(  $titleright_href ? "</a>" : '' );
+#line 59 "/var/www/localhost/htdocs/rt/Widgets/TitleBoxStart"
+$m->print( '    </span>
+  </div>
+  <div class="titlebox-content ' );
+#line 61 "/var/www/localhost/htdocs/rt/Widgets/TitleBoxStart"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $bodyclass )) );
+#line 61 "/var/www/localhost/htdocs/rt/Widgets/TitleBoxStart"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $rolledup ? " hidden" : "")) );
+#line 61 "/var/www/localhost/htdocs/rt/Widgets/TitleBoxStart"
+$m->print( '" id="' );
+#line 61 "/var/www/localhost/htdocs/rt/Widgets/TitleBoxStart"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $tid )) );
+#line 61 "/var/www/localhost/htdocs/rt/Widgets/TitleBoxStart"
+$m->print( '">
+' );
+#line 76 "/var/www/localhost/htdocs/rt/Widgets/TitleBoxStart"
+$m->print( '
+' );
+;return;
+},
+'declared_args' => {
+  '$bodyclass' => { default => ' \'\'' },
+  '$class' => { default => ' \'\'' },
+  '$hideable' => { default => ' 1' },
+  '$id' => { default => ' \'\'' },
+  '$rolledup' => { default => ' 0' },
+  '$title' => { default => ' \'\'' },
+  '$title_class' => { default => ' \'\'' },
+  '$title_href' => { default => ' \'\'' },
+  '$title_raw' => { default => ' \'\'' },
+  '$titleright' => { default => ' \'\'' },
+  '$titleright_href' => { default => ' \'\'' },
+  '$titleright_raw' => { default => ' \'\'' }
+},
+'load_time' => 1434735744,
+
+)
+;

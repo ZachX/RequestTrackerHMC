@@ -1,0 +1,261 @@
+package HTML::Mason::Commands;
+use strict;
+use vars qw($m $DECODED_ARGS $r %session);
+HTML::Mason::Component::FileBased->new(
+'code' => sub {
+HTML::Mason::Exception::Params->throw
+    ( error =>
+      "Odd number of parameters passed to component expecting name/value pairs"
+    ) if @_ % 2;
+my %ARGS = @_;
+my ( $FindDisabledQueues, $Format, $QueueField, $QueueOp, $QueueString );
+{
+    my %pos;
+    for ( my $x = 0; $x < @_; $x += 2 )
+    {
+        $pos{ $_[$x] } = $x + 1;
+    }
+#line 120 "/var/www/localhost/htdocs/rt/Admin/Queues/index.html"
+     $FindDisabledQueues = exists $pos{'FindDisabledQueues'} ? $_[ $pos{'FindDisabledQueues'} ] :  0;
+#line 121 "/var/www/localhost/htdocs/rt/Admin/Queues/index.html"
+     $Format = exists $pos{'Format'} ? $_[ $pos{'Format'} ] :  undef;
+#line 123 "/var/www/localhost/htdocs/rt/Admin/Queues/index.html"
+     $QueueField = exists $pos{'QueueField'} ? $_[ $pos{'QueueField'} ] :  'Name';
+#line 124 "/var/www/localhost/htdocs/rt/Admin/Queues/index.html"
+     $QueueOp = exists $pos{'QueueOp'} ? $_[ $pos{'QueueOp'} ] :  'LIKE';
+#line 125 "/var/www/localhost/htdocs/rt/Admin/Queues/index.html"
+     $QueueString = exists $pos{'QueueString'} ? $_[ $pos{'QueueString'} ] :  '';
+}
+$m->debug_hook( $m->current_comp->path ) if ( HTML::Mason::Compiler::IN_PERL_DB() );
+
+#line 92 "/var/www/localhost/htdocs/rt/Admin/Queues/index.html"
+
+my $queues = RT::Queues->new($session{'CurrentUser'});
+$queues->FindAllRows if $FindDisabledQueues;
+
+my ($caption);
+if ( defined $QueueString && length $QueueString ) {
+    $caption = $FindDisabledQueues
+        ? loc("All queues matching search criteria")
+        : loc("Enabled queues matching search criteria");
+    $queues->Limit(
+        FIELD    => $QueueField,
+        OPERATOR => $QueueOp,
+        VALUE    => $QueueString,
+    );
+    RT::Interface::Web::Redirect(RT->Config->Get('WebURL')."Admin/Queues/Modify.html?id=".$queues->First->id)
+          if $queues->Count == 1;
+} else {
+    $queues->UnLimit;
+    $caption = $FindDisabledQueues
+        ? loc("All Queues")
+        : loc("Enabled Queues");
+}
+
+$Format ||= RT->Config->Get('AdminSearchResultFormat')->{'Queues'};
+my $Rows = RT->Config->Get('AdminSearchResultRows')->{'Queues'} || 50;
+
+#line 1 "/var/www/localhost/htdocs/rt/Admin/Queues/index.html"
+# BEGIN BPS TAGGED BLOCK {{{
+#
+# COPYRIGHT:
+#
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
+#                                          <sales@bestpractical.com>
+#
+# (Except where explicitly superseded by other copyright notices)
+#
+#
+# LICENSE:
+#
+# This work is made available to you under the terms of Version 2 of
+# the GNU General Public License. A copy of that license should have
+# been provided with this software, but in any event can be snarfed
+# from www.gnu.org.
+#
+# This work is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
+#
+#
+# CONTRIBUTION SUBMISSION POLICY:
+#
+# (The following paragraph is not intended to limit the rights granted
+# to you to modify and distribute this software under the terms of
+# the GNU General Public License and is only of importance to you if
+# you choose to contribute your changes and enhancements to the
+# community by submitting them to Best Practical Solutions, LLC.)
+#
+# By intentionally submitting any modifications, corrections or
+# derivatives to this work, or any other work intended for use with
+# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+# you are the copyright holder for those contributions and you grant
+# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+# royalty-free, perpetual, license to use, copy, create derivative
+# works based on those contributions, and sublicense and distribute
+# those contributions and any derivatives thereof.
+#
+# END BPS TAGGED BLOCK }}}
+$m->comp(   '/Admin/Elements/Header', Title => loc("Admin queues")   
+); #line 48 "/var/www/localhost/htdocs/rt/Admin/Queues/index.html"
+$m->print( '
+' );
+#line 49 "/var/www/localhost/htdocs/rt/Admin/Queues/index.html"
+$m->comp(   '/Elements/Tabs'  
+); #line 49 "/var/www/localhost/htdocs/rt/Admin/Queues/index.html"
+$m->print( '
+
+<h1>' );
+#line 51 "/var/www/localhost/htdocs/rt/Admin/Queues/index.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($caption)) );
+#line 51 "/var/www/localhost/htdocs/rt/Admin/Queues/index.html"
+$m->print( '</h1>
+
+<form method="post" action="' );
+#line 53 "/var/www/localhost/htdocs/rt/Admin/Queues/index.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( RT->Config->Get('WebPath') )) );
+#line 53 "/var/www/localhost/htdocs/rt/Admin/Queues/index.html"
+$m->print( '/Admin/Queues/index.html">
+' );
+#line 54 "/var/www/localhost/htdocs/rt/Admin/Queues/index.html"
+ foreach my $field( qw(Format Rows Page Order OrderBy) ) {
+     next unless defined $ARGS{ $field } && length $ARGS{ $field };
+$m->print( '<input type="hidden" name="' );
+#line 56 "/var/www/localhost/htdocs/rt/Admin/Queues/index.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $field )) );
+#line 56 "/var/www/localhost/htdocs/rt/Admin/Queues/index.html"
+$m->print( '" value="' );
+#line 56 "/var/www/localhost/htdocs/rt/Admin/Queues/index.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $ARGS{ $field } )) );
+#line 56 "/var/www/localhost/htdocs/rt/Admin/Queues/index.html"
+$m->print( '" />
+' );
+#line 57 "/var/www/localhost/htdocs/rt/Admin/Queues/index.html"
+ }
+$m->print( '
+<select name="QueueField">
+' );
+#line 60 "/var/www/localhost/htdocs/rt/Admin/Queues/index.html"
+ foreach my $col (qw(Name Description CorrespondAddress CommentAddress InitialPriority FinalPriority DefaultDueIn Lifecycle SubjectTag)) {
+$m->print( '<option ' );
+#line 61 "/var/www/localhost/htdocs/rt/Admin/Queues/index.html"
+$m->print(  $QueueField eq $col ? 'selected="selected"' : '' );
+#line 61 "/var/www/localhost/htdocs/rt/Admin/Queues/index.html"
+$m->print( ' value="' );
+#line 61 "/var/www/localhost/htdocs/rt/Admin/Queues/index.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $col )) );
+#line 61 "/var/www/localhost/htdocs/rt/Admin/Queues/index.html"
+$m->print( '">' );
+#line 61 "/var/www/localhost/htdocs/rt/Admin/Queues/index.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( loc($col) )) );
+#line 61 "/var/www/localhost/htdocs/rt/Admin/Queues/index.html"
+$m->print( '</option>
+' );
+#line 62 "/var/www/localhost/htdocs/rt/Admin/Queues/index.html"
+ }
+$m->print( '</select>
+' );
+#line 64 "/var/www/localhost/htdocs/rt/Admin/Queues/index.html"
+$m->comp(   '/Elements/SelectMatch', Name => 'QueueOp', Default => $QueueOp   
+); #line 64 "/var/www/localhost/htdocs/rt/Admin/Queues/index.html"
+$m->print( '
+<input size="8" name="QueueString" value="' );
+#line 65 "/var/www/localhost/htdocs/rt/Admin/Queues/index.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $QueueString )) );
+#line 65 "/var/www/localhost/htdocs/rt/Admin/Queues/index.html"
+$m->print( '" />
+<br />
+
+<input type="checkbox" class="checkbox" id="FindDisabledQueues" name="FindDisabledQueues" value="1" ' );
+#line 68 "/var/www/localhost/htdocs/rt/Admin/Queues/index.html"
+$m->print(  $FindDisabledQueues? 'checked="checked"': '' );
+#line 68 "/var/www/localhost/htdocs/rt/Admin/Queues/index.html"
+$m->print( ' />
+<label for="FindDisabledQueues">' );
+#line 69 "/var/www/localhost/htdocs/rt/Admin/Queues/index.html"
+$m->comp( { content => sub {
+#line 69 "/var/www/localhost/htdocs/rt/Admin/Queues/index.html"
+$m->print( 'Include disabled queues in listing.' );
+#line 69 "/var/www/localhost/htdocs/rt/Admin/Queues/index.html"
+} }, '/l'
+ );
+#line 69 "/var/www/localhost/htdocs/rt/Admin/Queues/index.html"
+$m->print( '</label>
+<div align="right"><input type="submit" class="button" value="' );
+#line 70 "/var/www/localhost/htdocs/rt/Admin/Queues/index.html"
+$m->comp( { content => sub {
+#line 70 "/var/www/localhost/htdocs/rt/Admin/Queues/index.html"
+$m->print( 'Go!' );
+#line 70 "/var/www/localhost/htdocs/rt/Admin/Queues/index.html"
+} }, '/l'
+ );
+#line 70 "/var/www/localhost/htdocs/rt/Admin/Queues/index.html"
+$m->print( '" /></div>
+</form>
+
+<p>' );
+#line 73 "/var/www/localhost/htdocs/rt/Admin/Queues/index.html"
+$m->comp( { content => sub {
+#line 73 "/var/www/localhost/htdocs/rt/Admin/Queues/index.html"
+$m->print( 'Select a queue' );
+#line 73 "/var/www/localhost/htdocs/rt/Admin/Queues/index.html"
+} }, '/l'
+ );
+#line 73 "/var/www/localhost/htdocs/rt/Admin/Queues/index.html"
+$m->print( ':</p>
+' );
+#line 74 "/var/www/localhost/htdocs/rt/Admin/Queues/index.html"
+ unless ( $queues->Count ) {
+$m->print( '<em>' );
+#line 75 "/var/www/localhost/htdocs/rt/Admin/Queues/index.html"
+$m->comp( { content => sub {
+#line 75 "/var/www/localhost/htdocs/rt/Admin/Queues/index.html"
+$m->print( 'No queues matching search criteria found.' );
+#line 75 "/var/www/localhost/htdocs/rt/Admin/Queues/index.html"
+} }, '/l'
+ );
+#line 75 "/var/www/localhost/htdocs/rt/Admin/Queues/index.html"
+$m->print( '</em>
+' );
+#line 76 "/var/www/localhost/htdocs/rt/Admin/Queues/index.html"
+ } else {
+$m->comp(   '/Elements/CollectionList',
+    OrderBy => 'Name',
+    Order => 'ASC',
+    Rows  => $Rows,
+    %ARGS,
+    Format => $Format,
+    Collection => $queues,
+    AllowSorting => 1,
+    PassArguments => [qw(
+        Format Rows Page Order OrderBy
+        FindDisabledQueues QueueString QueueOp QueueField
+    )],
+  
+); #line 89 "/var/www/localhost/htdocs/rt/Admin/Queues/index.html"
+$m->print( '
+' );
+#line 90 "/var/www/localhost/htdocs/rt/Admin/Queues/index.html"
+ }
+$m->print( '
+' );
+;return;
+},
+'declared_args' => {
+  '$FindDisabledQueues' => { default => ' 0' },
+  '$Format' => { default => ' undef' },
+  '$QueueField' => { default => ' \'Name\'' },
+  '$QueueOp' => { default => ' \'LIKE\'' },
+  '$QueueString' => { default => ' \'\'' }
+},
+'load_time' => 1434738719,
+
+)
+;

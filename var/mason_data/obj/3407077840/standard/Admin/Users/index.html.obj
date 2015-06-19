@@ -1,0 +1,320 @@
+package HTML::Mason::Commands;
+use strict;
+use vars qw($m $DECODED_ARGS $r %session);
+HTML::Mason::Component::FileBased->new(
+'code' => sub {
+HTML::Mason::Exception::Params->throw
+    ( error =>
+      "Odd number of parameters passed to component expecting name/value pairs"
+    ) if @_ % 2;
+my %ARGS = @_;
+my ( $Format, $UserString, $UserOp, $UserField, $IdLike, $EmailLike, $FindDisabledUsers );
+{
+    my %pos;
+    for ( my $x = 0; $x < @_; $x += 2 )
+    {
+        $pos{ $_[$x] } = $x + 1;
+    }
+#line 159 "/var/www/localhost/htdocs/rt/Admin/Users/index.html"
+     $Format = exists $pos{'Format'} ? $_[ $pos{'Format'} ] :  undef,;
+#line 161 "/var/www/localhost/htdocs/rt/Admin/Users/index.html"
+     $UserString = exists $pos{'UserString'} ? $_[ $pos{'UserString'} ] :  undef;
+#line 162 "/var/www/localhost/htdocs/rt/Admin/Users/index.html"
+     $UserOp = exists $pos{'UserOp'} ? $_[ $pos{'UserOp'} ] :  '=';
+#line 163 "/var/www/localhost/htdocs/rt/Admin/Users/index.html"
+     $UserField = exists $pos{'UserField'} ? $_[ $pos{'UserField'} ] :  'Name';
+#line 164 "/var/www/localhost/htdocs/rt/Admin/Users/index.html"
+     $IdLike = exists $pos{'IdLike'} ? $_[ $pos{'IdLike'} ] :  undef;
+#line 165 "/var/www/localhost/htdocs/rt/Admin/Users/index.html"
+     $EmailLike = exists $pos{'EmailLike'} ? $_[ $pos{'EmailLike'} ] :  undef;
+#line 167 "/var/www/localhost/htdocs/rt/Admin/Users/index.html"
+     $FindDisabledUsers = exists $pos{'FindDisabledUsers'} ? $_[ $pos{'FindDisabledUsers'} ] :  0;
+}
+$m->debug_hook( $m->current_comp->path ) if ( HTML::Mason::Compiler::IN_PERL_DB() );
+
+#line 102 "/var/www/localhost/htdocs/rt/Admin/Users/index.html"
+
+my $caption;
+my $users = RT::Users->new( $session{'CurrentUser'} );
+$users->FindAllRows if $FindDisabledUsers;
+
+if ( defined($UserString) && length $UserString ) {
+    $caption = loc("Users matching search criteria");
+    if ( $UserField =~ /^CustomField-(\d+)/ ) {
+        $users->LimitCustomField(
+            CUSTOMFIELD => $1,
+            OPERATOR => $UserOp,
+            VALUE => $UserString,
+        ); 
+    }
+    else {
+        $users->Limit(
+            FIELD => $UserField,
+            OPERATOR => $UserOp,
+            VALUE => $UserString,
+        ); 
+    }
+    RT::Interface::Web::Redirect(RT->Config->Get('WebURL')."Admin/Users/Modify.html?id=".$users->First->id)
+          if $users->Count == 1;
+}
+else {
+    $caption = loc("Privileged users");
+    $users->LimitToPrivileged;
+}
+
+$Format ||= RT->Config->Get('AdminSearchResultFormat')->{'Users'};
+my $Rows = RT->Config->Get('AdminSearchResultRows')->{'Users'} || 50;
+
+# Build up the list of fields to display for searching
+my $i = 0;
+my %sorted = map { $_ => $i++ } qw(
+    Name EmailAddress RealName Organization NickName WorkPhone HomePhone
+    MobilePhone PagerPhone Address1 Address2 City State Zip Country
+    Timezone Lang Gecos SMIMECertificate Comments
+);
+
+my @attrs = sort { $sorted{$a} <=> $sorted{$b} }
+            grep { !/(?:^id$|ContactInfo|Encoding|^External|System|PGPKey|AuthToken|^Last|^Creat(?:ed|or)$|^Signature$)/ }
+            RT::User->ReadableAttributes;
+my @fields;
+
+for my $name (@attrs) {
+    my $label = $m->comp(
+        '/Elements/ColumnMap',
+        Class   => 'RT__User',
+        Name    => $name,
+        Attr    => 'title'
+    );
+
+    push @fields, [ $name, $label || $name ];
+}
+#line 1 "/var/www/localhost/htdocs/rt/Admin/Users/index.html"
+# BEGIN BPS TAGGED BLOCK {{{
+#
+# COPYRIGHT:
+#
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
+#                                          <sales@bestpractical.com>
+#
+# (Except where explicitly superseded by other copyright notices)
+#
+#
+# LICENSE:
+#
+# This work is made available to you under the terms of Version 2 of
+# the GNU General Public License. A copy of that license should have
+# been provided with this software, but in any event can be snarfed
+# from www.gnu.org.
+#
+# This work is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
+#
+#
+# CONTRIBUTION SUBMISSION POLICY:
+#
+# (The following paragraph is not intended to limit the rights granted
+# to you to modify and distribute this software under the terms of
+# the GNU General Public License and is only of importance to you if
+# you choose to contribute your changes and enhancements to the
+# community by submitting them to Best Practical Solutions, LLC.)
+#
+# By intentionally submitting any modifications, corrections or
+# derivatives to this work, or any other work intended for use with
+# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+# you are the copyright holder for those contributions and you grant
+# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+# royalty-free, perpetual, license to use, copy, create derivative
+# works based on those contributions, and sublicense and distribute
+# those contributions and any derivatives thereof.
+#
+# END BPS TAGGED BLOCK }}}
+$m->comp(   '/Admin/Elements/Header', Title => loc('Select a user')   
+); #line 48 "/var/www/localhost/htdocs/rt/Admin/Users/index.html"
+$m->print( '
+' );
+#line 49 "/var/www/localhost/htdocs/rt/Admin/Users/index.html"
+$m->comp(   '/Elements/Tabs'  
+); #line 49 "/var/www/localhost/htdocs/rt/Admin/Users/index.html"
+$m->print( '
+    
+<h1>' );
+#line 51 "/var/www/localhost/htdocs/rt/Admin/Users/index.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $caption )) );
+#line 51 "/var/www/localhost/htdocs/rt/Admin/Users/index.html"
+$m->print( '</h1>
+
+<form method="post" action="' );
+#line 53 "/var/www/localhost/htdocs/rt/Admin/Users/index.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( RT->Config->Get('WebPath') )) );
+#line 53 "/var/www/localhost/htdocs/rt/Admin/Users/index.html"
+$m->print( '/Admin/Users/index.html">
+' );
+#line 54 "/var/www/localhost/htdocs/rt/Admin/Users/index.html"
+ foreach my $field( qw(Format Rows Page Order OrderBy) ) {
+     next unless defined $ARGS{ $field } && length $ARGS{ $field };
+$m->print( '<input type="hidden" name="' );
+#line 56 "/var/www/localhost/htdocs/rt/Admin/Users/index.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $field )) );
+#line 56 "/var/www/localhost/htdocs/rt/Admin/Users/index.html"
+$m->print( '" value="' );
+#line 56 "/var/www/localhost/htdocs/rt/Admin/Users/index.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $ARGS{ $field } )) );
+#line 56 "/var/www/localhost/htdocs/rt/Admin/Users/index.html"
+$m->print( '" />
+' );
+#line 57 "/var/www/localhost/htdocs/rt/Admin/Users/index.html"
+ }
+$m->print( '<input type="hidden" name="UserField" value="Name" />
+<input type="hidden" name="UserOp" value="LIKE" />
+' );
+#line 60 "/var/www/localhost/htdocs/rt/Admin/Users/index.html"
+$m->comp( { content => sub {
+#line 60 "/var/www/localhost/htdocs/rt/Admin/Users/index.html"
+$m->print( 'Go to user' );
+#line 60 "/var/www/localhost/htdocs/rt/Admin/Users/index.html"
+} }, '/l'
+ );
+#line 60 "/var/www/localhost/htdocs/rt/Admin/Users/index.html"
+$m->print( '
+<input type="text" name="UserString" value="" data-autocomplete="Users" data-autocomplete-return="Name" id="autocomplete-UserString" />
+<script type="text/javascript">
+jQuery(function(){
+    // Jump directly to the page if a user is chosen
+    jQuery("#autocomplete-UserString").on("autocompleteselect", function( event, ui ) {
+        document.location = RT.Config.WebPath + "/Admin/Users/Modify.html?id=" + ui.item.id;
+    });
+});
+</script>
+</form>
+
+<form method="post" action="' );
+#line 72 "/var/www/localhost/htdocs/rt/Admin/Users/index.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( RT->Config->Get('WebPath') )) );
+#line 72 "/var/www/localhost/htdocs/rt/Admin/Users/index.html"
+$m->print( '/Admin/Users/index.html">
+' );
+#line 73 "/var/www/localhost/htdocs/rt/Admin/Users/index.html"
+ foreach my $field( qw(Format Rows Page Order OrderBy) ) {
+     next unless defined $ARGS{ $field } && length $ARGS{ $field };
+$m->print( '<input type="hidden" name="' );
+#line 75 "/var/www/localhost/htdocs/rt/Admin/Users/index.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $field )) );
+#line 75 "/var/www/localhost/htdocs/rt/Admin/Users/index.html"
+$m->print( '" value="' );
+#line 75 "/var/www/localhost/htdocs/rt/Admin/Users/index.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $ARGS{ $field } )) );
+#line 75 "/var/www/localhost/htdocs/rt/Admin/Users/index.html"
+$m->print( '" />
+' );
+#line 76 "/var/www/localhost/htdocs/rt/Admin/Users/index.html"
+ }
+$m->comp( { content => sub {
+#line 77 "/var/www/localhost/htdocs/rt/Admin/Users/index.html"
+$m->print( 'Find all users whose' );
+#line 77 "/var/www/localhost/htdocs/rt/Admin/Users/index.html"
+} }, '/l'
+ );
+#line 77 "/var/www/localhost/htdocs/rt/Admin/Users/index.html"
+$m->print( ' ' );
+#line 77 "/var/www/localhost/htdocs/rt/Admin/Users/index.html"
+$m->comp(   '/Elements/SelectUsers', %ARGS, Fields => \@fields   
+); #line 77 "/var/www/localhost/htdocs/rt/Admin/Users/index.html"
+$m->print( '<br />
+<input type="checkbox" class="checkbox" id="FindDisabledUsers" name="FindDisabledUsers" value="1" ' );
+#line 78 "/var/www/localhost/htdocs/rt/Admin/Users/index.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $FindDisabledUsers? 'checked="checked"': '' )) );
+#line 78 "/var/www/localhost/htdocs/rt/Admin/Users/index.html"
+$m->print( ' />
+<label for="FindDisabledUsers">' );
+#line 79 "/var/www/localhost/htdocs/rt/Admin/Users/index.html"
+$m->comp( { content => sub {
+#line 79 "/var/www/localhost/htdocs/rt/Admin/Users/index.html"
+$m->print( 'Include disabled users in search.' );
+#line 79 "/var/www/localhost/htdocs/rt/Admin/Users/index.html"
+} }, '/l'
+ );
+#line 79 "/var/www/localhost/htdocs/rt/Admin/Users/index.html"
+$m->print( '</label>
+<br />
+<div align="right"><input type="submit" class="button" value="' );
+#line 81 "/var/www/localhost/htdocs/rt/Admin/Users/index.html"
+$m->comp( { content => sub {
+#line 81 "/var/www/localhost/htdocs/rt/Admin/Users/index.html"
+$m->print( 'Go!' );
+#line 81 "/var/www/localhost/htdocs/rt/Admin/Users/index.html"
+} }, '/l'
+ );
+#line 81 "/var/www/localhost/htdocs/rt/Admin/Users/index.html"
+$m->print( '" /></div> 
+</form>
+
+' );
+#line 84 "/var/www/localhost/htdocs/rt/Admin/Users/index.html"
+ unless ( $users->Count ) {
+$m->print( '<em>' );
+#line 85 "/var/www/localhost/htdocs/rt/Admin/Users/index.html"
+$m->comp( { content => sub {
+#line 85 "/var/www/localhost/htdocs/rt/Admin/Users/index.html"
+$m->print( 'No users matching search criteria found.' );
+#line 85 "/var/www/localhost/htdocs/rt/Admin/Users/index.html"
+} }, '/l'
+ );
+#line 85 "/var/www/localhost/htdocs/rt/Admin/Users/index.html"
+$m->print( '</em>
+' );
+#line 86 "/var/www/localhost/htdocs/rt/Admin/Users/index.html"
+ } else {
+$m->print( '<p>' );
+#line 87 "/var/www/localhost/htdocs/rt/Admin/Users/index.html"
+$m->comp( { content => sub {
+#line 87 "/var/www/localhost/htdocs/rt/Admin/Users/index.html"
+$m->print( 'Select a user' );
+#line 87 "/var/www/localhost/htdocs/rt/Admin/Users/index.html"
+} }, '/l'
+ );
+#line 87 "/var/www/localhost/htdocs/rt/Admin/Users/index.html"
+$m->print( ':</p>
+
+' );
+#line 89 "/var/www/localhost/htdocs/rt/Admin/Users/index.html"
+$m->comp(   '/Elements/CollectionList',
+    OrderBy => 'Name',
+    Order => 'ASC',
+    Rows  => $Rows,
+    %ARGS,
+    Format => $Format,
+    Collection => $users,
+    AllowSorting => 1,
+    PassArguments => [qw(Format Rows Page Order OrderBy UserString UserOp UserField IdLike EmailLike FindDisabledUsers)],
+  
+); #line 98 "/var/www/localhost/htdocs/rt/Admin/Users/index.html"
+$m->print( '
+
+' );
+#line 100 "/var/www/localhost/htdocs/rt/Admin/Users/index.html"
+ }
+$m->print( '
+' );
+;return;
+},
+'declared_args' => {
+  '$EmailLike' => { default => ' undef' },
+  '$FindDisabledUsers' => { default => ' 0' },
+  '$Format' => { default => ' undef,' },
+  '$IdLike' => { default => ' undef' },
+  '$UserField' => { default => ' \'Name\'' },
+  '$UserOp' => { default => ' \'=\'' },
+  '$UserString' => { default => ' undef' }
+},
+'load_time' => 1434739335,
+
+)
+;

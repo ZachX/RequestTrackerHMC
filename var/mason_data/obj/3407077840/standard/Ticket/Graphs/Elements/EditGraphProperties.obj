@@ -1,0 +1,439 @@
+package HTML::Mason::Commands;
+use strict;
+use vars qw($m $DECODED_ARGS $r %session);
+my %_method =
+(
+'Properties' => HTML::Mason::Component::Subcomponent->new(
+'code' => sub {
+HTML::Mason::Exception::Params->throw
+    ( error =>
+      "Odd number of parameters passed to component expecting name/value pairs"
+    ) if @_ % 2;
+my ( @Available, @Default, $Level );
+{
+    my %pos;
+    for ( my $x = 0; $x < @_; $x += 2 )
+    {
+        $pos{ $_[$x] } = $x + 1;
+    }
+#line 145 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+     @Available = exists $pos{'Available'} ? HTML::Mason::Tools::coerce_to_array( $_[ $pos{'Available'} ], '@Available') :  ();
+#line 146 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+     @Default = exists $pos{'Default'} ? HTML::Mason::Tools::coerce_to_array( $_[ $pos{'Default'} ], '@Default') :  ();
+#line 147 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+     $Level = exists $pos{'Level'} ? $_[ $pos{'Level'} ] :  1,;
+}
+$m->debug_hook( $m->current_comp->path ) if ( HTML::Mason::Compiler::IN_PERL_DB() );
+
+#line 149 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+
+my $id = "graph-properties-box-$Level";
+my $class = '';
+$class = 'class="hidden"' if $Level != 1 && !@Default;
+#line 143 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+$m->print( '
+' );
+#line 154 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( loc('Show Tickets Properties on [_1] level', $Level) )) );
+#line 154 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+$m->print( '
+(<small><a href="#" onclick="hideshow(' );
+#line 155 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+$m->print( (map {; $m->interp->apply_escapes($_, 'j') } ( $id)) );
+#line 155 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+$m->print( '); return false;">' );
+#line 155 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( loc('open/close') )) );
+#line 155 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+$m->print( '</a></small>):
+<table id="' );
+#line 156 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $id )) );
+#line 156 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+$m->print( '" ' );
+#line 156 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+$m->print(  $class );
+#line 156 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+$m->print( '>
+' );
+#line 157 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+ while ( my ($group, $list) = (splice @Available, 0, 2) ) {
+$m->print( '<tr><td>' );
+#line 158 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( loc($group) )) );
+#line 158 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+$m->print( ':</td><td>
+' );
+#line 159 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+ foreach my $prop ( @$list ) {
+ my $checked = '';
+ $checked = 'checked="checked"' if grep $_ eq $prop, @Default;
+$m->print( '<input type="checkbox" class="checkbox" id="Level-' );
+#line 162 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $Level )) );
+#line 162 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+$m->print( '-Properties" name="Level-' );
+#line 162 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $Level )) );
+#line 162 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+$m->print( '-Properties" value="' );
+#line 162 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $prop )) );
+#line 162 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+$m->print( '" ' );
+#line 162 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+$m->print(  $checked );
+#line 162 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+$m->print( ' />
+<label for="Level-' );
+#line 163 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $Level )) );
+#line 163 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+$m->print( '-Properties">' );
+#line 163 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( loc($prop) )) );
+#line 163 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+$m->print( '</label>
+' );
+#line 164 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+ }
+$m->print( '</td></tr>
+' );
+#line 166 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+ }
+$m->print( '</table>
+<br />
+' );
+;return;
+},
+'declared_args' => {
+  '$Level' => { default => ' 1,' },
+  '@Available' => { default => ' ()' },
+  '@Default' => { default => ' ()' }
+},
+
+)
+,
+
+);
+HTML::Mason::Component::FileBased->new(
+'code' => sub {
+HTML::Mason::Exception::Params->throw
+    ( error =>
+      "Odd number of parameters passed to component expecting name/value pairs"
+    ) if @_ % 2;
+my %ARGS = @_;
+my ( $id, $Direction, $LeadingLink, @ShowLinks, $MaxDepth, $FillUsing, $ShowLinkDescriptions );
+{
+    my %pos;
+    for ( my $x = 0; $x < @_; $x += 2 )
+    {
+        $pos{ $_[$x] } = $x + 1;
+    }
+#line 127 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+     $id = exists $pos{'id'} ? $_[ $pos{'id'} ] :  undef;
+#line 128 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+     $Direction = exists $pos{'Direction'} ? $_[ $pos{'Direction'} ] :  'TB';
+#line 129 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+     $LeadingLink = exists $pos{'LeadingLink'} ? $_[ $pos{'LeadingLink'} ] :  'Members';
+#line 130 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+     @ShowLinks = exists $pos{'ShowLinks'} ? HTML::Mason::Tools::coerce_to_array( $_[ $pos{'ShowLinks'} ], '@ShowLinks') :  ('MemberOf', 'DependsOn', 'RefersTo');
+#line 131 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+     $MaxDepth = exists $pos{'MaxDepth'} ? $_[ $pos{'MaxDepth'} ] :  3;
+#line 132 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+     $FillUsing = exists $pos{'FillUsing'} ? $_[ $pos{'FillUsing'} ] :  '';
+#line 133 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+     $ShowLinkDescriptions = exists $pos{'ShowLinkDescriptions'} ? $_[ $pos{'ShowLinkDescriptions'} ] :  0;
+}
+$m->debug_hook( $m->current_comp->path ) if ( HTML::Mason::Compiler::IN_PERL_DB() );
+
+#line 135 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+
+require RT::Graph::Tickets;
+require RT::Link;
+
+my @link_types = qw(Members MemberOf RefersTo ReferredToBy DependsOn DependedOnBy); #loc_qw
+@ShowLinks = grep $_ ne $LeadingLink, @ShowLinks;
+#line 1 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+# BEGIN BPS TAGGED BLOCK {{{
+#
+# COPYRIGHT:
+#
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
+#                                          <sales@bestpractical.com>
+#
+# (Except where explicitly superseded by other copyright notices)
+#
+#
+# LICENSE:
+#
+# This work is made available to you under the terms of Version 2 of
+# the GNU General Public License. A copy of that license should have
+# been provided with this software, but in any event can be snarfed
+# from www.gnu.org.
+#
+# This work is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
+#
+#
+# CONTRIBUTION SUBMISSION POLICY:
+#
+# (The following paragraph is not intended to limit the rights granted
+# to you to modify and distribute this software under the terms of
+# the GNU General Public License and is only of importance to you if
+# you choose to contribute your changes and enhancements to the
+# community by submitting them to Best Practical Solutions, LLC.)
+#
+# By intentionally submitting any modifications, corrections or
+# derivatives to this work, or any other work intended for use with
+# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+# you are the copyright holder for those contributions and you grant
+# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+# royalty-free, perpetual, license to use, copy, create derivative
+# works based on those contributions, and sublicense and distribute
+# those contributions and any derivatives thereof.
+#
+# END BPS TAGGED BLOCK }}}
+$m->comp( { content => sub {
+#line 48 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+$m->print( '
+
+' );
+#line 50 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( loc('Direction') )) );
+#line 50 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+$m->print( ' <select name="Direction">
+<option value="TB" ' );
+#line 51 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+$m->print(  ($Direction||'TB') eq 'TB'? 'selected="selected"': '' );
+#line 51 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+$m->print( '>' );
+#line 51 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( loc('top to bottom') )) );
+#line 51 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+$m->print( '</option>
+<option value="LR" ' );
+#line 52 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+$m->print(  ($Direction||'TB') eq 'LR'? 'selected="selected"': '' );
+#line 52 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+$m->print( '>' );
+#line 52 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( loc('left to right') )) );
+#line 52 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+$m->print( '</option>
+' );
+#line 53 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+# XXX: not supported by GraphViz perl module
+#<option value="BT" <% ($Direction||'TB') eq 'BT'? 'selected="selected"': '' |n %>><% loc('bottom to top') %></option>
+#<option value="RL" <% ($Direction||'TB') eq 'RL'? 'selected="selected"': '' |n %>><% loc('right to left') %></option>
+$m->print( '</select><br />
+
+' );
+#line 58 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( loc('Main type of links') )) );
+#line 58 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+$m->print( ' <select name="LeadingLink">
+' );
+#line 59 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+ foreach ( @link_types ) {
+$m->print( '<option value="' );
+#line 60 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $_ )) );
+#line 60 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+$m->print( '" ' );
+#line 60 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+$m->print(  ($LeadingLink||'Members') eq $_? 'selected="selected"': '' );
+#line 60 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+$m->print( '>' );
+#line 60 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( loc($_) )) );
+#line 60 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+$m->print( '</option>
+' );
+#line 61 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+ }
+$m->print( '</select>
+
+' );
+#line 64 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( loc('maximum depth') )) );
+#line 64 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+$m->print( ' <select name="MaxDepth">
+<option value="0">' );
+#line 65 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( loc('Unlimit') )) );
+#line 65 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+$m->print( '</option>
+' );
+#line 66 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+ foreach ( 1..6 ) {
+$m->print( '<option value="' );
+#line 67 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $_ )) );
+#line 67 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+$m->print( '" ' );
+#line 67 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( ($MaxDepth||0) == $_? 'selected="selected"': '' )) );
+#line 67 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+$m->print( '>' );
+#line 67 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $_ )) );
+#line 67 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+$m->print( '</option>
+' );
+#line 68 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+ }
+$m->print( '</select><br />
+
+' );
+#line 71 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( loc('Show as well') )) );
+#line 71 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+$m->print( ':
+' );
+#line 72 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+ foreach my $type ( @link_types ) {
+ my $checked = '';
+ $checked = 'checked="checked"' if grep $type eq $_, @ShowLinks;
+$m->print( '<input type="checkbox" id="ShowLinks" name="ShowLinks" value="' );
+#line 75 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $type )) );
+#line 75 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+$m->print( '" ' );
+#line 75 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+$m->print(  $checked );
+#line 75 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+$m->print( ' />
+<label for="ShowLinks">' );
+#line 76 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( loc($type) )) );
+#line 76 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+$m->print( '</label>
+' );
+#line 77 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+ }
+$m->print( '<br />
+
+' );
+#line 80 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+ my @properties = RT::Graph::Tickets->TicketProperties( $session{'CurrentUser'} );
+$m->print( '
+' );
+#line 82 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( loc('Fill boxes with color using') )) );
+#line 82 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+$m->print( ':
+<select name="FillUsing">
+<option value="">' );
+#line 84 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( loc('nothing') )) );
+#line 84 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+$m->print( '</option>
+' );
+#line 85 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+
+my @tmp = @properties;
+while ( my ($group, $list) = (splice @tmp, 0, 2) ) {
+    # coloring by links and dates sounds stupid
+    next if $group eq 'Dates' || $group eq 'Links';
+
+    foreach my $prop ( @$list ) {
+        my $selected = '';
+        $selected = 'selected="selected"' if $prop eq ($FillUsing||'');
+#line 95 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+$m->print( '<option value="' );
+#line 95 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $prop )) );
+#line 95 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+$m->print( '" ' );
+#line 95 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+$m->print(  $selected );
+#line 95 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+$m->print( '>' );
+#line 95 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( loc($prop) )) );
+#line 95 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+$m->print( '</option>
+' );
+#line 96 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+ } }
+$m->print( '</select><br />
+
+' );
+#line 99 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+ if ( RT::Link->can('Description' ) ) {
+ my $checked = '';
+ $checked = 'checked="checked"' if $ShowLinkDescriptions;
+$m->print( '<label for="ShowLinkDescriptions">' );
+#line 102 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( loc('Show link descriptions') )) );
+#line 102 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+$m->print( ':</label>
+<input type="checkbox" id="ShowLinkDescriptions" name="ShowLinkDescriptions" value="1" ' );
+#line 103 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+$m->print(  $checked );
+#line 103 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+$m->print( ' />
+<br />
+' );
+#line 105 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+ }
+$m->print( '
+' );
+#line 107 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+
+for my $i ( 1..($MaxDepth||6) ) {
+    my @default;
+    if ( my $tmp = $ARGS{ 'Level-'. $i .'-Properties' } ) {
+        @default = ref $tmp? @$tmp : ($tmp);
+    }
+
+    $m->comp('SELF:Properties',
+        Level => $i,
+        Available => \@properties,
+        Default => \@default,
+    );
+}
+#line 121 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+$m->print( '
+' );
+#line 122 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+$m->comp(   '/Elements/Submit', Label => loc('Update Graph'), Name => 'Update'   
+); #line 122 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+$m->print( '
+
+' );
+#line 124 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+} }, '/Widgets/TitleBox', title => loc('Graph Properties')
+ );
+#line 124 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+$m->print( '
+
+' );
+#line 142 "/var/www/localhost/htdocs/rt/Ticket/Graphs/Elements/EditGraphProperties"
+$m->print( '
+' );
+;return;
+},
+'declared_args' => {
+  '$Direction' => { default => ' \'TB\'' },
+  '$FillUsing' => { default => ' \'\'' },
+  '$LeadingLink' => { default => ' \'Members\'' },
+  '$MaxDepth' => { default => ' 3' },
+  '$ShowLinkDescriptions' => { default => ' 0' },
+  '$id' => { default => ' undef' },
+  '@ShowLinks' => { default => ' (\'MemberOf\', \'DependsOn\', \'RefersTo\')' }
+},
+'load_time' => 1433478271,
+'methods' => \%_method,
+
+)
+;

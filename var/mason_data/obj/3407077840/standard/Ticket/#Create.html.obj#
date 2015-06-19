@@ -1,0 +1,834 @@
+package HTML::Mason::Commands;
+use strict;
+use vars qw($m $DECODED_ARGS $r %session);
+HTML::Mason::Component::FileBased->new(
+'code' => sub {
+HTML::Mason::Exception::Params->throw
+    ( error =>
+      "Odd number of parameters passed to component expecting name/value pairs"
+    ) if @_ % 2;
+my %ARGS = @_;
+my ( $DependsOn, $DependedOnBy, $MemberOf, $QuoteTransaction, $CloneTicket );
+{
+    my %pos;
+    for ( my $x = 0; $x < @_; $x += 2 )
+    {
+        $pos{ $_[$x] } = $x + 1;
+    }
+#line 461 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+     $DependsOn = exists $pos{'DependsOn'} ? $_[ $pos{'DependsOn'} ] :  undef;
+#line 462 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+     $DependedOnBy = exists $pos{'DependedOnBy'} ? $_[ $pos{'DependedOnBy'} ] :  undef;
+#line 463 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+     $MemberOf = exists $pos{'MemberOf'} ? $_[ $pos{'MemberOf'} ] :  undef;
+#line 464 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+     $QuoteTransaction = exists $pos{'QuoteTransaction'} ? $_[ $pos{'QuoteTransaction'} ] :  undef;
+#line 465 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+     $CloneTicket = exists $pos{'CloneTicket'} ? $_[ $pos{'CloneTicket'} ] :  undef;
+}
+$m->debug_hook( $m->current_comp->path ) if ( HTML::Mason::Compiler::IN_PERL_DB() );
+
+#line 301 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+
+$m->callback( CallbackName => "Init", ARGSRef => \%ARGS );
+my $Queue = $ARGS{Queue};
+$session{DefaultQueue} = $Queue;
+
+my $current_user = $session{'CurrentUser'};
+
+if ($CloneTicket) {
+    my $CloneTicketObj = RT::Ticket->new( $session{CurrentUser} );
+    $CloneTicketObj->Load($CloneTicket)
+        or Abort( loc("Ticket could not be loaded") );
+
+    my $clone = {
+        Requestors => join( ',', $CloneTicketObj->RequestorAddresses ),
+        Cc         => join( ',', $CloneTicketObj->CcAddresses ),
+        AdminCc    => join( ',', $CloneTicketObj->AdminCcAddresses ),
+        InitialPriority => $CloneTicketObj->Priority,
+    };
+
+    $clone->{$_} = $CloneTicketObj->$_()
+        for qw/Owner Subject TimeEstimated TimeWorked
+        Status TimeLeft/;
+
+    $clone->{$_} = $CloneTicketObj->$_->AsString
+        for grep { $CloneTicketObj->$_->IsSet }
+        map      { $_ . "Obj" } qw/Starts Started Due Resolved/;
+
+    my $get_link_value = sub {
+        my ($link, $type) = @_;
+        my $uri_method = $type . 'URI';
+        my $local_method = 'Local' . $type;
+        my $uri = $link->$uri_method;
+        return if $uri->IsLocal and
+                $uri->Object and
+                $uri->Object->isa('RT::Ticket') and
+                $uri->Object->Type eq 'reminder';
+
+        return $link->$local_method || $uri->URI;
+    };
+    my (@refers, @refers_by);
+    my $refers = $CloneTicketObj->RefersTo;
+    while ( my $refer = $refers->Next ) {
+        my $refer_value = $get_link_value->($refer, 'Target');
+        push @refers, $refer_value if defined $refer_value;
+    }
+    $clone->{'new-RefersTo'} = join ' ', @refers;
+
+    my $refers_by = $CloneTicketObj->ReferredToBy;
+    while ( my $refer_by = $refers_by->Next ) {
+        my $refer_by_value = $get_link_value->($refer_by, 'Base');
+        push @refers_by, $refer_by_value if defined $refer_by_value;
+    }
+    $clone->{'RefersTo-new'} = join ' ', @refers_by;
+
+    my $cfs = $CloneTicketObj->QueueObj->TicketCustomFields();
+    while ( my $cf = $cfs->Next ) {
+        my $cf_id     = $cf->id;
+        my $cf_values = $CloneTicketObj->CustomFieldValues( $cf->id );
+        my @cf_values;
+        while ( my $cf_value = $cf_values->Next ) {
+            push @cf_values, $cf_value->Content;
+        }
+
+        if ( @cf_values > 1 && $cf->Type eq 'Select' ) {
+            $clone->{GetCustomFieldInputName( CustomField => $cf )} = \@cf_values;
+        }
+        else {
+            $clone->{GetCustomFieldInputName( CustomField => $cf )} = join "\n",
+              @cf_values;
+        }
+    }
+
+    for ( keys %$clone ) {
+        $ARGS{$_} = $clone->{$_} if not defined $ARGS{$_};
+    }
+
+}
+
+my @results;
+
+my $title = loc("Create a new ticket");
+
+my $QueueObj = RT::Queue->new($current_user);
+$QueueObj->Load($Queue) || Abort(loc("Queue [_1] could not be loaded.", $Queue||''));
+
+$m->callback( QueueObj => $QueueObj, title => \$title, results => \@results, ARGSRef => \%ARGS );
+
+$m->scomp( '/Articles/Elements/SubjectOverride', ARGSRef => \%ARGS, QueueObj => $QueueObj, results => \@results );
+
+$QueueObj->Disabled && Abort(loc("Cannot create tickets in a disabled queue."));
+
+my $ticket = RT::Ticket->new($current_user); # empty ticket object
+
+ProcessAttachments(ARGSRef => \%ARGS);
+
+my $checks_failure = 0;
+
+{
+    my ($status, @msg) = $m->comp(
+        '/Elements/ValidateCustomFields',
+        CustomFields    => $QueueObj->TicketCustomFields,
+        ARGSRef         => \%ARGS
+    );
+    unless ($status) {
+        $checks_failure = 1;
+        push @results, @msg;
+    }
+}
+
+my $gnupg_widget = $m->comp('/Elements/Crypt/SignEncryptWidget:new', Arguments => \%ARGS );
+$m->comp( '/Elements/Crypt/SignEncryptWidget:Process',
+    self      => $gnupg_widget,
+    QueueObj  => $QueueObj,
+);
+
+
+if ( !exists $ARGS{'AddMoreAttach'} && ($ARGS{'id'}||'') eq 'new' ) {
+    my $status = $m->comp('/Elements/Crypt/SignEncryptWidget:Check',
+        self      => $gnupg_widget,
+        Operation => 'Create',
+        QueueObj  => $QueueObj,
+    );
+    $checks_failure = 1 unless $status;
+}
+
+# check email addresses for RT's
+{
+    foreach my $field ( qw(Requestors Cc AdminCc) ) {
+        my $value = $ARGS{ $field };
+        next unless defined $value && length $value;
+
+        my @emails = Email::Address->parse( $value );
+        foreach my $email ( grep RT::EmailParser->IsRTAddress($_->address), @emails ) {
+            push @results, loc("[_1] is an address RT receives mail at. Adding it as a '[_2]' would create a mail loop", $email->format, loc($field =~ /^(.*?)s?$/) );
+            $checks_failure = 1;
+            $email = undef;
+        }
+        $ARGS{ $field } = join ', ', map $_->format, grep defined, @emails;
+    }
+}
+
+my $skip_create = 0;
+$m->callback( CallbackName => 'BeforeCreate', ARGSRef => \%ARGS, skip_create => \$skip_create, 
+              checks_failure => $checks_failure, results => \@results );
+
+$m->comp( '/Articles/Elements/CheckSkipCreate', ARGSRef => \%ARGS, skip_create => \$skip_create,
+              checks_failure => $checks_failure, results => \@results );
+
+if ((!exists $ARGS{'AddMoreAttach'}) and (defined($ARGS{'id'}) and $ARGS{'id'} eq 'new')) { # new ticket?
+    if ( !$checks_failure && !$skip_create ) {
+        $m->comp('Display.html', %ARGS);
+        $RT::Logger->crit("After display call; error is $@");
+        $m->abort();
+    }
+  }
+<!-- Button for Basics -->  
+PageMenu->child( basics => raw_html =>  q[<a href="#basics" onclick="return switchVisibility('Ticket-Create-basics','Ticket-Create-details');">] . loc('Basics') . q[</a>])
+
+#line 1 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+#BEGIN BPS TAGGED BLOCK {{{
+#
+#line 2 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+#
+# COPYRIGHT:
+#
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
+#                                          <sales@bestpractical.com>
+#
+# (Except where explicitly superseded by other copyright notices)
+#
+#
+# LICENSE:
+#
+# This work is made available to you under the terms of Version 2 of
+# the GNU General Public License. A copy of that license should have
+# been provided with this software, but in any event can be snarfed
+# from www.gnu.org.
+#
+# This work is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
+#
+#
+# CONTRIBUTION SUBMISSION POLICY:
+#
+# (The following paragraph is not intended to limit the rights granted
+# to you to modify and distribute this software under the terms of
+# the GNU General Public License and is only of importance to you if
+# you choose to contribute your changes and enhancements to the
+# community by submitting them to Best Practical Solutions, LLC.)
+#
+# By intentionally submitting any modifications, corrections or
+# derivatives to this work, or any other work intended for use with
+# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+# you are the copyright holder for those contributions and you grant
+# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+# royalty-free, perpetual, license to use, copy, create derivative
+# works based on those contributions, and sublicense and distribute
+# those contributions and any derivatives thereof.
+#
+# END BPS TAGGED BLOCK }}}
+$m->comp(   '/Elements/Header',
+    Title => $title,
+    onload => "function () { hide('Ticket-Create-details') }"   
+); #line 50 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->print( '
+' );
+#line 51 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->comp(   '/Elements/Tabs'  
+); #line 51 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->print( '
+    
+' );
+#line 53 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->comp(   '/Elements/ListActions', actions => \@results   
+); #line 53 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->print( '
+
+<form action="' );
+#line 55 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( RT->Config->Get('WebPath') )) );
+#line 55 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->print( '/Ticket/Create.html" method="post" enctype="multipart/form-data" name="TicketCreate">
+  <input type="submit" name="SubmitTicket" value="Create" style="display:none">
+  <input type="hidden" class="hidden" name="id" value="new" />
+  <input type="hidden" class="hidden" name="Token" value="' );
+#line 58 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $ARGS{'Token'} )) );
+#line 58 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->print( '" />
+  
+' );
+#line 60 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+ $m->callback( CallbackName => 'FormStart', QueueObj => $QueueObj, ARGSRef => \%ARGS );
+$m->print( '
+' );
+#line 62 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+ if ($gnupg_widget) {
+$m->print( '  ' );
+#line 63 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->comp(   '/Elements/Crypt/SignEncryptWidget:ShowIssues', self => $gnupg_widget   
+); #line 63 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->print( '
+' );
+#line 64 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+ }
+$m->print( '
+<div id="Ticket-Create-basics">
+<a name="basics"></a>
+
+<div id="ticket-create-metadata">
+    ' );
+#line 70 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->comp( { content => sub {
+#line 70 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->print( '
+    <input type="hidden" class="hidden" name="Queue" value="' );
+#line 71 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $QueueObj->Id )) );
+#line 71 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->print( '" />
+    <table width="100%" border="0">
+    ' );
+#line 73 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->comp(   '/Ticket/Elements/EditBasics',
+        InTable => 1,
+        fields  => [
+            {   name => 'Queue',
+                comp => '/Ticket/Elements/ShowQueue',
+                args => {
+                    QueueObj => $QueueObj,
+                },
+            },
+            {   name => 'Status',
+                comp => '/Ticket/Elements/SelectStatus',
+                args => {
+                    Name            => "Status",
+                    QueueObj        => $QueueObj,
+                },
+            },
+            {   name => 'Owner',
+                comp => '/Elements/SelectOwner',
+                args => {
+                    Name            => "Owner",
+                    Default         => $ARGS{Owner} || RT->Nobody->Id,
+                    DefaultValue    => 0,
+                    QueueObj        => $QueueObj,
+                },
+            }
+        ]
+          
+); #line 99 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->print( '
+
+<!-- Priority -->
+<tr><td class="label">' );
+#line 232 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->comp( { content => sub {
+#line 232 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->print( 'Priority' );
+#line 232 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+} }, '/l'
+ );
+#line 232 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->print( ':</td>
+<td>' );
+#line 233 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->comp(   '/Elements/SelectPriority',
+    Name => "InitialPriority",
+    Default => $ARGS{InitialPriority} ? $ARGS{InitialPriority} : $QueueObj->InitialPriority,
+  
+); #line 236 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->print( '</td></tr>
+
+<!-- Date -->
+<tr><td class="label">' );
+#line 266 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->comp( { content => sub {
+#line 266 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->print( 'Due' );
+#line 266 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+} }, '/l'
+ );
+#line 266 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->print( ':</td><td>' );
+#line 266 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->comp(   '/Elements/SelectDate', Name => "Due", Default => $ARGS{Due} || ''   
+); #line 266 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->print( '</td></tr>
+
+
+' );
+#line 101 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+ $m->callback( CallbackName => 'AfterOwner', ARGSRef => \%ARGS );
+$m->print( '
+      ' );
+#line 103 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->comp(   '/Elements/EditCustomFields',
+          %ARGS,
+          Object => $ticket,
+          CustomFields => $QueueObj->TicketCustomFields,
+          Grouping => 'Basics',
+          InTable => 1,
+          KeepValue => 1,
+        
+); #line 110 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->print( '
+      ' );
+#line 111 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->comp(   '/Ticket/Elements/EditTransactionCustomFields', %ARGS, QueueObj => $QueueObj, InTable => 1, KeepValue => 1,   
+); #line 111 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->print( '
+    </table>
+  ' );
+#line 113 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+} }, '/Widgets/TitleBox', title => loc("Basics"), class=>'ticket-info-basics'
+ );
+#line 113 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->print( '
+' );
+#line 114 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+ $m->callback( CallbackName => 'AfterBasics', QueueObj => $QueueObj, ARGSRef => \%ARGS );
+$m->print( '
+' );
+#line 116 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->comp(   '/Elements/EditCustomFieldCustomGroupings',
+    %ARGS,
+    Object => $ticket,
+    CustomFieldGenerator => sub { $QueueObj->TicketCustomFields },
+    KeepValue => 1,
+  
+); #line 121 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->print( '
+
+</div>
+
+<!-- Ticket Creation -->
+<div id="ticket-create-message">
+  ' );
+#line 126 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->comp( { content => sub {
+#line 126 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->print( '
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr>
+    
+<tr>
+<td class="label">
+' );
+#line 132 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->comp( { content => sub {
+#line 132 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->print( 'Subject' );
+#line 132 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+} }, '/l'
+ );
+#line 132 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->print( ':
+</td>
+<td class="value" colspan="5">
+<input type="text" name="Subject" maxsize="200" value="' );
+#line 135 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($ARGS{Subject} || '')) );
+#line 135 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->print( '" />
+' );
+#line 136 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+ $m->callback( %ARGS, CallbackName => 'AfterSubject' );
+$m->print( '</td>
+</tr>
+
+  <td class="label">
+' );
+#line 141 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->comp( { content => sub {
+#line 141 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->print( 'Your Email' );
+#line 141 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+} }, '/l'
+ );
+#line 141 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->print( ':
+</td>
+<td class="value" colspan="5">
+' );
+#line 144 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->comp(   '/Elements/EmailInput', Name => 'Requestors', Size => undef, Default => $ARGS{Requestors} // $session{CurrentUser}->EmailAddress, AutocompleteMultiple => 1   
+); #line 144 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->print( '
+' );
+#line 145 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+ $m->callback( CallbackName => 'AfterRequestors', QueueObj => $QueueObj, ARGSRef => \%ARGS );
+$m->print( '</td>
+</tr>
+<tr>
+  <td class="label">
+    
+' );
+#line 151 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->comp( { content => sub {
+#line 151 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->print( 'Cc' );
+#line 151 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+} }, '/l'
+ );
+#line 151 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->print( ':
+</td>
+<td class="value" colspan="5">' );
+#line 153 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->comp(   '/Elements/EmailInput', Name => 'Cc', Size => undef, Default => $ARGS{Cc}, AutocompleteMultiple => 1   
+); #line 153 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->print( '</td>
+</tr>
+
+<tr>
+  <td class="label">&nbsp;</td>
+  <td class="comment" colspan="5">
+    <i><font size="-2">
+      ' );
+#line 160 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->comp( { content => sub {
+#line 160 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->print( '(Sends a carbon-copy of this update to a comma-delimited list of email addresses. These people <strong>will</strong> receive future updates.)' );
+#line 160 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+} }, '/l'
+ );
+#line 160 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->print( '
+    </font></i>
+  </td>
+</tr>
+
+<tr>
+<td class="label">
+' );
+#line 167 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->comp( { content => sub {
+#line 167 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->print( 'Admin Cc' );
+#line 167 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+} }, '/l'
+ );
+#line 167 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->print( ':
+</td>
+<td class="value" colspan="5">' );
+#line 169 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->comp(   '/Elements/EmailInput', Name => 'AdminCc', Size => undef, Default => $ARGS{AdminCc}, AutocompleteMultiple => 1   
+); #line 169 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->print( '</td>
+</tr>
+
+<tr>
+  <td class="label">&nbsp;</td>
+  <td class="comment" colspan="5">
+    <i><font size="-2">
+      ' );
+#line 176 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->comp( { content => sub {
+#line 176 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->print( '(Sends a carbon-copy of this update to a comma-delimited list of administrative email addresses. These people <strong>will</strong> receive future updates.)' );
+#line 176 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+} }, '/l'
+ );
+#line 176 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->print( '
+    </font></i>
+  </td>
+</tr>
+
+' );
+#line 181 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->comp(   '/Elements/EditCustomFields',
+    %ARGS,
+    Object => $ticket,
+    CustomFields => $QueueObj->TicketCustomFields,
+    Grouping => 'People',
+    InTable => 1,
+    KeepValue => 1,
+    
+); #line 188 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->print( '
+  
+' );
+#line 190 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+ if ( $gnupg_widget ) {
+$m->print( '<tr><td>&nbsp;</td><td colspan="5">
+' );
+#line 192 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->comp(   '/Elements/Crypt/SignEncryptWidget', self => $gnupg_widget, QueueObj => $QueueObj   
+); #line 192 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->print( '
+</td></tr>
+' );
+#line 194 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+ }
+$m->print( '
+<tr>
+<td colspan="6">
+' );
+#line 198 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->comp( { content => sub {
+#line 198 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->print( 'Describe the issue below' );
+#line 198 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+} }, '/l'
+ );
+#line 198 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->print( ':<br />
+' );
+#line 199 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+ if ( RT->Config->Get('ArticleOnTicketCreate')) {
+$m->comp(   '/Articles/Elements/BeforeMessageBox', %ARGS, QueueObj => $QueueObj   
+); #line 200 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->print( '
+' );
+#line 201 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+ }
+ $m->callback( %ARGS, QueueObj => $QueueObj, CallbackName => 'BeforeMessageBox' );
+ if (exists $ARGS{Content}) {
+$m->comp(   '/Elements/MessageBox', Default => $ARGS{Content}, IncludeSignature => 0   
+); #line 204 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->print( '
+' );
+#line 206 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+}
+else {
+$m->comp(   '/Elements/MessageBox', QuoteTransaction => $QuoteTransaction   
+); #line 206 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->print( '
+' );
+#line 207 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+}
+ $m->callback( %ARGS, QueueObj => $QueueObj, CallbackName => 'AfterMessageBox' );
+$m->print( '
+<br />
+</td>
+</tr>
+
+        ' );
+#line 214 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->comp(   '/Ticket/Elements/AddAttachments', %ARGS, QueueObj => $QueueObj   
+); #line 214 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->print( '
+      </table>
+    ' );
+#line 216 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+} }, '/Widgets/TitleBox', title => $title, class => 'messagedetails'
+ );
+#line 216 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->print( '
+    ' );
+#line 217 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->comp(   '/Elements/Submit', Label => loc("Create"), id => 'SubmitTicket'   
+); #line 217 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->print( '
+  </div>
+</div>
+
+<!-- Ticket Creation Details -->
+<div id="Ticket-Create-details">
+<a name="details"></a>
+<table width="100%" border="0">
+<tr>
+<td width="50%" valign="top" class="boxcontainer">
+    <div class="ticket-info-basics">
+          ' );
+#line 228 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->comp( { content => sub {
+#line 230 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->print( '
+	  <table border="0">
+	    
+<!-- <tr><td class="label">' );
+#line 237 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->comp( { content => sub {
+#line 237 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->print( 'Final Priority' );
+#line 237 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+} }, '/l'
+ );
+#line 237 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->print( ':</td>
+<td>' );
+#line 238 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->comp(   '/Elements/SelectPriority',
+    Name => "FinalPriority",
+    Default => $ARGS{FinalPriority} ? $ARGS{FinalPriority} : $QueueObj->FinalPriority,
+  
+); #line 241 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->print( '</td></tr> -->
+<tr><td class="label">' );
+#line 242 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->comp( { content => sub {
+#line 242 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->print( 'Time Estimated' );
+#line 242 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+} }, '/l'
+ );
+#line 242 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->print( ':</td>
+<td>
+' );
+#line 244 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->comp(   '/Elements/EditTimeValue', Name => 'TimeEstimated', Default => $ARGS{TimeEstimated} || ''   
+); #line 244 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->print( '
+
+</td></tr>
+<tr><td class="label">' );
+#line 247 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->comp( { content => sub {
+#line 247 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->print( 'Time Worked' );
+#line 247 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+} }, '/l'
+ );
+#line 247 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->print( ':</td>
+<td>
+' );
+#line 249 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->comp(   '/Elements/EditTimeValue', Name => 'TimeWorked', Default => $ARGS{TimeWorked} || ''   
+); #line 249 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->print( '
+</td></tr>
+<tr>
+<td class="label">' );
+#line 252 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->comp( { content => sub {
+#line 252 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->print( 'Time Left' );
+#line 252 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+} }, '/l'
+ );
+#line 252 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->print( ':</td>
+<td>
+' );
+#line 254 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->comp(   '/Elements/EditTimeValue', Name => 'TimeLeft', Default => $ARGS{TimeLeft} || ''   
+); #line 254 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->print( '
+</td></tr>
+</table>
+' );
+#line 257 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+} }, '/Widgets/TitleBox', title => loc("Priority"), 
+                title_class=> 'inverse',  
+                color => "#993333"
+ );
+#line 257 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->print( '
+<br />
+<div class="ticket-info-dates">
+' );
+#line 260 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->comp( { content => sub {
+#line 262 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->print( '
+
+<table>
+<tr><td class="label">' );
+#line 265 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->comp( { content => sub {
+#line 265 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->print( 'Starts' );
+#line 265 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+} }, '/l'
+ );
+#line 265 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->print( ':</td><td>' );
+#line 265 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->comp(   '/Elements/SelectDate', Name => "Starts", Default => $ARGS{Starts} || ''   
+); #line 265 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->print( '</td></tr>
+' );
+#line 267 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->comp(   '/Elements/EditCustomFields',
+    %ARGS,
+    Object => $ticket,
+    CustomFields => $QueueObj->TicketCustomFields,
+    Grouping => 'Dates',
+    InTable => 1,
+    KeepValue => 1,
+  
+); #line 274 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->print( '
+</table>
+' );
+#line 276 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+} }, '/Widgets/TitleBox', title => loc("Dates"),
+  title_class=> 'inverse',  
+  color => "#663366"
+ );
+#line 276 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->print( '
+</div>
+</div>
+<br />
+</td>
+
+<td valign="top" class="boxcontainer">
+<div class="ticket-info-links">
+' );
+#line 284 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->comp( { content => sub {
+#line 284 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->print( '
+' );
+#line 285 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->comp(   '/Elements/AddLinks',
+    Object          => $ticket,
+    CustomFields    => $QueueObj->TicketCustomFields,
+    ARGSRef         => \%ARGS,
+      
+); #line 289 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->print( '
+' );
+#line 290 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+} }, '/Widgets/TitleBox', title => loc('Links'), title_class=> 'inverse'
+ );
+#line 290 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->print( '
+</div>
+<br />
+
+</td>
+</tr>
+</table>
+' );
+#line 297 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->comp(   '/Elements/Submit', Label => loc("Create")   
+); #line 297 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->print( '
+</div>
+</form>
+
+' );
+#line 459 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
+$m->print( '
+' );
+;return;
+},
+'declared_args' => {
+  '$CloneTicket' => { default => ' undef' },
+  '$DependedOnBy' => { default => ' undef' },
+  '$DependsOn' => { default => ' undef' },
+  '$MemberOf' => { default => ' undef' },
+  '$QuoteTransaction' => { default => ' undef' }
+},
+'load_time' => 1434560495,
+
+)
+;

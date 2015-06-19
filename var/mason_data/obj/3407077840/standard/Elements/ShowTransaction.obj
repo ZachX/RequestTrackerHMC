@@ -1,0 +1,381 @@
+package HTML::Mason::Commands;
+use strict;
+use vars qw($m $DECODED_ARGS $r %session);
+#line 102 "/var/www/localhost/htdocs/rt/Elements/ShowTransaction"
+
+
+HTML::Mason::Component::FileBased->new(
+'code' => sub {
+HTML::Mason::Exception::Params->throw
+    ( error =>
+      "Odd number of parameters passed to component expecting name/value pairs"
+    ) if @_ % 2;
+my %ARGS = @_;
+my ( $Transaction, $Object, $Attachments, $AttachmentContent, $HasTxnCFs, $ShowBody, $ShowActions, $RowNum, $DisplayPath, $AttachmentPath, $UpdatePath, $ForwardPath, $EncryptionPath, $EmailRecordPath );
+{
+    my %pos;
+    for ( my $x = 0; $x < @_; $x += 2 )
+    {
+        $pos{ $_[$x] } = $x + 1;
+    }
+
+    foreach my $arg ( qw( Transaction ) )
+    {
+        HTML::Mason::Exception::Params->throw
+            ( error => "no value sent for required parameter '$arg'" )
+                unless exists $pos{$arg};
+    }
+#line 83 "/var/www/localhost/htdocs/rt/Elements/ShowTransaction"
+    $Transaction = $_[ $pos{'Transaction'} ];
+#line 84 "/var/www/localhost/htdocs/rt/Elements/ShowTransaction"
+     $Object = exists $pos{'Object'} ? $_[ $pos{'Object'} ] :  $Transaction->Object;
+#line 86 "/var/www/localhost/htdocs/rt/Elements/ShowTransaction"
+     $Attachments = exists $pos{'Attachments'} ? $_[ $pos{'Attachments'} ] :  undef;
+#line 87 "/var/www/localhost/htdocs/rt/Elements/ShowTransaction"
+     $AttachmentContent = exists $pos{'AttachmentContent'} ? $_[ $pos{'AttachmentContent'} ] :  undef;
+#line 88 "/var/www/localhost/htdocs/rt/Elements/ShowTransaction"
+     $HasTxnCFs = exists $pos{'HasTxnCFs'} ? $_[ $pos{'HasTxnCFs'} ] :  1;
+#line 90 "/var/www/localhost/htdocs/rt/Elements/ShowTransaction"
+     $ShowBody = exists $pos{'ShowBody'} ? $_[ $pos{'ShowBody'} ] :  1;
+#line 91 "/var/www/localhost/htdocs/rt/Elements/ShowTransaction"
+     $ShowActions = exists $pos{'ShowActions'} ? $_[ $pos{'ShowActions'} ] :  1;
+#line 92 "/var/www/localhost/htdocs/rt/Elements/ShowTransaction"
+     $RowNum = exists $pos{'RowNum'} ? $_[ $pos{'RowNum'} ] :  1;
+#line 94 "/var/www/localhost/htdocs/rt/Elements/ShowTransaction"
+     $DisplayPath = exists $pos{'DisplayPath'} ? $_[ $pos{'DisplayPath'} ] :  undef;
+#line 95 "/var/www/localhost/htdocs/rt/Elements/ShowTransaction"
+     $AttachmentPath = exists $pos{'AttachmentPath'} ? $_[ $pos{'AttachmentPath'} ] :  undef;
+#line 96 "/var/www/localhost/htdocs/rt/Elements/ShowTransaction"
+     $UpdatePath = exists $pos{'UpdatePath'} ? $_[ $pos{'UpdatePath'} ] :  undef;
+#line 97 "/var/www/localhost/htdocs/rt/Elements/ShowTransaction"
+     $ForwardPath = exists $pos{'ForwardPath'} ? $_[ $pos{'ForwardPath'} ] :  undef;
+#line 98 "/var/www/localhost/htdocs/rt/Elements/ShowTransaction"
+     $EncryptionPath = exists $pos{'EncryptionPath'} ? $_[ $pos{'EncryptionPath'} ] :  undef;
+#line 99 "/var/www/localhost/htdocs/rt/Elements/ShowTransaction"
+     $EmailRecordPath = exists $pos{'EmailRecordPath'} ? $_[ $pos{'EmailRecordPath'} ] :  undef;
+}
+$m->debug_hook( $m->current_comp->path ) if ( HTML::Mason::Compiler::IN_PERL_DB() );
+
+#line 105 "/var/www/localhost/htdocs/rt/Elements/ShowTransaction"
+
+my $record_type = $Object->RecordType;
+my $type_class  = $Object->ClassifyTransaction( $Transaction );
+
+$m->callback(
+    CallbackName => 'MassageTypeClass',
+    Transaction  => $Transaction,
+    TypeClassRef => \$type_class,
+    ARGSRef      => \%ARGS,
+);
+
+my @classes = (
+    "transaction",
+    "$record_type-transaction",
+    $type_class,
+    ($RowNum % 2 ? 'odd' : 'even')
+);
+
+my $desc = $Transaction->BriefDescriptionAsHTML;
+if ( $Object->id != $Transaction->ObjectId ) {
+    # merged objects
+    $desc = join " - ",
+        $m->interp->apply_escapes(
+            loc("[_1] #[_2]:", loc($record_type), $Transaction->ObjectId), 'h'),
+        $desc;
+}
+
+my $date = $Transaction->CreatedAsString;
+
+my $time = '';
+$time = loc('[quant,_1,minute,minutes]', $Transaction->TimeTaken)
+    if $Transaction->TimeTaken;
+
+if ( $ShowBody && !$Attachments ) {
+    $ARGS{'Attachments'} = $Attachments = {};
+
+    my $attachments = $Transaction->Attachments( WithHeaders => 1 );
+    push @{ $Attachments->{ $_->Parent || 0 } ||= [] }, $_
+        foreach @{ $attachments->ItemsArrayRef };
+}
+
+my @actions = ();
+my $txn_type = $Transaction->Type;
+if ( $txn_type =~ /EmailRecord$/ ) {
+    push @actions, {
+        title  => loc('Show'),
+        target => '_blank',
+        path   => $EmailRecordPath
+            .'?id='. $Object->id
+            .'&Transaction='. $Transaction->id
+            .'&Attachment='. ( $Attachments->{0}[0] && $Attachments->{0}[0]->id ),
+    } if $EmailRecordPath;
+
+    $ShowBody = 0;
+}
+
+# If the transaction has anything attached to it at all
+elsif ( %$Attachments && $ShowActions ) {
+    my %has_right = map {
+        $_ => RT::ACE->CanonicalizeRightName( $_ . $record_type )
+    } qw(Modify CommentOn ReplyTo);
+    $has_right{'Forward'} = RT::ACE->CanonicalizeRightName('ForwardMessage');
+
+    my $can_modify = $has_right{'Modify'}
+        && $Object->CurrentUserHasRight( $has_right{'Modify'} );
+
+    if ( $UpdatePath && $has_right{'ReplyTo'}
+        && ( $can_modify
+            || $Object->CurrentUserHasRight( $has_right{'ReplyTo'} )
+        )
+    ) {
+        push @actions, {
+            class  => "reply-link",
+            title  => loc('Reply'),
+            path   => $UpdatePath
+                .'?id='. $Object->id
+                .'&QuoteTransaction='. $Transaction->id
+                .'&Action=Respond'
+            ,
+        };
+    }
+    if ( $UpdatePath && $has_right{'CommentOn'}
+        && ( $can_modify
+            || $Object->CurrentUserHasRight( $has_right{'CommentOn'} )
+        )
+    ) {
+        push @actions, {
+            class  => "comment-link",
+            title  => loc('Comment'),
+            path   => $UpdatePath
+                .'?id='. $Object->id
+                .'&QuoteTransaction='. $Transaction->id
+                .'&Action=Comment'
+            ,
+        };
+    }
+    if ( $ForwardPath && $has_right{'Forward'}
+        && $Object->CurrentUserHasRight( $has_right{'Forward'} )
+    ) {
+        push @actions, {
+            class  => "forward-link",
+            title  => loc('Forward'),
+            path   => $ForwardPath
+                .'?id='. $Object->id
+                .'&QuoteTransaction='. $Transaction->id
+            ,
+        };
+    }
+    if ( $EncryptionPath && $can_modify
+        && RT->Config->Get('Crypt')->{'Enable'}
+        && RT->Config->Get('Crypt')->{'AllowEncryptDataInDB'}
+    ) {
+        push @actions, {
+            class  => "encryption-link",
+            title  => loc('Encrypt/Decrypt'),
+            path   => $EncryptionPath
+                .'?id='. $Transaction->id
+                .'&QuoteTransaction='. $Transaction->id
+            ,
+        };
+    }
+}
+
+$m->callback(
+    %ARGS,
+    Transaction => $Transaction,
+    Object      => $Object,
+
+    Classes     => \@classes,
+    Actions     => \@actions,
+    Created     => \$date,
+    TimeTaken   => \$time,
+    Description => \$desc,
+    ShowBody    => \$ShowBody,
+);
+
+my $actions = '';
+if ( @actions ) {
+    my $i = $m->interp;
+
+    foreach my $a ( @actions ) {
+        $a = '<a'
+            .' href="'. $i->apply_escapes( $a->{'path'}, 'h' ) .'"'
+            . ($a->{'target'}
+                ? ' target="'. $i->apply_escapes( $a->{'target'}, 'h' ) .'"'
+                : ''
+            )
+            . ($a->{'class'}
+                ? ' class="'. $i->apply_escapes( $a->{'class'}, 'h' ) .'"'
+                : ''
+            )
+            .'>'. $i->apply_escapes( $a->{'title'}, 'h' ) .'</a>'
+        ;
+    }
+    $actions = join '&nbsp;', map "[$_]", @actions;
+}
+
+# make date unbreakable
+$date = $m->interp->apply_escapes( $date, 'h' );
+$date =~ s/\s/&nbsp;/g;
+#line 1 "/var/www/localhost/htdocs/rt/Elements/ShowTransaction"
+# BEGIN BPS TAGGED BLOCK {{{
+#
+# COPYRIGHT:
+#
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
+#                                          <sales@bestpractical.com>
+#
+# (Except where explicitly superseded by other copyright notices)
+#
+#
+# LICENSE:
+#
+# This work is made available to you under the terms of Version 2 of
+# the GNU General Public License. A copy of that license should have
+# been provided with this software, but in any event can be snarfed
+# from www.gnu.org.
+#
+# This work is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
+#
+#
+# CONTRIBUTION SUBMISSION POLICY:
+#
+# (The following paragraph is not intended to limit the rights granted
+# to you to modify and distribute this software under the terms of
+# the GNU General Public License and is only of importance to you if
+# you choose to contribute your changes and enhancements to the
+# community by submitting them to Best Practical Solutions, LLC.)
+#
+# By intentionally submitting any modifications, corrections or
+# derivatives to this work, or any other work intended for use with
+# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+# you are the copyright holder for those contributions and you grant
+# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+# royalty-free, perpetual, license to use, copy, create derivative
+# works based on those contributions, and sublicense and distribute
+# those contributions and any derivatives thereof.
+#
+# END BPS TAGGED BLOCK }}}
+$m->print( '<div class="' );
+#line 48 "/var/www/localhost/htdocs/rt/Elements/ShowTransaction"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( join ' ', @classes )) );
+#line 48 "/var/www/localhost/htdocs/rt/Elements/ShowTransaction"
+$m->print( '">
+  <div class="metadata">
+    <span class="type">
+      <a name="txn-' );
+#line 51 "/var/www/localhost/htdocs/rt/Elements/ShowTransaction"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $Transaction->id )) );
+#line 51 "/var/www/localhost/htdocs/rt/Elements/ShowTransaction"
+$m->print( '" ' );
+#line 52 "/var/www/localhost/htdocs/rt/Elements/ShowTransaction"
+ if ( $DisplayPath ) {
+$m->print( '      href="' );
+#line 53 "/var/www/localhost/htdocs/rt/Elements/ShowTransaction"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $DisplayPath )) );
+#line 53 "/var/www/localhost/htdocs/rt/Elements/ShowTransaction"
+$m->print( '?id=' );
+#line 53 "/var/www/localhost/htdocs/rt/Elements/ShowTransaction"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $Object->id )) );
+#line 53 "/var/www/localhost/htdocs/rt/Elements/ShowTransaction"
+$m->print( '#txn-' );
+#line 53 "/var/www/localhost/htdocs/rt/Elements/ShowTransaction"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $Transaction->id )) );
+#line 53 "/var/www/localhost/htdocs/rt/Elements/ShowTransaction"
+$m->print( '" ' );
+#line 54 "/var/www/localhost/htdocs/rt/Elements/ShowTransaction"
+ }
+$m->print( '      >#</a>
+    </span>
+' );
+#line 57 "/var/www/localhost/htdocs/rt/Elements/ShowTransaction"
+ $m->callback( %ARGS, Transaction => $Transaction, CallbackName => 'AfterAnchor' );
+$m->print( '    <span class="date">' );
+#line 58 "/var/www/localhost/htdocs/rt/Elements/ShowTransaction"
+$m->print(  $date );
+#line 58 "/var/www/localhost/htdocs/rt/Elements/ShowTransaction"
+$m->print( '</span>
+    <span class="description">
+      ' );
+#line 60 "/var/www/localhost/htdocs/rt/Elements/ShowTransaction"
+$m->comp(   '/Elements/ShowUser', User => $Transaction->CreatorObj   
+); #line 60 "/var/www/localhost/htdocs/rt/Elements/ShowTransaction"
+$m->print( ' - ' );
+#line 60 "/var/www/localhost/htdocs/rt/Elements/ShowTransaction"
+$m->print(  $desc );
+#line 60 "/var/www/localhost/htdocs/rt/Elements/ShowTransaction"
+$m->print( '
+' );
+#line 61 "/var/www/localhost/htdocs/rt/Elements/ShowTransaction"
+ $m->callback( %ARGS, Transaction => $Transaction, CallbackName => 'AfterDescription' );
+$m->print( '    </span>
+    <span class="time-taken">' );
+#line 63 "/var/www/localhost/htdocs/rt/Elements/ShowTransaction"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $time )) );
+#line 63 "/var/www/localhost/htdocs/rt/Elements/ShowTransaction"
+$m->print( '</span>
+' );
+#line 64 "/var/www/localhost/htdocs/rt/Elements/ShowTransaction"
+ if ( $actions ) {
+$m->print( '    <span class="actions">' );
+#line 65 "/var/www/localhost/htdocs/rt/Elements/ShowTransaction"
+$m->print(  $actions );
+#line 65 "/var/www/localhost/htdocs/rt/Elements/ShowTransaction"
+$m->print( '</span>
+' );
+#line 66 "/var/www/localhost/htdocs/rt/Elements/ShowTransaction"
+ }
+$m->print( '  </div>
+
+  <div class="content">
+' );
+#line 70 "/var/www/localhost/htdocs/rt/Elements/ShowTransaction"
+
+$m->comp('/Elements/ShowCustomFields', Object => $Transaction, HideEmpty => 1 ) if $HasTxnCFs;
+$m->comp(
+    'ShowTransactionAttachments',
+    %ARGS,
+    Parent => 0
+) if $ShowBody;
+#line 78 "/var/www/localhost/htdocs/rt/Elements/ShowTransaction"
+$m->print( '  </div>
+' );
+#line 79 "/var/www/localhost/htdocs/rt/Elements/ShowTransaction"
+ $m->callback( %ARGS, Transaction => $Transaction, CallbackName => 'AfterContent' );
+$m->print( '</div>
+
+' );
+#line 101 "/var/www/localhost/htdocs/rt/Elements/ShowTransaction"
+$m->print( '
+' );
+;return;
+},
+'declared_args' => {
+  '$AttachmentContent' => { default => ' undef' },
+  '$AttachmentPath' => { default => ' undef' },
+  '$Attachments' => { default => ' undef' },
+  '$DisplayPath' => { default => ' undef' },
+  '$EmailRecordPath' => { default => ' undef' },
+  '$EncryptionPath' => { default => ' undef' },
+  '$ForwardPath' => { default => ' undef' },
+  '$HasTxnCFs' => { default => ' 1' },
+  '$Object' => { default => ' $Transaction->Object' },
+  '$RowNum' => { default => ' 1' },
+  '$ShowActions' => { default => ' 1' },
+  '$ShowBody' => { default => ' 1' },
+  '$Transaction' => { default => undef },
+  '$UpdatePath' => { default => ' undef' }
+},
+'load_time' => 1434735749,
+
+)
+;

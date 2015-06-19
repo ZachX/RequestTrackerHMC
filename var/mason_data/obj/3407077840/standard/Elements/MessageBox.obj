@@ -1,0 +1,196 @@
+package HTML::Mason::Commands;
+use strict;
+use vars qw($m $DECODED_ARGS $r %session);
+HTML::Mason::Component::FileBased->new(
+'code' => sub {
+HTML::Mason::Exception::Params->throw
+    ( error =>
+      "Odd number of parameters passed to component expecting name/value pairs"
+    ) if @_ % 2;
+my %ARGS = @_;
+my ( $QuoteTransaction, $Name, $Default, $Width, $Height, $IncludeSignature, $IncludeArticle, $Type );
+{
+    my %pos;
+    for ( my $x = 0; $x < @_; $x += 2 )
+    {
+        $pos{ $_[$x] } = $x + 1;
+    }
+#line 94 "/var/www/localhost/htdocs/rt/Elements/MessageBox"
+     $QuoteTransaction = exists $pos{'QuoteTransaction'} ? $_[ $pos{'QuoteTransaction'} ] :  undef;
+#line 95 "/var/www/localhost/htdocs/rt/Elements/MessageBox"
+     $Name = exists $pos{'Name'} ? $_[ $pos{'Name'} ] :  'Content';
+#line 96 "/var/www/localhost/htdocs/rt/Elements/MessageBox"
+     $Default = exists $pos{'Default'} ? $_[ $pos{'Default'} ] :  '';
+#line 97 "/var/www/localhost/htdocs/rt/Elements/MessageBox"
+     $Width = exists $pos{'Width'} ? $_[ $pos{'Width'} ] :  RT->Config->Get('MessageBoxWidth', $session{'CurrentUser'} );
+#line 98 "/var/www/localhost/htdocs/rt/Elements/MessageBox"
+     $Height = exists $pos{'Height'} ? $_[ $pos{'Height'} ] :  RT->Config->Get('MessageBoxHeight', $session{'CurrentUser'} ) || 15;
+#line 99 "/var/www/localhost/htdocs/rt/Elements/MessageBox"
+     $IncludeSignature = exists $pos{'IncludeSignature'} ? $_[ $pos{'IncludeSignature'} ] :  RT->Config->Get('MessageBoxIncludeSignature');;
+#line 100 "/var/www/localhost/htdocs/rt/Elements/MessageBox"
+     $IncludeArticle = exists $pos{'IncludeArticle'} ? $_[ $pos{'IncludeArticle'} ] :  1;;
+#line 101 "/var/www/localhost/htdocs/rt/Elements/MessageBox"
+     $Type = exists $pos{'Type'} ? $_[ $pos{'Type'} ] :  RT->Config->Get('MessageBoxRichText',  $session{'CurrentUser'}) ? 'text/html' : 'text/plain';;
+}
+$m->debug_hook( $m->current_comp->path ) if ( HTML::Mason::Compiler::IN_PERL_DB() );
+
+#line 56 "/var/www/localhost/htdocs/rt/Elements/MessageBox"
+
+
+my $message = '';
+
+if ( $QuoteTransaction ) {
+    my $transaction = RT::Transaction->new( $session{'CurrentUser'} );
+    $transaction->Load( $QuoteTransaction );
+    $message = $transaction->Content( Quote => 1, Type  => $Type );
+}
+
+my $signature = '';
+if ( $IncludeSignature and my $text = $session{'CurrentUser'}->UserObj->Signature ) {
+    $signature = "-- \n". $text;
+    if ($Type eq 'text/html') {
+        $signature =~ s/&/&amp;/g;
+        $signature =~ s/</&lt;/g;
+        $signature =~ s/>/&gt;/g;
+        $signature =~ s/"/&quot;/g;  # "//;
+        $signature =~ s/'/&#39;/g;   # '//;
+        $signature =~ s{\n}{<br />}g;
+        $signature = "<p>$signature</p>";
+    }
+}
+
+# wrap="something" seems to really break IE + richtext
+my $wrap_type = $Type eq 'text/html' ? '' : 'wrap="soft"';
+
+# If there's no cols specified, we want to set the width to 100% in CSS
+my $width_attr;
+if ($Width) {
+    $width_attr = 'cols';
+} else {
+    $width_attr = 'style';
+    $Width = 'width: 100%';
+}
+
+#line 1 "/var/www/localhost/htdocs/rt/Elements/MessageBox"
+# BEGIN BPS TAGGED BLOCK {{{
+#
+# COPYRIGHT:
+#
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
+#                                          <sales@bestpractical.com>
+#
+# (Except where explicitly superseded by other copyright notices)
+#
+#
+# LICENSE:
+#
+# This work is made available to you under the terms of Version 2 of
+# the GNU General Public License. A copy of that license should have
+# been provided with this software, but in any event can be snarfed
+# from www.gnu.org.
+#
+# This work is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
+#
+#
+# CONTRIBUTION SUBMISSION POLICY:
+#
+# (The following paragraph is not intended to limit the rights granted
+# to you to modify and distribute this software under the terms of
+# the GNU General Public License and is only of importance to you if
+# you choose to contribute your changes and enhancements to the
+# community by submitting them to Best Practical Solutions, LLC.)
+#
+# By intentionally submitting any modifications, corrections or
+# derivatives to this work, or any other work intended for use with
+# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+# you are the copyright holder for those contributions and you grant
+# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+# royalty-free, perpetual, license to use, copy, create derivative
+# works based on those contributions, and sublicense and distribute
+# those contributions and any derivatives thereof.
+#
+# END BPS TAGGED BLOCK }}}
+$m->print( '<textarea autocomplete="off" class="messagebox ' );
+#line 48 "/var/www/localhost/htdocs/rt/Elements/MessageBox"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $Type eq 'text/html' ? 'richtext' : '' )) );
+#line 48 "/var/www/localhost/htdocs/rt/Elements/MessageBox"
+$m->print( '" ' );
+#line 48 "/var/www/localhost/htdocs/rt/Elements/MessageBox"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $width_attr )) );
+#line 48 "/var/www/localhost/htdocs/rt/Elements/MessageBox"
+$m->print( '="' );
+#line 48 "/var/www/localhost/htdocs/rt/Elements/MessageBox"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $Width )) );
+#line 48 "/var/www/localhost/htdocs/rt/Elements/MessageBox"
+$m->print( '" rows="' );
+#line 48 "/var/www/localhost/htdocs/rt/Elements/MessageBox"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $Height )) );
+#line 48 "/var/www/localhost/htdocs/rt/Elements/MessageBox"
+$m->print( '" ' );
+#line 48 "/var/www/localhost/htdocs/rt/Elements/MessageBox"
+$m->print(  $wrap_type );
+#line 48 "/var/www/localhost/htdocs/rt/Elements/MessageBox"
+$m->print( ' name="' );
+#line 48 "/var/www/localhost/htdocs/rt/Elements/MessageBox"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $Name )) );
+#line 48 "/var/www/localhost/htdocs/rt/Elements/MessageBox"
+$m->print( '" id="' );
+#line 48 "/var/www/localhost/htdocs/rt/Elements/MessageBox"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $Name )) );
+#line 48 "/var/www/localhost/htdocs/rt/Elements/MessageBox"
+$m->print( '">' );
+#line 49 "/var/www/localhost/htdocs/rt/Elements/MessageBox"
+ $m->comp('/Articles/Elements/IncludeArticle', %ARGS) if $IncludeArticle;
+ $m->callback( %ARGS, SignatureRef => \$signature );
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $Default || '' )) );
+#line 51 "/var/www/localhost/htdocs/rt/Elements/MessageBox"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $message )) );
+#line 51 "/var/www/localhost/htdocs/rt/Elements/MessageBox"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $signature )) );
+#line 51 "/var/www/localhost/htdocs/rt/Elements/MessageBox"
+$m->print( '</textarea>
+' );
+#line 52 "/var/www/localhost/htdocs/rt/Elements/MessageBox"
+ $m->callback( %ARGS, CallbackName => 'AfterTextArea' );
+ if ($Type eq 'text/html') {
+$m->print( '<input type="text" style="display:none" name="' );
+#line 54 "/var/www/localhost/htdocs/rt/Elements/MessageBox"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $Name )) );
+#line 54 "/var/www/localhost/htdocs/rt/Elements/MessageBox"
+$m->print( 'Type" id="' );
+#line 54 "/var/www/localhost/htdocs/rt/Elements/MessageBox"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $Name )) );
+#line 54 "/var/www/localhost/htdocs/rt/Elements/MessageBox"
+$m->print( 'Type" value="' );
+#line 54 "/var/www/localhost/htdocs/rt/Elements/MessageBox"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $m->request_args->{$Name."Type"}||$Type )) );
+#line 54 "/var/www/localhost/htdocs/rt/Elements/MessageBox"
+$m->print( '" />
+' );
+#line 55 "/var/www/localhost/htdocs/rt/Elements/MessageBox"
+ }
+;return;
+},
+'declared_args' => {
+  '$Default' => { default => ' \'\'' },
+  '$Height' => { default => ' RT->Config->Get(\'MessageBoxHeight\', $session{\'CurrentUser\'} ) || 15' },
+  '$IncludeArticle' => { default => ' 1;' },
+  '$IncludeSignature' => { default => ' RT->Config->Get(\'MessageBoxIncludeSignature\');' },
+  '$Name' => { default => ' \'Content\'' },
+  '$QuoteTransaction' => { default => ' undef' },
+  '$Type' => { default => ' RT->Config->Get(\'MessageBoxRichText\',  $session{\'CurrentUser\'}) ? \'text/html\' : \'text/plain\';' },
+  '$Width' => { default => ' RT->Config->Get(\'MessageBoxWidth\', $session{\'CurrentUser\'} )' }
+},
+'load_time' => 1434735752,
+
+)
+;

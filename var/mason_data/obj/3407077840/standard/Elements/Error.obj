@@ -1,0 +1,154 @@
+package HTML::Mason::Commands;
+use strict;
+use vars qw($m $DECODED_ARGS $r %session);
+HTML::Mason::Component::FileBased->new(
+'code' => sub {
+HTML::Mason::Exception::Params->throw
+    ( error =>
+      "Odd number of parameters passed to component expecting name/value pairs"
+    ) if @_ % 2;
+my %ARGS = @_;
+my ( $Actions, $Details, $Title, $Why, $SuppressHeader );
+{
+    my %pos;
+    for ( my $x = 0; $x < @_; $x += 2 )
+    {
+        $pos{ $_[$x] } = $x + 1;
+    }
+#line 67 "/var/www/localhost/htdocs/rt/Elements/Error"
+     $Actions = exists $pos{'Actions'} ? $_[ $pos{'Actions'} ] :  [];
+#line 68 "/var/www/localhost/htdocs/rt/Elements/Error"
+     $Details = exists $pos{'Details'} ? $_[ $pos{'Details'} ] :  '';
+#line 69 "/var/www/localhost/htdocs/rt/Elements/Error"
+     $Title = exists $pos{'Title'} ? $_[ $pos{'Title'} ] :  loc("RT Error");
+#line 70 "/var/www/localhost/htdocs/rt/Elements/Error"
+     $Why = exists $pos{'Why'} ? $_[ $pos{'Why'} ] :  loc("the calling component did not specify why"),;
+#line 71 "/var/www/localhost/htdocs/rt/Elements/Error"
+     $SuppressHeader = exists $pos{'SuppressHeader'} ? $_[ $pos{'SuppressHeader'} ] :  0,;
+}
+$m->debug_hook( $m->current_comp->path ) if ( HTML::Mason::Compiler::IN_PERL_DB() );
+
+#line 74 "/var/www/localhost/htdocs/rt/Elements/Error"
+
+my $error = $Why;
+$error .= " ($Details)" if defined $Details && length $Details;
+
+$RT::Logger->error( $error );
+
+if ( $session{'REST'} ) {
+    $r->content_type('text/plain; charset=utf-8');
+    $m->out( "Error: " . $Why . "\n" );
+    $m->out( $Details . "\n" ) if defined $Details && length $Details;
+    $m->abort();
+}
+#line 1 "/var/www/localhost/htdocs/rt/Elements/Error"
+# BEGIN BPS TAGGED BLOCK {{{
+#
+# COPYRIGHT:
+#
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
+#                                          <sales@bestpractical.com>
+#
+# (Except where explicitly superseded by other copyright notices)
+#
+#
+# LICENSE:
+#
+# This work is made available to you under the terms of Version 2 of
+# the GNU General Public License. A copy of that license should have
+# been provided with this software, but in any event can be snarfed
+# from www.gnu.org.
+#
+# This work is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
+#
+#
+# CONTRIBUTION SUBMISSION POLICY:
+#
+# (The following paragraph is not intended to limit the rights granted
+# to you to modify and distribute this software under the terms of
+# the GNU General Public License and is only of importance to you if
+# you choose to contribute your changes and enhancements to the
+# community by submitting them to Best Practical Solutions, LLC.)
+#
+# By intentionally submitting any modifications, corrections or
+# derivatives to this work, or any other work intended for use with
+# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+# you are the copyright holder for those contributions and you grant
+# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+# royalty-free, perpetual, license to use, copy, create derivative
+# works based on those contributions, and sublicense and distribute
+# those contributions and any derivatives thereof.
+#
+# END BPS TAGGED BLOCK }}}
+ $m->callback( %ARGS, error => $error );
+$m->print( '
+' );
+#line 50 "/var/www/localhost/htdocs/rt/Elements/Error"
+ unless ($SuppressHeader) {
+$m->comp(   '/Elements/Header', Title => $Title   
+); #line 51 "/var/www/localhost/htdocs/rt/Elements/Error"
+$m->print( '
+' );
+#line 52 "/var/www/localhost/htdocs/rt/Elements/Error"
+$m->comp(   '/Elements/Tabs'  
+); #line 52 "/var/www/localhost/htdocs/rt/Elements/Error"
+$m->print( '
+' );
+#line 53 "/var/www/localhost/htdocs/rt/Elements/Error"
+ }
+$m->print( '
+' );
+#line 55 "/var/www/localhost/htdocs/rt/Elements/Error"
+$m->comp(   '/Elements/ListActions', actions => $Actions   
+); #line 55 "/var/www/localhost/htdocs/rt/Elements/Error"
+$m->print( '
+
+<div class="error">
+' );
+#line 58 "/var/www/localhost/htdocs/rt/Elements/Error"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($Why)) );
+#line 58 "/var/www/localhost/htdocs/rt/Elements/Error"
+$m->print( '
+<br />
+' );
+#line 60 "/var/www/localhost/htdocs/rt/Elements/Error"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($Details)) );
+#line 60 "/var/www/localhost/htdocs/rt/Elements/Error"
+$m->print( '
+</div>
+
+' );
+#line 63 "/var/www/localhost/htdocs/rt/Elements/Error"
+$m->comp(   '/Elements/Footer'  
+); #line 63 "/var/www/localhost/htdocs/rt/Elements/Error"
+$m->print( '
+' );
+#line 64 "/var/www/localhost/htdocs/rt/Elements/Error"
+ $m->abort;
+$m->print( '
+' );
+#line 73 "/var/www/localhost/htdocs/rt/Elements/Error"
+$m->print( '
+' );
+;return;
+},
+'declared_args' => {
+  '$Actions' => { default => ' []' },
+  '$Details' => { default => ' \'\'' },
+  '$SuppressHeader' => { default => ' 0,' },
+  '$Title' => { default => ' loc("RT Error")' },
+  '$Why' => { default => ' loc("the calling component did not specify why"),' }
+},
+'load_time' => 1434739577,
+
+)
+;

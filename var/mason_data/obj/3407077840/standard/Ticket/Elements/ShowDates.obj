@@ -1,0 +1,294 @@
+package HTML::Mason::Commands;
+use strict;
+use vars qw($m $DECODED_ARGS $r %session);
+HTML::Mason::Component::FileBased->new(
+'code' => sub {
+HTML::Mason::Exception::Params->throw
+    ( error =>
+      "Odd number of parameters passed to component expecting name/value pairs"
+    ) if @_ % 2;
+my %ARGS = @_;
+my ( $Ticket, $UpdatedLink );
+{
+    my %pos;
+    for ( my $x = 0; $x < @_; $x += 2 )
+    {
+        $pos{ $_[$x] } = $x + 1;
+    }
+#line 98 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowDates"
+     $Ticket = exists $pos{'Ticket'} ? $_[ $pos{'Ticket'} ] :  undef;
+#line 99 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowDates"
+     $UpdatedLink = exists $pos{'UpdatedLink'} ? $_[ $pos{'UpdatedLink'} ] :  1;
+}
+$m->debug_hook( $m->current_comp->path ) if ( HTML::Mason::Compiler::IN_PERL_DB() );
+
+#line 101 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowDates"
+
+if ($UpdatedLink and $Ticket) {
+    my $txns = $Ticket->Transactions;
+    $txns->OrderByCols(
+        { FIELD => "Created",   ORDER => "DESC" },
+        { FIELD => "id",        ORDER => "DESC" },
+    );
+    $txns->RowsPerPage(1);
+
+    if (my $latest = $txns->First) {
+        $UpdatedLink = "#txn-" . $latest->id;
+    } else {
+        undef $UpdatedLink;
+    }
+}
+#line 1 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowDates"
+# BEGIN BPS TAGGED BLOCK {{{
+#
+# COPYRIGHT:
+#
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
+#                                          <sales@bestpractical.com>
+#
+# (Except where explicitly superseded by other copyright notices)
+#
+#
+# LICENSE:
+#
+# This work is made available to you under the terms of Version 2 of
+# the GNU General Public License. A copy of that license should have
+# been provided with this software, but in any event can be snarfed
+# from www.gnu.org.
+#
+# This work is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
+#
+#
+# CONTRIBUTION SUBMISSION POLICY:
+#
+# (The following paragraph is not intended to limit the rights granted
+# to you to modify and distribute this software under the terms of
+# the GNU General Public License and is only of importance to you if
+# you choose to contribute your changes and enhancements to the
+# community by submitting them to Best Practical Solutions, LLC.)
+#
+# By intentionally submitting any modifications, corrections or
+# derivatives to this work, or any other work intended for use with
+# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+# you are the copyright holder for those contributions and you grant
+# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+# royalty-free, perpetual, license to use, copy, create derivative
+# works based on those contributions, and sublicense and distribute
+# those contributions and any derivatives thereof.
+#
+# END BPS TAGGED BLOCK }}}
+$m->print( '<table>
+  <tr class="date created">
+    <td class="label">' );
+#line 50 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowDates"
+$m->comp( { content => sub {
+#line 50 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowDates"
+$m->print( 'Created' );
+#line 50 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowDates"
+} }, '/l'
+ );
+#line 50 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowDates"
+$m->print( ':</td>' );
+#line 51 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowDates"
+$m->print( '    <td class="value">' );
+#line 51 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowDates"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $Ticket->CreatedObj->AsString )) );
+#line 51 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowDates"
+$m->print( '</td>
+  </tr>
+' );
+#line 53 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowDates"
+ $m->callback( %ARGS, CallbackName => 'AfterCreated', TicketObj => $Ticket );
+$m->print( '  <tr class="date starts">
+    <td class="label">' );
+#line 55 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowDates"
+$m->comp( { content => sub {
+#line 55 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowDates"
+$m->print( 'Starts' );
+#line 55 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowDates"
+} }, '/l'
+ );
+#line 55 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowDates"
+$m->print( ':</td>' );
+#line 56 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowDates"
+$m->print( '    <td class="value">' );
+#line 56 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowDates"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $Ticket->StartsObj->AsString )) );
+#line 56 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowDates"
+$m->print( '</td>
+  </tr>
+' );
+#line 58 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowDates"
+ $m->callback( %ARGS, CallbackName => 'AfterStarts', TicketObj => $Ticket );
+$m->print( '  <tr class="date started">
+    <td class="label">' );
+#line 60 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowDates"
+$m->comp( { content => sub {
+#line 60 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowDates"
+$m->print( 'Started' );
+#line 60 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowDates"
+} }, '/l'
+ );
+#line 60 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowDates"
+$m->print( ':</td>' );
+#line 61 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowDates"
+$m->print( '    <td class="value">' );
+#line 61 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowDates"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $Ticket->StartedObj->AsString )) );
+#line 61 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowDates"
+$m->print( '</td>
+  </tr>
+' );
+#line 63 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowDates"
+ $m->callback( %ARGS, CallbackName => 'AfterStarted', TicketObj => $Ticket );
+$m->print( '  <tr class="date told">
+    <td class="label"><a href="' );
+#line 65 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowDates"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( RT->Config->Get('WebPath') )) );
+#line 65 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowDates"
+$m->print( '/Ticket/Display.html?id=' );
+#line 65 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowDates"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $Ticket->id )) );
+#line 65 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowDates"
+$m->print( '&Action=SetTold">' );
+#line 65 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowDates"
+$m->comp( { content => sub {
+#line 65 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowDates"
+$m->print( 'Last Contact' );
+#line 65 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowDates"
+} }, '/l'
+ );
+#line 65 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowDates"
+$m->print( '</a>:</td>' );
+#line 66 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowDates"
+$m->print( '    <td class="value">' );
+#line 66 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowDates"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $Ticket->ToldObj->AsString )) );
+#line 66 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowDates"
+$m->print( '</td>
+  </tr>
+' );
+#line 68 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowDates"
+ $m->callback( %ARGS, CallbackName => 'AfterTold', TicketObj => $Ticket );
+$m->print( '  <tr class="date due">
+    <td class="label">' );
+#line 70 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowDates"
+$m->comp( { content => sub {
+#line 70 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowDates"
+$m->print( 'Due' );
+#line 70 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowDates"
+} }, '/l'
+ );
+#line 70 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowDates"
+$m->print( ':</td>' );
+#line 71 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowDates"
+ my $due = $Ticket->DueObj;
+ if ( $due && $due->IsSet && $due->Diff < 0 && $Ticket->QueueObj->IsActiveStatus($Ticket->Status) ) {
+$m->print( '    <td class="value"><span class="overdue">' );
+#line 73 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowDates"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $due->AsString  )) );
+#line 73 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowDates"
+$m->print( '</span></td>
+' );
+#line 74 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowDates"
+ } else {
+$m->print( '    <td class="value">' );
+#line 75 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowDates"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $due->AsString  )) );
+#line 75 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowDates"
+$m->print( '</td>
+' );
+#line 76 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowDates"
+ }
+$m->print( '  </tr>
+' );
+#line 78 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowDates"
+ $m->callback( %ARGS, CallbackName => 'AfterDue', TicketObj => $Ticket );
+$m->print( '  <tr class="date resolved">
+    <td class="label">' );
+#line 80 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowDates"
+$m->comp( { content => sub {
+#line 80 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowDates"
+$m->print( 'Closed' );
+#line 80 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowDates"
+} }, '/l'
+ );
+#line 80 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowDates"
+$m->print( ':</td>' );
+#line 81 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowDates"
+$m->print( '    <td class="value">' );
+#line 81 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowDates"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $Ticket->ResolvedObj->AsString  )) );
+#line 81 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowDates"
+$m->print( '</td>
+  </tr>
+' );
+#line 83 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowDates"
+ $m->callback( %ARGS, CallbackName => 'AfterResolved', TicketObj => $Ticket );
+$m->print( '  <tr class="date updated">
+    <td class="label">' );
+#line 85 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowDates"
+$m->comp( { content => sub {
+#line 85 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowDates"
+$m->print( 'Updated' );
+#line 85 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowDates"
+} }, '/l'
+ );
+#line 85 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowDates"
+$m->print( ':</td>' );
+#line 86 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowDates"
+ my $UpdatedString = $Ticket->LastUpdated ? loc("[_1] by [_2]", $Ticket->LastUpdatedAsString, $m->scomp('/Elements/ShowUser', User => $Ticket->LastUpdatedByObj)) : loc("Never");
+ if ($UpdatedLink) {
+$m->print( '    <td class="value"><a href="' );
+#line 88 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowDates"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $UpdatedLink )) );
+#line 88 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowDates"
+$m->print( '">' );
+#line 88 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowDates"
+$m->print(  $UpdatedString );
+#line 88 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowDates"
+$m->print( '</a></td>
+' );
+#line 89 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowDates"
+ } else {
+$m->print( '    <td class="value">' );
+#line 90 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowDates"
+$m->print(  $UpdatedString );
+#line 90 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowDates"
+$m->print( '</td>
+' );
+#line 91 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowDates"
+ }
+$m->print( '  </tr>
+' );
+#line 93 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowDates"
+ $m->callback( %ARGS, CallbackName => 'AfterUpdated', TicketObj => $Ticket );
+$m->print( '  ' );
+#line 94 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowDates"
+$m->comp(   '/Ticket/Elements/ShowCustomFields', Ticket => $Ticket, Grouping => 'Dates', Table => 0   
+); #line 94 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowDates"
+$m->print( '
+' );
+#line 95 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowDates"
+ $m->callback( %ARGS, CallbackName => 'EndOfList', TicketObj => $Ticket );
+$m->print( '</table>
+' );
+;return;
+},
+'declared_args' => {
+  '$Ticket' => { default => ' undef' },
+  '$UpdatedLink' => { default => ' 1' }
+},
+'load_time' => 1432969539,
+
+)
+;

@@ -1,0 +1,68 @@
+package HTML::Mason::Commands;
+use strict;
+use vars qw($m $DECODED_ARGS $r %session);
+HTML::Mason::Component::FileBased->new(
+'code' => sub {
+HTML::Mason::Exception::Params->throw
+    ( error =>
+      "Odd number of parameters passed to component expecting name/value pairs"
+    ) if @_ % 2;
+my ( $COLUMN_MAP );
+{
+    my %pos;
+    for ( my $x = 0; $x < @_; $x += 2 )
+    {
+        $pos{ $_[$x] } = $x + 1;
+    }
+#line 2 "/RT-Extension-PriorityAsString/html/Callbacks/PriorityAsString/Elements/RT__Ticket/ColumnMap/Once"
+     $COLUMN_MAP = exists $pos{'COLUMN_MAP'} ? $_[ $pos{'COLUMN_MAP'} ] :  {};
+}
+$m->debug_hook( $m->current_comp->path ) if ( HTML::Mason::Compiler::IN_PERL_DB() );
+
+#line 4 "/RT-Extension-PriorityAsString/html/Callbacks/PriorityAsString/Elements/RT__Ticket/ColumnMap/Once"
+
+my $printer = sub {
+    my ($class, $string) = @_;
+    return '' unless defined $string && length $string;
+
+    my $request_path = $HTML::Mason::Commands::r->path_info;
+    if ($request_path =~ /Results\.tsv/) {
+        return loc($string);
+    }
+
+    my $escaped = $m->interp->apply_escapes($string, 'h');
+    my $loc_escaped = $m->interp->apply_escapes(loc($string), 'h');
+    return \( qq{<span class="ticket-info-$class-}. lc($escaped) .qq{">$loc_escaped</span>} );
+    
+};
+foreach my $field (qw(Priority InitialPriority FinalPriority)) {
+    $COLUMN_MAP->{ $field .'Number' } ||= $COLUMN_MAP->{ $field };
+
+    my $class = lc($field);
+    $class =~ s/(?=<.)(?=priority)/-/;
+
+    my $method = $field .'AsString';
+
+    my %queues = RT->Config->Get('PriorityAsStringQueues');
+    if (not keys %queues) {
+        $COLUMN_MAP->{ $field }{'value'} = sub {
+            return $printer->( $class, $_[0]->$method() );
+        };
+    } else {
+        $COLUMN_MAP->{ $field }{'value'} = sub {
+            return $queues{$_[0]->QueueObj->Name}
+                ? $printer->( $class, $_[0]->$method() )
+                : $_[0]->$field;
+        };
+    }
+}
+return;
+;return;
+},
+'declared_args' => {
+  '$COLUMN_MAP' => { default => ' {}' }
+},
+'load_time' => 1434735836,
+
+)
+;

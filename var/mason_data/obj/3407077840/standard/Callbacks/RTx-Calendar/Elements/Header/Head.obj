@@ -1,0 +1,21 @@
+package HTML::Mason::Commands;
+use strict;
+use vars qw($m $DECODED_ARGS $r %session);
+HTML::Mason::Component::FileBased->new(
+'code' => sub {
+$m->debug_hook( $m->current_comp->path ) if ( HTML::Mason::Compiler::IN_PERL_DB() );
+
+#line 1 "/var/www/localhost/htdocs/rt/Callbacks/RTx-Calendar/Elements/Header/Head"
+$m->print( '<link rel="stylesheet" href="' );
+#line 1 "/var/www/localhost/htdocs/rt/Callbacks/RTx-Calendar/Elements/Header/Head"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($RT::WebPath)) );
+#line 1 "/var/www/localhost/htdocs/rt/Callbacks/RTx-Calendar/Elements/Header/Head"
+$m->print( '/NoAuth/css/calendar.css" type="text/css" media="all" />
+
+' );
+;return;
+},
+'load_time' => 1434735744,
+
+)
+;

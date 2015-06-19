@@ -1,0 +1,212 @@
+package HTML::Mason::Commands;
+use strict;
+use vars qw($m $DECODED_ARGS $r %session);
+HTML::Mason::Component::FileBased->new(
+'code' => sub {
+$m->debug_hook( $m->current_comp->path ) if ( HTML::Mason::Compiler::IN_PERL_DB() );
+
+#line 84 "/var/www/localhost/htdocs/rt/Elements/QuickCreate"
+
+my $args = delete $session{QuickCreate} || {};
+#line 1 "/var/www/localhost/htdocs/rt/Elements/QuickCreate"
+# BEGIN BPS TAGGED BLOCK {{{
+#
+# COPYRIGHT:
+#
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
+#                                          <sales@bestpractical.com>
+#
+# (Except where explicitly superseded by other copyright notices)
+#
+#
+# LICENSE:
+#
+# This work is made available to you under the terms of Version 2 of
+# the GNU General Public License. A copy of that license should have
+# been provided with this software, but in any event can be snarfed
+# from www.gnu.org.
+#
+# This work is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
+#
+#
+# CONTRIBUTION SUBMISSION POLICY:
+#
+# (The following paragraph is not intended to limit the rights granted
+# to you to modify and distribute this software under the terms of
+# the GNU General Public License and is only of importance to you if
+# you choose to contribute your changes and enhancements to the
+# community by submitting them to Best Practical Solutions, LLC.)
+#
+# By intentionally submitting any modifications, corrections or
+# derivatives to this work, or any other work intended for use with
+# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+# you are the copyright holder for those contributions and you grant
+# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+# royalty-free, perpetual, license to use, copy, create derivative
+# works based on those contributions, and sublicense and distribute
+# those contributions and any derivatives thereof.
+#
+# END BPS TAGGED BLOCK }}}
+$m->print( '<div class="quick-create">
+' );
+#line 49 "/var/www/localhost/htdocs/rt/Elements/QuickCreate"
+$m->comp( { content => sub {
+#line 49 "/var/www/localhost/htdocs/rt/Elements/QuickCreate"
+$m->print( '
+<form
+    method="post"
+    action="' );
+#line 52 "/var/www/localhost/htdocs/rt/Elements/QuickCreate"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } (RT->Config->Get('WebPath'))) );
+#line 52 "/var/www/localhost/htdocs/rt/Elements/QuickCreate"
+$m->print( '/index.html"
+' );
+#line 53 "/var/www/localhost/htdocs/rt/Elements/QuickCreate"
+ $m->callback(CallbackName => 'InFormElement');
+$m->print( '>
+<input type="hidden" class="hidden" name="QuickCreate" value="1" />
+<table>
+<tr class="input-row"><td class="label">' );
+#line 57 "/var/www/localhost/htdocs/rt/Elements/QuickCreate"
+$m->comp( { content => sub {
+#line 57 "/var/www/localhost/htdocs/rt/Elements/QuickCreate"
+$m->print( 'Subject' );
+#line 57 "/var/www/localhost/htdocs/rt/Elements/QuickCreate"
+} }, '/l'
+ );
+#line 57 "/var/www/localhost/htdocs/rt/Elements/QuickCreate"
+$m->print( ':</td>
+    <td colspan="3" class="value"><input type="text" size="50" name="Subject" value="' );
+#line 58 "/var/www/localhost/htdocs/rt/Elements/QuickCreate"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $args->{Subject} || '' )) );
+#line 58 "/var/www/localhost/htdocs/rt/Elements/QuickCreate"
+$m->print( '" /></td>
+    </tr><tr class="input-row">
+<td class="label">' );
+#line 60 "/var/www/localhost/htdocs/rt/Elements/QuickCreate"
+$m->comp( { content => sub {
+#line 60 "/var/www/localhost/htdocs/rt/Elements/QuickCreate"
+$m->print( 'Queue' );
+#line 60 "/var/www/localhost/htdocs/rt/Elements/QuickCreate"
+} }, '/l'
+ );
+#line 60 "/var/www/localhost/htdocs/rt/Elements/QuickCreate"
+$m->print( ':</td><td class="value">' );
+#line 60 "/var/www/localhost/htdocs/rt/Elements/QuickCreate"
+$m->comp(   '/Elements/SelectNewTicketQueue', Name => 'Queue', Default => $args->{Queue}   
+); #line 60 "/var/www/localhost/htdocs/rt/Elements/QuickCreate"
+$m->print( '
+</td>
+<td class="label">' );
+#line 62 "/var/www/localhost/htdocs/rt/Elements/QuickCreate"
+$m->comp( { content => sub {
+#line 62 "/var/www/localhost/htdocs/rt/Elements/QuickCreate"
+$m->print( 'Owner' );
+#line 62 "/var/www/localhost/htdocs/rt/Elements/QuickCreate"
+} }, '/l'
+ );
+#line 62 "/var/www/localhost/htdocs/rt/Elements/QuickCreate"
+$m->print( ':</td><td class="value">
+<select type="select" name="Owner">  
+' );
+#line 64 "/var/www/localhost/htdocs/rt/Elements/QuickCreate"
+ my $default_owner = $args->{Owner} || Nobody;
+$m->print( '<option value="' );
+#line 65 "/var/www/localhost/htdocs/rt/Elements/QuickCreate"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } (RT->Nobody->id)) );
+#line 65 "/var/www/localhost/htdocs/rt/Elements/QuickCreate"
+$m->print( '" ' );
+#line 65 "/var/www/localhost/htdocs/rt/Elements/QuickCreate"
+$m->print(  $default_owner == RT->Nobody->id ? 'selected="selected"' : '' );
+#line 65 "/var/www/localhost/htdocs/rt/Elements/QuickCreate"
+$m->print( '>' );
+#line 65 "/var/www/localhost/htdocs/rt/Elements/QuickCreate"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } (loc('Nobody'))) );
+#line 65 "/var/www/localhost/htdocs/rt/Elements/QuickCreate"
+$m->print( '</option>
+<option value="' );
+#line 66 "/var/www/localhost/htdocs/rt/Elements/QuickCreate"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($session{'CurrentUser'}->id)) );
+#line 66 "/var/www/localhost/htdocs/rt/Elements/QuickCreate"
+$m->print( '" ' );
+#line 66 "/var/www/localhost/htdocs/rt/Elements/QuickCreate"
+$m->print(  $default_owner == $session{'CurrentUser'}->id ? 'selected="selected"' : '' );
+#line 66 "/var/www/localhost/htdocs/rt/Elements/QuickCreate"
+$m->print( '>' );
+#line 66 "/var/www/localhost/htdocs/rt/Elements/QuickCreate"
+$m->comp( { content => sub {
+#line 66 "/var/www/localhost/htdocs/rt/Elements/QuickCreate"
+$m->print( 'Me' );
+#line 66 "/var/www/localhost/htdocs/rt/Elements/QuickCreate"
+} }, '/l'
+ );
+#line 66 "/var/www/localhost/htdocs/rt/Elements/QuickCreate"
+$m->print( '</option>
+
+</select>
+</td>
+</tr>
+<tr class="input-row">
+    <td class="label">' );
+#line 72 "/var/www/localhost/htdocs/rt/Elements/QuickCreate"
+$m->comp( { content => sub {
+#line 72 "/var/www/localhost/htdocs/rt/Elements/QuickCreate"
+$m->print( 'Requestors' );
+#line 72 "/var/www/localhost/htdocs/rt/Elements/QuickCreate"
+} }, '/l'
+ );
+#line 72 "/var/www/localhost/htdocs/rt/Elements/QuickCreate"
+$m->print( ':</td>
+    <td colspan="3" class="value">' );
+#line 73 "/var/www/localhost/htdocs/rt/Elements/QuickCreate"
+$m->comp(   '/Elements/EmailInput', Name => 'Requestors', Size => '40', Default => $args->{Requestors} || $session{CurrentUser}->EmailAddress, AutocompleteMultiple => 1   
+); #line 73 "/var/www/localhost/htdocs/rt/Elements/QuickCreate"
+$m->print( '</td>
+</tr>
+<tr class="input-row">
+<td class="labeltop">' );
+#line 76 "/var/www/localhost/htdocs/rt/Elements/QuickCreate"
+$m->comp( { content => sub {
+#line 76 "/var/www/localhost/htdocs/rt/Elements/QuickCreate"
+$m->print( 'Content' );
+#line 76 "/var/www/localhost/htdocs/rt/Elements/QuickCreate"
+} }, '/l'
+ );
+#line 76 "/var/www/localhost/htdocs/rt/Elements/QuickCreate"
+$m->print( ':</td>
+<td colspan="3" class="value"><textarea name="Content" cols="50" rows="3">' );
+#line 77 "/var/www/localhost/htdocs/rt/Elements/QuickCreate"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $args->{Content} || '')) );
+#line 77 "/var/www/localhost/htdocs/rt/Elements/QuickCreate"
+$m->print( '</textarea></td></tr>
+</table>
+' );
+#line 79 "/var/www/localhost/htdocs/rt/Elements/QuickCreate"
+$m->comp(   '/Elements/Submit', Label => loc('Create')   
+); #line 79 "/var/www/localhost/htdocs/rt/Elements/QuickCreate"
+$m->print( '
+</form>
+' );
+#line 81 "/var/www/localhost/htdocs/rt/Elements/QuickCreate"
+} }, '/Widgets/TitleBox', title => loc('Quick ticket creation')
+ );
+#line 81 "/var/www/localhost/htdocs/rt/Elements/QuickCreate"
+$m->print( '
+</div>
+
+' );
+;return;
+},
+'load_time' => 1434735943,
+
+)
+;

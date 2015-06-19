@@ -1,0 +1,551 @@
+package HTML::Mason::Commands;
+use strict;
+use vars qw($m $DECODED_ARGS $r %session);
+HTML::Mason::Component::FileBased->new(
+'code' => sub {
+HTML::Mason::Exception::Params->throw
+    ( error =>
+      "Odd number of parameters passed to component expecting name/value pairs"
+    ) if @_ % 2;
+my %ARGS = @_;
+my ( $id, $Action, $DefaultStatus );
+{
+    my %pos;
+    for ( my $x = 0; $x < @_; $x += 2 )
+    {
+        $pos{ $_[$x] } = $x + 1;
+    }
+#line 300 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+     $id = exists $pos{'id'} ? $_[ $pos{'id'} ] :  undef;
+#line 301 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+     $Action = exists $pos{'Action'} ? $_[ $pos{'Action'} ] :  '';
+#line 302 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+     $DefaultStatus = exists $pos{'DefaultStatus'} ? $_[ $pos{'DefaultStatus'} ] :  undef;
+}
+$m->debug_hook( $m->current_comp->path ) if ( HTML::Mason::Compiler::IN_PERL_DB() );
+
+#line 202 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+
+my $CanRespond = 0;
+my $CanComment = 0;
+my $checks_failure = 0;
+
+my $TicketObj = LoadTicket($id);
+
+my @results;
+
+$m->callback( Ticket => $TicketObj, ARGSRef => \%ARGS, checks_failure => \$checks_failure, results => \@results, CallbackName => 'Initial' );
+$m->scomp( '/Articles/Elements/SubjectOverride', Ticket => $TicketObj, ARGSRef => \%ARGS, results => \@results );
+
+unless($DefaultStatus){
+    $DefaultStatus=($ARGS{'Status'} ||$TicketObj->Status());
+}
+
+my $title = loc("Update ticket #[_1] ([_2])", $TicketObj->id, $TicketObj->Subject||'');
+
+# Things needed in the template - we'll do the processing here, just
+# for the convenience:
+
+my ($CommentDefault, $ResponseDefault);
+if ($Action ne 'Respond') {
+    $CommentDefault = qq[ selected="selected"]; 
+    $ResponseDefault = "";
+} else {
+    $CommentDefault = ""; 
+    $ResponseDefault = qq[ selected="selected"];
+}
+
+my $type =             $ARGS{'UpdateType'} ? $ARGS{'UpdateType'} :
+           lc $Action eq 'respond' ? 'response'          :
+           lc $Action eq 'comment' ? 'private'           :
+                                             'none'              ;
+
+
+$CanRespond = 1 if ( $TicketObj->CurrentUserHasRight('ReplyToTicket') or
+                     $TicketObj->CurrentUserHasRight('ModifyTicket') ); 
+
+$CanComment = 1 if ( $TicketObj->CurrentUserHasRight('CommentOnTicket') or
+                     $TicketObj->CurrentUserHasRight('ModifyTicket') ); 
+
+ProcessAttachments(ARGSRef => \%ARGS);
+
+my %squelched = ProcessTransactionSquelching( \%ARGS );
+$ARGS{'SquelchMailTo'} = [keys %squelched] if keys %squelched;
+
+my $gnupg_widget = $m->comp('/Elements/Crypt/SignEncryptWidget:new', Arguments => \%ARGS );
+$m->comp( '/Elements/Crypt/SignEncryptWidget:Process',
+    self => $gnupg_widget,
+    TicketObj => $TicketObj,
+);
+
+if ( $ARGS{'SubmitTicket'} ) {
+
+    my ($status, @msg) = $m->comp(
+        '/Elements/ValidateCustomFields',
+        CustomFields => $TicketObj->TransactionCustomFields,
+        Object => RT::Transaction->new( $session{'CurrentUser'} ),
+        ARGSRef => \%ARGS
+    );
+    unless ( $status ) {
+        push @results, @msg;
+        $checks_failure = 1;
+    }
+    $status = $m->comp('/Elements/Crypt/SignEncryptWidget:Check',
+        self      => $gnupg_widget,
+        TicketObj => $TicketObj,
+    );
+    $checks_failure = 1 unless $status;
+}
+
+# check email addresses for RT's
+{
+    foreach my $field ( qw(UpdateCc UpdateBcc) ) {
+        my $value = $ARGS{ $field };
+        next unless defined $value && length $value;
+
+        my @emails = Email::Address->parse( $value );
+        foreach my $email ( grep RT::EmailParser->IsRTAddress($_->address), @emails ) {
+            push @results, loc("[_1] is an address RT receives mail at. Adding it as a '[_2]' would create a mail loop", $email->format, loc(substr($field, 6)) );
+            $checks_failure = 1;
+            $email = undef;
+        }
+        $ARGS{ $field } = join ', ', map $_->format, grep defined, @emails;
+    }
+}
+my $skip_update = 0;
+$m->callback( CallbackName => 'BeforeUpdate', ARGSRef => \%ARGS, skip_update => \$skip_update,
+              checks_failure => $checks_failure, results => \@results, TicketObj => $TicketObj );
+
+if ( !$checks_failure && !$skip_update && exists $ARGS{SubmitTicket} ) {
+    $m->callback( Ticket => $TicketObj, ARGSRef => \%ARGS, CallbackName => 'BeforeDisplay' );
+    return $m->comp('Display.html', TicketObj => $TicketObj, %ARGS);
+}
+#line 1 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+# BEGIN BPS TAGGED BLOCK {{{
+#
+# COPYRIGHT:
+#
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
+#                                          <sales@bestpractical.com>
+#
+# (Except where explicitly superseded by other copyright notices)
+#
+#
+# LICENSE:
+#
+# This work is made available to you under the terms of Version 2 of
+# the GNU General Public License. A copy of that license should have
+# been provided with this software, but in any event can be snarfed
+# from www.gnu.org.
+#
+# This work is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
+#
+#
+# CONTRIBUTION SUBMISSION POLICY:
+#
+# (The following paragraph is not intended to limit the rights granted
+# to you to modify and distribute this software under the terms of
+# the GNU General Public License and is only of importance to you if
+# you choose to contribute your changes and enhancements to the
+# community by submitting them to Best Practical Solutions, LLC.)
+#
+# By intentionally submitting any modifications, corrections or
+# derivatives to this work, or any other work intended for use with
+# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+# you are the copyright holder for those contributions and you grant
+# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+# royalty-free, perpetual, license to use, copy, create derivative
+# works based on those contributions, and sublicense and distribute
+# those contributions and any derivatives thereof.
+#
+# END BPS TAGGED BLOCK }}}
+$m->comp(   '/Elements/Header', Title  => $title   
+); #line 48 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+$m->print( '
+' );
+#line 49 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+$m->comp(   '/Elements/Tabs'  
+); #line 49 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+$m->print( '
+
+' );
+#line 51 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+ $m->callback(CallbackName => 'BeforeActionList', ARGSRef => \%ARGS, Ticket => $TicketObj);
+$m->comp(   '/Elements/ListActions', actions => \@results   
+); #line 52 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+$m->print( '
+
+<form action="Update.html" name="TicketUpdate"
+    method="post" enctype="multipart/form-data">
+' );
+#line 56 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+ $m->callback( CallbackName => 'FormStart', ARGSRef => \%ARGS, Ticket => $TicketObj, CanRespond => $CanRespond, CanComment => $CanComment, ResponseDefault => $ResponseDefault, CommentDefault => $CommentDefault );
+$m->print( '<input type="hidden" class="hidden" name="QuoteTransaction" value="' );
+#line 57 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $ARGS{QuoteTransaction}||'' )) );
+#line 57 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+$m->print( '" />
+<input type="hidden" class="hidden" name="DefaultStatus" value="' );
+#line 58 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $DefaultStatus ||'')) );
+#line 58 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+$m->print( '" />
+<input type="hidden" class="hidden" name="Action" value="' );
+#line 59 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $Action )) );
+#line 59 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+$m->print( '" />
+<input type="hidden" class="hidden" name="Token" value="' );
+#line 60 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $ARGS{'Token'} )) );
+#line 60 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+$m->print( '" />
+
+' );
+#line 62 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+$m->comp(   '/Elements/Crypt/SignEncryptWidget:ShowIssues', self => $gnupg_widget   
+); #line 62 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+$m->print( '
+
+<div id="ticket-update-metadata">
+  ' );
+#line 65 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+$m->comp( { content => sub {
+#line 65 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+$m->print( '
+<table width="100%" border="0">
+' );
+#line 67 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+ $m->callback(CallbackName => 'AfterTableOpens', ARGSRef => \%ARGS, Ticket => $TicketObj);
+$m->print( '
+' );
+#line 69 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+ my $skip;
+ $m->callback( %ARGS, CallbackName => 'BeforeUpdateType', skip => \$skip );
+ if (!$skip) {
+$m->print( '<input type="hidden" class="hidden" name="id" value="' );
+#line 72 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($TicketObj->Id)) );
+#line 72 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+$m->print( '" /><br />
+' );
+#line 73 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+ }
+$m->print( '<tr><td class="label">' );
+#line 74 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+$m->comp( { content => sub {
+#line 74 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+$m->print( 'Update Type' );
+#line 74 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+} }, '/l'
+ );
+#line 74 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+$m->print( ':</td>
+<td><select name="UpdateType" id="UpdateType">
+' );
+#line 76 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+ if ($CanComment) {
+$m->print( '<option value="private" ' );
+#line 77 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+$m->print(  ($ARGS{'UpdateType'} &&  $ARGS{'UpdateType'} eq "private") ? qq[ selected="selected"] : !$ARGS{'UpdateType'}&&$CommentDefault );
+#line 77 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+$m->print( '>' );
+#line 77 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+$m->comp( { content => sub {
+#line 77 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+$m->print( 'Comments (Not sent to requestors)' );
+#line 77 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+} }, '/l'
+ );
+#line 77 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+$m->print( '</option>
+' );
+#line 78 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+ }
+ if ($CanRespond) {
+$m->print( '<option value="response" ' );
+#line 80 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+$m->print(  ($ARGS{'UpdateType'} && $ARGS{'UpdateType'} eq "response") ? qq[ selected="selected"] : !$ARGS{'UpdateType'}&&$ResponseDefault );
+#line 80 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+$m->print( '>' );
+#line 80 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+$m->comp( { content => sub {
+#line 80 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+$m->print( 'Reply to requestors' );
+#line 80 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+} }, '/l'
+ );
+#line 80 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+$m->print( '</option>
+' );
+#line 81 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+ }
+$m->print( '</select> 
+
+<script type="text/javascript">
+    jQuery(function() {
+        jQuery("input[name=TxnSendMailTo]").change(function(ev) {
+            jQuery("input[name=TxnSendMailTo]").filter( function() { return this.value == ev.target.value; } ).prop("checked",jQuery(ev.target).prop(\'checked\'));
+        });
+    });
+</script>
+
+' );
+#line 92 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+ $m->callback( %ARGS, CallbackName => 'AfterUpdateType' );
+$m->print( '</td></tr>
+
+' );
+#line 95 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+$m->comp(   '/Ticket/Elements/EditBasics',
+    TicketObj => $TicketObj,
+    InTable   => 1,
+    fields    => [
+        {   name => 'Status',
+            comp => '/Ticket/Elements/SelectStatus',
+            args => {
+                Name => 'Status',
+                Default => $DefaultStatus,
+                TicketObj => $TicketObj,
+            },
+        },
+        {   name => 'Owner',
+            comp => '/Elements/SelectOwner',
+            args => {
+                Name         => "Owner",
+                TicketObj    => $TicketObj,
+                QueueObj     => $TicketObj->QueueObj,
+                DefaultLabel => loc("[_1] (Unchanged)", $TicketObj->OwnerObj->Format),
+                Default      => $ARGS{'Owner'}
+            }
+        },
+        {   name => 'Worked',
+            comp => '/Elements/EditTimeValue',
+            args => {
+                Name => 'UpdateTimeWorked',
+                Default => $ARGS{UpdateTimeWorked}||'',
+            }
+        },
+    ]
+  
+); #line 125 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+$m->print( '
+
+' );
+#line 127 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+ $m->callback( %ARGS, CallbackName => 'AfterWorked', Ticket => $TicketObj );
+$m->print( '
+' );
+#line 129 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+$m->comp(   '/Ticket/Elements/EditTransactionCustomFields', %ARGS, TicketObj => $TicketObj, InTable => 1, KeepValue => 1,   
+); #line 129 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+$m->print( '
+
+  </table>
+  ' );
+#line 132 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+} }, '/Widgets/TitleBox', title => loc('Ticket and Transaction')
+ );
+#line 132 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+$m->print( '
+</div>
+
+<div id="ticket-update-message">
+  ' );
+#line 136 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+$m->comp(   '/Ticket/Elements/ShowSimplifiedRecipients', TicketObj => $TicketObj, %ARGS   
+); #line 136 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+$m->print( '
+
+  ' );
+#line 138 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+$m->comp( { content => sub {
+#line 138 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+$m->print( '
+  <table width="100%" border="0">
+' );
+#line 140 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+$m->comp(   '/Ticket/Elements/UpdateCc', %ARGS, TicketObj => $TicketObj   
+); #line 140 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+$m->print( '
+
+' );
+#line 142 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+ if ( $gnupg_widget ) {
+$m->print( '<tr><td>&nbsp;</td><td>
+' );
+#line 144 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+$m->comp(   '/Elements/Crypt/SignEncryptWidget',
+    self => $gnupg_widget,
+    TicketObj => $TicketObj,
+  
+); #line 147 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+$m->print( '
+</td></tr>
+' );
+#line 149 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+ }
+ $m->callback( %ARGS, CallbackName => 'AfterGnuPG' );
+$m->print( '
+<tr><td class="label">' );
+#line 152 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+$m->comp( { content => sub {
+#line 152 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+$m->print( 'Subject' );
+#line 152 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+} }, '/l'
+ );
+#line 152 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+$m->print( ':</td><td> <input type="text" name="UpdateSubject" value="' );
+#line 152 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $ARGS{UpdateSubject} || $TicketObj->Subject || '' )) );
+#line 152 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+$m->print( '" />
+' );
+#line 153 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+ $m->callback( %ARGS, CallbackName => 'AfterSubject' );
+$m->print( '</td></tr>
+
+<tr><td class="label" valign="top">' );
+#line 156 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+$m->comp( { content => sub {
+#line 156 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+$m->print( 'Message' );
+#line 156 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+} }, '/l'
+ );
+#line 156 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+$m->print( ':</td>
+<td class="messagebox-container action-' );
+#line 157 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $type )) );
+#line 157 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+$m->print( '">
+' );
+#line 158 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+$m->comp(   '/Articles/Elements/BeforeMessageBox', %ARGS   
+); #line 158 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+$m->print( '
+' );
+#line 159 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+ $m->callback( %ARGS, CallbackName => 'BeforeMessageBox' );
+ if (exists $ARGS{UpdateContent}) {
+ # preserve QuoteTransaction so we can use it to set up sane references/in/reply to
+ my $temp = $ARGS{'QuoteTransaction'};
+ delete $ARGS{'QuoteTransaction'};
+$m->comp(   '/Elements/MessageBox', Name=>"UpdateContent", Default=>$ARGS{UpdateContent}, IncludeSignature => 0, %ARGS  
+); #line 164 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+$m->print( '
+' );
+#line 165 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+ $ARGS{'QuoteTransaction'} = $temp;
+ } else {
+ my $IncludeSignature = 1;
+ $IncludeSignature = 0 if $Action ne 'Respond' && !RT->Config->Get('MessageBoxIncludeSignatureOnComment');
+$m->comp(   '/Elements/MessageBox', Name=>"UpdateContent", IncludeSignature => $IncludeSignature, %ARGS   
+); #line 169 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+$m->print( '
+' );
+#line 170 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+ }
+ $m->callback( %ARGS, CallbackName => 'AfterMessageBox' );
+$m->print( '</td></tr>
+
+    ' );
+#line 174 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+$m->comp(   '/Ticket/Elements/AddAttachments', %ARGS, TicketObj => $TicketObj   
+); #line 174 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+$m->print( '
+  </table>
+' );
+#line 176 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+} }, '/Widgets/TitleBox', title => loc('Message'), class => 'messagedetails'
+ );
+#line 176 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+$m->print( '
+
+' );
+#line 178 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+ $m->callback( %ARGS, CallbackName => 'BeforeSubmit', Ticket => $TicketObj );
+$m->print( '
+  ' );
+#line 180 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+$m->comp(   '/Elements/Submit', Label => loc('Update Ticket'), Name => 'SubmitTicket', id => 'SubmitTicket'   
+); #line 180 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+$m->print( '
+
+' );
+#line 182 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+ $m->callback( %ARGS, CallbackName => 'BeforeScrips', Ticket => $TicketObj );
+$m->print( '
+' );
+#line 184 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+ if ($TicketObj->CurrentUserHasRight('ShowOutgoingEmail')) {
+$m->print( '  ' );
+#line 185 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+$m->comp( { content => sub {
+#line 185 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+$m->print( '
+    ' );
+#line 186 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+$m->comp(   '/Ticket/Elements/PreviewScrips', TicketObj => $TicketObj, %ARGS   
+); #line 186 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+$m->print( '
+  ' );
+#line 187 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+} }, '/Widgets/TitleBox', title => loc('Scrips and Recipients'), id => 'previewscrips', rolledup => RT->Config->Get('SimplifiedRecipients', $session{'CurrentUser'})
+ );
+#line 187 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+$m->print( '
+' );
+#line 188 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+ }
+$m->print( '</div>
+
+' );
+#line 191 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+ $m->callback( %ARGS, CallbackName => 'AfterScrips', Ticket => $TicketObj );
+$m->print( '
+' );
+#line 193 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+ if (my $recips = $m->notes("DryRun-Recipients-".$TicketObj->Id)) {
+$m->print( '<input type="hidden" name="TxnRecipients" value="' );
+#line 194 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( join ",",sort keys %{$recips} )) );
+#line 194 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+$m->print( '" />
+' );
+#line 195 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+ }
+$m->print( '
+</form>
+<hr class="clear" />
+
+' );
+#line 200 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+ $m->callback( %ARGS, CallbackName => 'AfterForm', Ticket => $TicketObj );
+$m->print( '
+' );
+#line 298 "/var/www/localhost/htdocs/rt/Ticket/Update.html"
+$m->print( '
+' );
+;return;
+},
+'declared_args' => {
+  '$Action' => { default => ' \'\'' },
+  '$DefaultStatus' => { default => ' undef' },
+  '$id' => { default => ' undef' }
+},
+'load_time' => 1432969609,
+
+)
+;

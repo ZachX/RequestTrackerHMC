@@ -1,0 +1,152 @@
+package HTML::Mason::Commands;
+use strict;
+use vars qw($m $DECODED_ARGS $r %session);
+HTML::Mason::Component::FileBased->new(
+'code' => sub {
+HTML::Mason::Exception::Params->throw
+    ( error =>
+      "Odd number of parameters passed to component expecting name/value pairs"
+    ) if @_ % 2;
+my %ARGS = @_;
+my ( $Scrip );
+{
+    my %pos;
+    for ( my $x = 0; $x < @_; $x += 2 )
+    {
+        $pos{ $_[$x] } = $x + 1;
+    }
+
+    foreach my $arg ( qw( Scrip ) )
+    {
+        HTML::Mason::Exception::Params->throw
+            ( error => "no value sent for required parameter '$arg'" )
+                unless exists $pos{$arg};
+    }
+#line 67 "/var/www/localhost/htdocs/rt/Admin/Scrips/Elements/EditCustomCode"
+    $Scrip = $_[ $pos{'Scrip'} ];
+}
+$m->debug_hook( $m->current_comp->path ) if ( HTML::Mason::Compiler::IN_PERL_DB() );
+
+#line 69 "/var/www/localhost/htdocs/rt/Admin/Scrips/Elements/EditCustomCode"
+
+my @list = (
+    CustomIsApplicableCode => loc('Custom condition'),
+    CustomPrepareCode      => loc('Custom action preparation code'),
+    CustomCommitCode       => loc('Custom action commit code'),
+);
+
+my $min_lines = 10;
+#line 1 "/var/www/localhost/htdocs/rt/Admin/Scrips/Elements/EditCustomCode"
+# BEGIN BPS TAGGED BLOCK {{{
+#
+# COPYRIGHT:
+#
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
+#                                          <sales@bestpractical.com>
+#
+# (Except where explicitly superseded by other copyright notices)
+#
+#
+# LICENSE:
+#
+# This work is made available to you under the terms of Version 2 of
+# the GNU General Public License. A copy of that license should have
+# been provided with this software, but in any event can be snarfed
+# from www.gnu.org.
+#
+# This work is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
+#
+#
+# CONTRIBUTION SUBMISSION POLICY:
+#
+# (The following paragraph is not intended to limit the rights granted
+# to you to modify and distribute this software under the terms of
+# the GNU General Public License and is only of importance to you if
+# you choose to contribute your changes and enhancements to the
+# community by submitting them to Best Practical Solutions, LLC.)
+#
+# By intentionally submitting any modifications, corrections or
+# derivatives to this work, or any other work intended for use with
+# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+# you are the copyright holder for those contributions and you grant
+# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+# royalty-free, perpetual, license to use, copy, create derivative
+# works based on those contributions, and sublicense and distribute
+# those contributions and any derivatives thereof.
+#
+# END BPS TAGGED BLOCK }}}
+$m->comp( { content => sub {
+#line 48 "/var/www/localhost/htdocs/rt/Admin/Scrips/Elements/EditCustomCode"
+$m->print( '
+
+<table>
+<tr><td colspan="2" class="comment">
+<i>' );
+#line 52 "/var/www/localhost/htdocs/rt/Admin/Scrips/Elements/EditCustomCode"
+$m->comp( { content => sub {
+#line 52 "/var/www/localhost/htdocs/rt/Admin/Scrips/Elements/EditCustomCode"
+$m->print( '(Use these fields when you choose \'User Defined\' for a condition or action)' );
+#line 52 "/var/www/localhost/htdocs/rt/Admin/Scrips/Elements/EditCustomCode"
+} }, '/l'
+ );
+#line 52 "/var/www/localhost/htdocs/rt/Admin/Scrips/Elements/EditCustomCode"
+$m->print( '</i>
+</td></tr>
+
+' );
+#line 55 "/var/www/localhost/htdocs/rt/Admin/Scrips/Elements/EditCustomCode"
+ while ( my ($method, $desc) = splice @list, 0, 2 ) {
+$m->print( '<tr><td class="labeltop">' );
+#line 56 "/var/www/localhost/htdocs/rt/Admin/Scrips/Elements/EditCustomCode"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $desc )) );
+#line 56 "/var/www/localhost/htdocs/rt/Admin/Scrips/Elements/EditCustomCode"
+$m->print( ':</td><td class="value">
+' );
+#line 57 "/var/www/localhost/htdocs/rt/Admin/Scrips/Elements/EditCustomCode"
+ my $code = $ARGS{ $method } || $Scrip->$method() || '';
+ my $lines = @{[ $code =~ /\n/gs ]} + 3;
+ $lines = $min_lines if $lines < $min_lines;
+$m->print( '<textarea cols="80" rows="' );
+#line 60 "/var/www/localhost/htdocs/rt/Admin/Scrips/Elements/EditCustomCode"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $lines )) );
+#line 60 "/var/www/localhost/htdocs/rt/Admin/Scrips/Elements/EditCustomCode"
+$m->print( '" name="' );
+#line 60 "/var/www/localhost/htdocs/rt/Admin/Scrips/Elements/EditCustomCode"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $method )) );
+#line 60 "/var/www/localhost/htdocs/rt/Admin/Scrips/Elements/EditCustomCode"
+$m->print( '">' );
+#line 60 "/var/www/localhost/htdocs/rt/Admin/Scrips/Elements/EditCustomCode"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $code )) );
+#line 60 "/var/www/localhost/htdocs/rt/Admin/Scrips/Elements/EditCustomCode"
+$m->print( '</textarea>
+</td></tr>
+' );
+#line 62 "/var/www/localhost/htdocs/rt/Admin/Scrips/Elements/EditCustomCode"
+ }
+$m->print( '
+</table>
+' );
+#line 65 "/var/www/localhost/htdocs/rt/Admin/Scrips/Elements/EditCustomCode"
+} }, '/Widgets/TitleBox', title => loc('User Defined conditions and results')
+ );
+#line 65 "/var/www/localhost/htdocs/rt/Admin/Scrips/Elements/EditCustomCode"
+$m->print( '
+' );
+;return;
+},
+'declared_args' => {
+  '$Scrip' => { default => undef }
+},
+'load_time' => 1434746412,
+
+)
+;

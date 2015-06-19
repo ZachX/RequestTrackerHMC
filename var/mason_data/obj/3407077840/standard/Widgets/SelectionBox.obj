@@ -1,0 +1,481 @@
+package HTML::Mason::Commands;
+use strict;
+use vars qw($m $DECODED_ARGS $r %session);
+my %_method =
+(
+'show' => HTML::Mason::Component::Subcomponent->new(
+'code' => sub {
+HTML::Mason::Exception::Params->throw
+    ( error =>
+      "Odd number of parameters passed to component expecting name/value pairs"
+    ) if @_ % 2;
+my %ARGS = @_;
+my ( $self, $size );
+{
+    my %pos;
+    for ( my $x = 0; $x < @_; $x += 2 )
+    {
+        $pos{ $_[$x] } = $x + 1;
+    }
+#line 215 "/var/www/localhost/htdocs/rt/Widgets/SelectionBox"
+     $self = exists $pos{'self'} ? $_[ $pos{'self'} ] :  undef;
+#line 216 "/var/www/localhost/htdocs/rt/Widgets/SelectionBox"
+     $size = exists $pos{'size'} ? $_[ $pos{'size'} ] :  10;
+}
+$m->debug_hook( $m->current_comp->path ) if ( HTML::Mason::Compiler::IN_PERL_DB() );
+
+#line 218 "/var/www/localhost/htdocs/rt/Widgets/SelectionBox"
+
+my $name = $self->{Name};
+my %selected = map {$_ => 1} @{$self->{Selected}};
+#line 166 "/var/www/localhost/htdocs/rt/Widgets/SelectionBox"
+$m->print( '
+<form method="post" action="' );
+#line 167 "/var/www/localhost/htdocs/rt/Widgets/SelectionBox"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($self->{Action})) );
+#line 167 "/var/www/localhost/htdocs/rt/Widgets/SelectionBox"
+$m->print( '" name="SelectionBox-' );
+#line 167 "/var/www/localhost/htdocs/rt/Widgets/SelectionBox"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $name )) );
+#line 167 "/var/www/localhost/htdocs/rt/Widgets/SelectionBox"
+$m->print( '" id="SelectionBox-' );
+#line 167 "/var/www/localhost/htdocs/rt/Widgets/SelectionBox"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $name )) );
+#line 167 "/var/www/localhost/htdocs/rt/Widgets/SelectionBox"
+$m->print( '">
+<input type="hidden" class="hidden" name="' );
+#line 168 "/var/www/localhost/htdocs/rt/Widgets/SelectionBox"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $self->{Name} )) );
+#line 168 "/var/www/localhost/htdocs/rt/Widgets/SelectionBox"
+$m->print( '-Submit" value="1" />
+' );
+#line 169 "/var/www/localhost/htdocs/rt/Widgets/SelectionBox"
+$m->comp(   'SelectionBox:current', self => $self   
+); #line 169 "/var/www/localhost/htdocs/rt/Widgets/SelectionBox"
+$m->print( '
+' );
+#line 170 "/var/www/localhost/htdocs/rt/Widgets/SelectionBox"
+$m->comp( { content => sub {
+#line 170 "/var/www/localhost/htdocs/rt/Widgets/SelectionBox"
+$m->print( 'Available' );
+#line 170 "/var/www/localhost/htdocs/rt/Widgets/SelectionBox"
+} }, '/l'
+ );
+#line 170 "/var/www/localhost/htdocs/rt/Widgets/SelectionBox"
+$m->print( ':
+<br />
+<select name="' );
+#line 172 "/var/www/localhost/htdocs/rt/Widgets/SelectionBox"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($name)) );
+#line 172 "/var/www/localhost/htdocs/rt/Widgets/SelectionBox"
+$m->print( '-Available" id="' );
+#line 172 "/var/www/localhost/htdocs/rt/Widgets/SelectionBox"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($name)) );
+#line 172 "/var/www/localhost/htdocs/rt/Widgets/SelectionBox"
+$m->print( '-Available" size="' );
+#line 172 "/var/www/localhost/htdocs/rt/Widgets/SelectionBox"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($size)) );
+#line 172 "/var/www/localhost/htdocs/rt/Widgets/SelectionBox"
+$m->print( '" multiple="multiple">
+' );
+#line 173 "/var/www/localhost/htdocs/rt/Widgets/SelectionBox"
+ for (@{$self->{Available}}) {
+$m->print( '<option value="' );
+#line 174 "/var/www/localhost/htdocs/rt/Widgets/SelectionBox"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $_->[0] )) );
+#line 174 "/var/www/localhost/htdocs/rt/Widgets/SelectionBox"
+$m->print( '">' );
+#line 174 "/var/www/localhost/htdocs/rt/Widgets/SelectionBox"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $_->[1] )) );
+#line 174 "/var/www/localhost/htdocs/rt/Widgets/SelectionBox"
+$m->print( '</option>
+' );
+#line 175 "/var/www/localhost/htdocs/rt/Widgets/SelectionBox"
+ }
+$m->print( '</select>
+
+' );
+#line 178 "/var/www/localhost/htdocs/rt/Widgets/SelectionBox"
+ unless ($self->{ReadOnly}) {
+$m->print( '<input aria-label="Add" name="add" type="submit" class="button" value=" &rarr; " />
+' );
+#line 180 "/var/www/localhost/htdocs/rt/Widgets/SelectionBox"
+ }
+$m->print( '
+<select name="' );
+#line 182 "/var/www/localhost/htdocs/rt/Widgets/SelectionBox"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($name)) );
+#line 182 "/var/www/localhost/htdocs/rt/Widgets/SelectionBox"
+$m->print( '-Selected" id="' );
+#line 182 "/var/www/localhost/htdocs/rt/Widgets/SelectionBox"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($name)) );
+#line 182 "/var/www/localhost/htdocs/rt/Widgets/SelectionBox"
+$m->print( '-Selected" size="' );
+#line 182 "/var/www/localhost/htdocs/rt/Widgets/SelectionBox"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($size)) );
+#line 182 "/var/www/localhost/htdocs/rt/Widgets/SelectionBox"
+$m->print( '" multiple="multiple">
+' );
+#line 183 "/var/www/localhost/htdocs/rt/Widgets/SelectionBox"
+ for (@{$self->{Current}}) {
+$m->print( '<option value="' );
+#line 184 "/var/www/localhost/htdocs/rt/Widgets/SelectionBox"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $_ )) );
+#line 184 "/var/www/localhost/htdocs/rt/Widgets/SelectionBox"
+$m->print( '"
+' );
+#line 185 "/var/www/localhost/htdocs/rt/Widgets/SelectionBox"
+ if (exists $selected{$_}) {
+$m->print( 'selected="selected"
+' );
+#line 187 "/var/www/localhost/htdocs/rt/Widgets/SelectionBox"
+ }
+$m->print( '>' );
+#line 188 "/var/www/localhost/htdocs/rt/Widgets/SelectionBox"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $self->{_item_map}{$_} ||'' )) );
+#line 188 "/var/www/localhost/htdocs/rt/Widgets/SelectionBox"
+$m->print( '</option>
+' );
+#line 189 "/var/www/localhost/htdocs/rt/Widgets/SelectionBox"
+ }
+$m->print( '</select>
+' );
+#line 191 "/var/www/localhost/htdocs/rt/Widgets/SelectionBox"
+ unless ($self->{'ReadOnly'}) {
+ unless ($ARGS{'NoArrows'}) {
+$m->print( ' <input aria-label="Move up" name="moveup" type="submit" class="button" value=" &uarr; " />
+ <input aria-label="Move down" name="movedown" type="submit" class="button" value=" &darr; " />
+' );
+#line 195 "/var/www/localhost/htdocs/rt/Widgets/SelectionBox"
+ }
+$m->print( ' <input name="remove" type="submit" class="button" value="' );
+#line 196 "/var/www/localhost/htdocs/rt/Widgets/SelectionBox"
+$m->comp( { content => sub {
+#line 196 "/var/www/localhost/htdocs/rt/Widgets/SelectionBox"
+$m->print( 'Delete' );
+#line 196 "/var/www/localhost/htdocs/rt/Widgets/SelectionBox"
+} }, '/l'
+ );
+#line 196 "/var/www/localhost/htdocs/rt/Widgets/SelectionBox"
+$m->print( '" />
+' );
+#line 197 "/var/www/localhost/htdocs/rt/Widgets/SelectionBox"
+ if ($ARGS{'Clear'}) {
+$m->print( ' <input name="clear" type="submit" class="button" value="' );
+#line 198 "/var/www/localhost/htdocs/rt/Widgets/SelectionBox"
+$m->comp( { content => sub {
+#line 198 "/var/www/localhost/htdocs/rt/Widgets/SelectionBox"
+$m->print( 'Clear' );
+#line 198 "/var/www/localhost/htdocs/rt/Widgets/SelectionBox"
+} }, '/l'
+ );
+#line 198 "/var/www/localhost/htdocs/rt/Widgets/SelectionBox"
+$m->print( '" />
+' );
+#line 199 "/var/www/localhost/htdocs/rt/Widgets/SelectionBox"
+ }
+ if ( $ARGS{'ShowUpdate'} ) {
+$m->print( ' <input name="update" type="submit" class="button" value="' );
+#line 201 "/var/www/localhost/htdocs/rt/Widgets/SelectionBox"
+$m->comp( { content => sub {
+#line 201 "/var/www/localhost/htdocs/rt/Widgets/SelectionBox"
+$m->print( 'Update' );
+#line 201 "/var/www/localhost/htdocs/rt/Widgets/SelectionBox"
+} }, '/l'
+ );
+#line 201 "/var/www/localhost/htdocs/rt/Widgets/SelectionBox"
+$m->print( '" />
+' );
+#line 202 "/var/www/localhost/htdocs/rt/Widgets/SelectionBox"
+ }
+ }
+$m->print( '
+' );
+#line 205 "/var/www/localhost/htdocs/rt/Widgets/SelectionBox"
+ my $caption = "";
+ unless ($self->{'AutoSave'}) {
+ if ($self->{Modified}) {
+ $caption = loc('Selections modified. Please save your changes');
+ }
+$m->comp(   '/Elements/Submit', Caption => loc($caption), Label => loc('Save'), Name => $name.'-Save'   
+); #line 210 "/var/www/localhost/htdocs/rt/Widgets/SelectionBox"
+$m->print( '
+' );
+#line 211 "/var/www/localhost/htdocs/rt/Widgets/SelectionBox"
+ }
+$m->print( '</form>
+
+' );
+#line 222 "/var/www/localhost/htdocs/rt/Widgets/SelectionBox"
+$m->print( '
+' );
+;return;
+},
+'declared_args' => {
+  '$self' => { default => ' undef' },
+  '$size' => { default => ' 10' }
+},
+
+)
+,
+'current' => HTML::Mason::Component::Subcomponent->new(
+'code' => sub {
+HTML::Mason::Exception::Params->throw
+    ( error =>
+      "Odd number of parameters passed to component expecting name/value pairs"
+    ) if @_ % 2;
+my ( $self );
+{
+    my %pos;
+    for ( my $x = 0; $x < @_; $x += 2 )
+    {
+        $pos{ $_[$x] } = $x + 1;
+    }
+#line 161 "/var/www/localhost/htdocs/rt/Widgets/SelectionBox"
+     $self = exists $pos{'self'} ? $_[ $pos{'self'} ] :  undef;
+}
+$m->debug_hook( $m->current_comp->path ) if ( HTML::Mason::Compiler::IN_PERL_DB() );
+
+#line 158 "/var/www/localhost/htdocs/rt/Widgets/SelectionBox"
+
+#line 154 "/var/www/localhost/htdocs/rt/Widgets/SelectionBox"
+$m->print( '
+' );
+#line 155 "/var/www/localhost/htdocs/rt/Widgets/SelectionBox"
+ for (@{$self->{Current}}) {
+$m->print( '<input type="hidden" class="hidden" name="' );
+#line 156 "/var/www/localhost/htdocs/rt/Widgets/SelectionBox"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $self->{Name} )) );
+#line 156 "/var/www/localhost/htdocs/rt/Widgets/SelectionBox"
+$m->print( '-Current" value="' );
+#line 156 "/var/www/localhost/htdocs/rt/Widgets/SelectionBox"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($_)) );
+#line 156 "/var/www/localhost/htdocs/rt/Widgets/SelectionBox"
+$m->print( '" />
+' );
+#line 157 "/var/www/localhost/htdocs/rt/Widgets/SelectionBox"
+ }
+$m->print( '
+' );
+;return;
+},
+'declared_args' => {
+  '$self' => { default => ' undef' }
+},
+
+)
+,
+'new' => HTML::Mason::Component::Subcomponent->new(
+'code' => sub {
+my %ARGS;
+{ local $^W; %ARGS = @_ unless (@_ % 2); }
+$m->debug_hook( $m->current_comp->path ) if ( HTML::Mason::Compiler::IN_PERL_DB() );
+
+#line 73 "/var/www/localhost/htdocs/rt/Widgets/SelectionBox"
+
+$ARGS{_item_map} = {map {$_->[0] => $_->[1]} @{$ARGS{Available}}};
+return \%ARGS;
+#line 72 "/var/www/localhost/htdocs/rt/Widgets/SelectionBox"
+$m->print( '
+' );
+;return;
+},
+
+)
+,
+'process' => HTML::Mason::Component::Subcomponent->new(
+'code' => sub {
+HTML::Mason::Exception::Params->throw
+    ( error =>
+      "Odd number of parameters passed to component expecting name/value pairs"
+    ) if @_ % 2;
+my %ARGS = @_;
+my ( $self );
+{
+    my %pos;
+    for ( my $x = 0; $x < @_; $x += 2 )
+    {
+        $pos{ $_[$x] } = $x + 1;
+    }
+#line 149 "/var/www/localhost/htdocs/rt/Widgets/SelectionBox"
+     $self = exists $pos{'self'} ? $_[ $pos{'self'} ] :  undef;
+}
+$m->debug_hook( $m->current_comp->path ) if ( HTML::Mason::Compiler::IN_PERL_DB() );
+
+#line 80 "/var/www/localhost/htdocs/rt/Widgets/SelectionBox"
+
+unless ($ARGS{$self->{Name}.'-Submit'}) {
+    # init
+    $self->{Current} = $self->{Selected};
+    $self->{Selected} = [];
+    return;
+}
+
+$self->{Selected} = $ARGS{$self->{Name}.'-Selected'};
+if ($self->{Selected} && !ref($self->{Selected})) {
+    $self->{Selected} = [$self->{Selected}];
+}
+
+my $current = $self->{Current} = $ARGS{$self->{Name}.'-Current'};
+if ($current && !ref ($current)) {
+    $current = [$current];
+}
+
+unless ($self->{ReadOnly}) {
+    ++$self->{Modified};
+    if ($ARGS{add}) {
+        my $choosed = $ARGS{$self->{Name}.'-Available'};
+        for my $add (ref($choosed) ? @$choosed : $choosed) {
+            next if grep { $_ eq $add } @$current;
+            push @$current, $add;
+        }
+    }
+
+    if ($ARGS{remove}) {
+        my $choosed = $ARGS{$self->{Name}.'-Selected'};
+        for my $del (ref($choosed) ? @$choosed : $choosed) {
+            @$current = map { $_ eq $del ? () : $_ } @$current;
+        }
+    }
+
+    if ($ARGS{moveup} or $ARGS{movedown}) {
+        my $offset = $ARGS{moveup} ? 1 : 0;
+        my $choosed = $ARGS{$self->{Name}.'-Selected'};
+        $choosed = [$choosed] unless ref ($choosed);
+        my $canmove = 0; # not in the cornor
+        for my $i ($ARGS{moveup} ? 0..$#{$current} : reverse 0..$#{$current}) {
+            if (grep {$_ eq $current->[$i]} @$choosed) {
+            if ($canmove) {
+                splice (@$current, $i-$offset, 2,
+                    @{$current}[$i+1-$offset,$i-$offset]);
+            }
+            }
+            else {
+            ++$canmove;
+            }
+        }
+    }
+
+    if ($ARGS{clear}) {
+        $current = [];
+    }
+
+    $self->{Current} = $current;
+}
+
+@{$self->{Current}} = grep { exists $self->{_item_map}{$_} } @{$self->{Current}};
+
+if ($self->{AutoSave} or $ARGS{$self->{Name}.'-Save'}) {
+    $self->{OnSubmit}->($self);
+    delete $self->{Modified};
+}
+
+#line 79 "/var/www/localhost/htdocs/rt/Widgets/SelectionBox"
+$m->print( '
+' );
+#line 151 "/var/www/localhost/htdocs/rt/Widgets/SelectionBox"
+$m->print( '
+' );
+;return;
+},
+'declared_args' => {
+  '$self' => { default => ' undef' }
+},
+
+)
+,
+
+);
+HTML::Mason::Component::FileBased->new(
+'code' => sub {
+my %ARGS;
+{ local $^W; %ARGS = @_ unless (@_ % 2); }
+$m->debug_hook( $m->current_comp->path ) if ( HTML::Mason::Compiler::IN_PERL_DB() );
+
+#line 1 "/var/www/localhost/htdocs/rt/Widgets/SelectionBox"
+# BEGIN BPS TAGGED BLOCK {{{
+#
+# COPYRIGHT:
+#
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
+#                                          <sales@bestpractical.com>
+#
+# (Except where explicitly superseded by other copyright notices)
+#
+#
+# LICENSE:
+#
+# This work is made available to you under the terms of Version 2 of
+# the GNU General Public License. A copy of that license should have
+# been provided with this software, but in any event can be snarfed
+# from www.gnu.org.
+#
+# This work is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
+#
+#
+# CONTRIBUTION SUBMISSION POLICY:
+#
+# (The following paragraph is not intended to limit the rights granted
+# to you to modify and distribute this software under the terms of
+# the GNU General Public License and is only of importance to you if
+# you choose to contribute your changes and enhancements to the
+# community by submitting them to Best Practical Solutions, LLC.)
+#
+# By intentionally submitting any modifications, corrections or
+# derivatives to this work, or any other work intended for use with
+# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+# you are the copyright holder for those contributions and you grant
+# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+# royalty-free, perpetual, license to use, copy, create derivative
+# works based on those contributions, and sublicense and distribute
+# those contributions and any derivatives thereof.
+#
+# END BPS TAGGED BLOCK }}}
+# The SelectionBox Widget
+# 
+# SYNOPSIS
+#
+# <%init>:
+# my $sel = $m->comp ('/Widgets/SelectionBox:new',
+#                Action => me.html',
+#                Name => 'my-selection',
+#                Available => \@items,
+#                # you can do things with @{$sel->{Current}} in the 
+#                # OnSubmit callback
+#                OnSubmit => sub { my $sel = shift; },
+#                Selected => \@selected);
+#
+# $m->comp ('/Widgets/SelectionBox:process', %ARGS, self => $sel)
+#
+# where @items is an arrayref, each element is [value, label],
+# and @selected is an arrayref of selected values from @items.
+#
+# and in html:
+# <& /Widgets/SelectionBox:show, self => $sel &>
+#
+# if the SelectionBox is created with AutoSave option, OnSubmit will be called
+# on every button clicked
+$m->print( '
+' );
+#line 153 "/var/www/localhost/htdocs/rt/Widgets/SelectionBox"
+$m->print( '
+' );
+#line 165 "/var/www/localhost/htdocs/rt/Widgets/SelectionBox"
+$m->print( '
+' );
+;return;
+},
+'load_time' => 1434738628,
+'methods' => \%_method,
+
+)
+;

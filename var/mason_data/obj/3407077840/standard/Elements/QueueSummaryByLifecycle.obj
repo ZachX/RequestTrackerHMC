@@ -1,0 +1,252 @@
+package HTML::Mason::Commands;
+use strict;
+use vars qw($m $DECODED_ARGS $r %session);
+HTML::Mason::Component::FileBased->new(
+'code' => sub {
+HTML::Mason::Exception::Params->throw
+    ( error =>
+      "Odd number of parameters passed to component expecting name/value pairs"
+    ) if @_ % 2;
+my ( $queue_filter, @statuses );
+{
+    my %pos;
+    for ( my $x = 0; $x < @_; $x += 2 )
+    {
+        $pos{ $_[$x] } = $x + 1;
+    }
+#line 169 "/var/www/localhost/htdocs/rt/Elements/QueueSummaryByLifecycle"
+     $queue_filter = exists $pos{'queue_filter'} ? $_[ $pos{'queue_filter'} ] :  undef;
+#line 170 "/var/www/localhost/htdocs/rt/Elements/QueueSummaryByLifecycle"
+     @statuses = exists $pos{'statuses'} ? HTML::Mason::Tools::coerce_to_array( $_[ $pos{'statuses'} ], '@statuses') :  ();
+}
+$m->debug_hook( $m->current_comp->path ) if ( HTML::Mason::Compiler::IN_PERL_DB() );
+
+#line 85 "/var/www/localhost/htdocs/rt/Elements/QueueSummaryByLifecycle"
+
+my $build_search_link = sub {
+    my ($queue_name, $extra_query) = @_;
+    $queue_name =~ s/(['\\])/\\$1/g; #'
+
+    return RT->Config->Get('WebPath')
+         . "/Search/Results.html?Query="
+         . $m->interp->apply_escapes("Queue = '$queue_name' AND $extra_query", 'u');
+};
+
+my $link_all = sub {
+    my ($queue, $all_statuses) = @_;
+    my @escaped = @{$all_statuses};
+    s{(['\\])}{\\$1}g for @escaped;
+    return $build_search_link->($queue->{Name}, "(".join(" OR ", map "Status = '$_'", @escaped).")");
+};
+
+my $link_status = sub {
+    my ($queue, $status) = @_;
+    $status =~ s{(['\\])}{\\$1}g;
+    return $build_search_link->($queue->{Name}, "Status = '$status'");
+};
+
+$m->callback(
+    CallbackName        => 'LinkBuilders',
+    build_search_link   => \$build_search_link,
+    link_all            => \$link_all,
+    link_status         => \$link_status,
+);
+
+my $Queues = RT::Queues->new( $session{'CurrentUser'} );
+$Queues->UnLimit();
+$m->callback( CallbackName => 'SQLFilter', Queues => $Queues );
+
+my @queues = grep $queue_filter->($_), @{ $Queues->ItemsArrayRef };
+$m->callback( CallbackName => 'Filter', Queues => \@queues );
+
+@queues = map {
+    {  id          => $_->Id,
+       Name        => $_->Name,
+       Description => $_->Description || '',
+       Lifecycle   => $_->Lifecycle,
+    }
+} grep $_, @queues;
+
+my %lifecycle;
+
+for my $queue (@queues) {
+    my $cycle = RT::Lifecycle->Load( Name => $queue->{'Lifecycle'} );
+    $lifecycle{ lc $cycle->Name } = $cycle;
+}
+
+unless (@statuses) {
+    my %seen;
+    foreach my $set ( 'initial', 'active' ) {
+        foreach my $lifecycle ( map $lifecycle{$_}, sort keys %lifecycle ) {
+            push @statuses, grep !$seen{ lc $_ }++, $lifecycle->Valid($set);
+        }
+    }
+}
+
+my $data     = {};
+my $statuses = {};
+
+use RT::Report::Tickets;
+my $report = RT::Report::Tickets->new( RT->SystemUser );
+my @escaped = @statuses;
+s{(['\\])}{\\$1}g for @escaped;
+my $query =
+    "(".
+    join(" OR ", map {"Status = '$_'"} @escaped) #'
+    .") AND (".
+    join(' OR ', map "Queue = ".$_->{id}, @queues)
+    .")";
+$query = 'id < 0' unless @queues;
+$report->SetupGroupings( Query => $query, GroupBy => [qw(Status Queue)] );
+
+while ( my $entry = $report->Next ) {
+    $data->{ $entry->__Value("Queue") }->{ $entry->__Value("Status") }
+        = $entry->__Value('id');
+    $statuses->{ $entry->__Value("Status") } = 1;
+}
+#line 1 "/var/www/localhost/htdocs/rt/Elements/QueueSummaryByLifecycle"
+# BEGIN BPS TAGGED BLOCK {{{
+#
+# COPYRIGHT:
+#
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
+#                                          <sales@bestpractical.com>
+#
+# (Except where explicitly superseded by other copyright notices)
+#
+#
+# LICENSE:
+#
+# This work is made available to you under the terms of Version 2 of
+# the GNU General Public License. A copy of that license should have
+# been provided with this software, but in any event can be snarfed
+# from www.gnu.org.
+#
+# This work is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
+#
+#
+# CONTRIBUTION SUBMISSION POLICY:
+#
+# (The following paragraph is not intended to limit the rights granted
+# to you to modify and distribute this software under the terms of
+# the GNU General Public License and is only of importance to you if
+# you choose to contribute your changes and enhancements to the
+# community by submitting them to Best Practical Solutions, LLC.)
+#
+# By intentionally submitting any modifications, corrections or
+# derivatives to this work, or any other work intended for use with
+# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+# you are the copyright holder for those contributions and you grant
+# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+# royalty-free, perpetual, license to use, copy, create derivative
+# works based on those contributions, and sublicense and distribute
+# those contributions and any derivatives thereof.
+#
+# END BPS TAGGED BLOCK }}}
+
+    foreach my $lifecycle ( map $lifecycle{$_}, sort keys %lifecycle ) {
+    my @cur_statuses = grep $lifecycle->IsValid($_), @statuses;
+    next unless @cur_statuses;
+#line 53 "/var/www/localhost/htdocs/rt/Elements/QueueSummaryByLifecycle"
+$m->print( '
+<table border="0" cellspacing="0" cellpadding="1" width="100%" class="queue-summary">
+
+<tr>
+    <th class="collection-as-table">' );
+#line 57 "/var/www/localhost/htdocs/rt/Elements/QueueSummaryByLifecycle"
+$m->comp( { content => sub {
+#line 57 "/var/www/localhost/htdocs/rt/Elements/QueueSummaryByLifecycle"
+$m->print( 'Queue' );
+#line 57 "/var/www/localhost/htdocs/rt/Elements/QueueSummaryByLifecycle"
+} }, '/l'
+ );
+#line 57 "/var/www/localhost/htdocs/rt/Elements/QueueSummaryByLifecycle"
+$m->print( '</th>
+' );
+#line 58 "/var/www/localhost/htdocs/rt/Elements/QueueSummaryByLifecycle"
+ for my $status ( @cur_statuses ) {
+$m->print( '    <th class="collection-as-table">' );
+#line 59 "/var/www/localhost/htdocs/rt/Elements/QueueSummaryByLifecycle"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( loc($status) )) );
+#line 59 "/var/www/localhost/htdocs/rt/Elements/QueueSummaryByLifecycle"
+$m->print( '</th>
+' );
+#line 60 "/var/www/localhost/htdocs/rt/Elements/QueueSummaryByLifecycle"
+ }
+$m->print( '</tr>
+
+' );
+#line 63 "/var/www/localhost/htdocs/rt/Elements/QueueSummaryByLifecycle"
+
+my $i = 0;
+for my $queue (@queues) {
+    next if lc($queue->{Lifecycle} || '') ne lc $lifecycle->Name;
+
+    $i++;
+#line 70 "/var/www/localhost/htdocs/rt/Elements/QueueSummaryByLifecycle"
+$m->print( '<tr class="' );
+#line 70 "/var/www/localhost/htdocs/rt/Elements/QueueSummaryByLifecycle"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $i%2 ? 'oddline' : 'evenline')) );
+#line 70 "/var/www/localhost/htdocs/rt/Elements/QueueSummaryByLifecycle"
+$m->print( '" >
+
+<td>
+    <a href="' );
+#line 73 "/var/www/localhost/htdocs/rt/Elements/QueueSummaryByLifecycle"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $link_all->($queue, \@cur_statuses) )) );
+#line 73 "/var/www/localhost/htdocs/rt/Elements/QueueSummaryByLifecycle"
+$m->print( '" title="' );
+#line 73 "/var/www/localhost/htdocs/rt/Elements/QueueSummaryByLifecycle"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $queue->{Description} )) );
+#line 73 "/var/www/localhost/htdocs/rt/Elements/QueueSummaryByLifecycle"
+$m->print( '">' );
+#line 73 "/var/www/localhost/htdocs/rt/Elements/QueueSummaryByLifecycle"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $queue->{Name} )) );
+#line 73 "/var/www/localhost/htdocs/rt/Elements/QueueSummaryByLifecycle"
+$m->print( '</a>
+</td>
+
+' );
+#line 76 "/var/www/localhost/htdocs/rt/Elements/QueueSummaryByLifecycle"
+   for my $status (@cur_statuses) {
+$m->print( '<td align="right">
+    <a href="' );
+#line 78 "/var/www/localhost/htdocs/rt/Elements/QueueSummaryByLifecycle"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $link_status->($queue, $status) )) );
+#line 78 "/var/www/localhost/htdocs/rt/Elements/QueueSummaryByLifecycle"
+$m->print( '">' );
+#line 78 "/var/www/localhost/htdocs/rt/Elements/QueueSummaryByLifecycle"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $data->{$queue->{id}}->{lc $status} || '-' )) );
+#line 78 "/var/www/localhost/htdocs/rt/Elements/QueueSummaryByLifecycle"
+$m->print( '</a>
+</td>
+' );
+#line 80 "/var/www/localhost/htdocs/rt/Elements/QueueSummaryByLifecycle"
+   }
+$m->print( '</tr>
+' );
+#line 82 "/var/www/localhost/htdocs/rt/Elements/QueueSummaryByLifecycle"
+ }
+$m->print( '</table>
+' );
+#line 84 "/var/www/localhost/htdocs/rt/Elements/QueueSummaryByLifecycle"
+ }
+;return;
+},
+'declared_args' => {
+  '$queue_filter' => { default => ' undef' },
+  '@statuses' => { default => ' ()' }
+},
+'load_time' => 1434736008,
+
+)
+;

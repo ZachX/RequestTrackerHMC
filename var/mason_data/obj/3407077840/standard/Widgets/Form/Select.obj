@@ -1,0 +1,388 @@
+package HTML::Mason::Commands;
+use strict;
+use vars qw($m $DECODED_ARGS $r %session);
+my %_method =
+(
+'InputOnly' => HTML::Mason::Component::Subcomponent->new(
+'code' => sub {
+HTML::Mason::Exception::Params->throw
+    ( error =>
+      "Odd number of parameters passed to component expecting name/value pairs"
+    ) if @_ % 2;
+my ( $Name, $Description, @Values, $ValuesCallback, %ValuesLabel, @CurrentValue, $Default, @DefaultValue, $DefaultLabel, $Alternative, $AlternativeLabel, $Multiple );
+{
+    my %pos;
+    for ( my $x = 0; $x < @_; $x += 2 )
+    {
+        $pos{ $_[$x] } = $x + 1;
+    }
+
+    foreach my $arg ( qw( Name ) )
+    {
+        HTML::Mason::Exception::Params->throw
+            ( error => "no value sent for required parameter '$arg'" )
+                unless exists $pos{$arg};
+    }
+#line 66 "/var/www/localhost/htdocs/rt/Widgets/Form/Select"
+    $Name = $_[ $pos{'Name'} ];
+#line 67 "/var/www/localhost/htdocs/rt/Widgets/Form/Select"
+     $Description = exists $pos{'Description'} ? $_[ $pos{'Description'} ] :  undef,;
+#line 69 "/var/www/localhost/htdocs/rt/Widgets/Form/Select"
+     @Values = exists $pos{'Values'} ? HTML::Mason::Tools::coerce_to_array( $_[ $pos{'Values'} ], '@Values') :  (),;
+#line 70 "/var/www/localhost/htdocs/rt/Widgets/Form/Select"
+     $ValuesCallback = exists $pos{'ValuesCallback'} ? $_[ $pos{'ValuesCallback'} ] :  undef,;
+#line 71 "/var/www/localhost/htdocs/rt/Widgets/Form/Select"
+     %ValuesLabel = exists $pos{'ValuesLabel'} ? HTML::Mason::Tools::coerce_to_hash( $_[ $pos{'ValuesLabel'} ], '%ValuesLabel') :  (),;
+#line 72 "/var/www/localhost/htdocs/rt/Widgets/Form/Select"
+     @CurrentValue = exists $pos{'CurrentValue'} ? HTML::Mason::Tools::coerce_to_array( $_[ $pos{'CurrentValue'} ], '@CurrentValue') :  (),;
+#line 74 "/var/www/localhost/htdocs/rt/Widgets/Form/Select"
+     $Default = exists $pos{'Default'} ? $_[ $pos{'Default'} ] :  1,;
+#line 75 "/var/www/localhost/htdocs/rt/Widgets/Form/Select"
+     @DefaultValue = exists $pos{'DefaultValue'} ? HTML::Mason::Tools::coerce_to_array( $_[ $pos{'DefaultValue'} ], '@DefaultValue') :  (),;
+#line 76 "/var/www/localhost/htdocs/rt/Widgets/Form/Select"
+     $DefaultLabel = exists $pos{'DefaultLabel'} ? $_[ $pos{'DefaultLabel'} ] :  undef,;
+#line 78 "/var/www/localhost/htdocs/rt/Widgets/Form/Select"
+     $Alternative = exists $pos{'Alternative'} ? $_[ $pos{'Alternative'} ] :  0,;
+#line 79 "/var/www/localhost/htdocs/rt/Widgets/Form/Select"
+     $AlternativeLabel = exists $pos{'AlternativeLabel'} ? $_[ $pos{'AlternativeLabel'} ] :  loc('other...'),;
+#line 81 "/var/www/localhost/htdocs/rt/Widgets/Form/Select"
+     $Multiple = exists $pos{'Multiple'} ? $_[ $pos{'Multiple'} ] :  0,;
+}
+$m->debug_hook( $m->current_comp->path ) if ( HTML::Mason::Compiler::IN_PERL_DB() );
+
+#line 107 "/var/www/localhost/htdocs/rt/Widgets/Form/Select"
+
+my %CurrentValue = map {$_ => 1} grep defined, @CurrentValue;
+if ( $ValuesCallback ) {
+    my $values = $ValuesCallback->(
+        CurrentUser => $session{'CurrentUser'},
+        Name        => $Name,
+    );
+    if ( ref $values eq 'ARRAY' ) {
+        @Values = @$values;
+    } else {
+        %ValuesLabel = %$values;
+        @Values = keys %ValuesLabel;
+    }
+}
+unless (defined $DefaultLabel ) {
+    $DefaultLabel = loc('Use system default ([_1])',
+        join ', ', map loc($ValuesLabel{$_} || $_), grep defined,
+            @DefaultValue
+    );
+}
+#line 64 "/var/www/localhost/htdocs/rt/Widgets/Form/Select"
+$m->print( '
+' );
+#line 83 "/var/www/localhost/htdocs/rt/Widgets/Form/Select"
+$m->print( '<select name="' );
+#line 83 "/var/www/localhost/htdocs/rt/Widgets/Form/Select"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $Name )) );
+#line 83 "/var/www/localhost/htdocs/rt/Widgets/Form/Select"
+$m->print( '" ' );
+#line 83 "/var/www/localhost/htdocs/rt/Widgets/Form/Select"
+$m->print(  $Multiple ? 'multiple="multiple"' : '' );
+#line 83 "/var/www/localhost/htdocs/rt/Widgets/Form/Select"
+$m->print( '>
+
+' );
+#line 85 "/var/www/localhost/htdocs/rt/Widgets/Form/Select"
+ if ( $Default ) {
+ my $selected = '';
+ $selected = 'selected="selected"' unless $CurrentValue[0];
+$m->print( '<option value="__empty_value__" ' );
+#line 88 "/var/www/localhost/htdocs/rt/Widgets/Form/Select"
+$m->print(  $selected );
+#line 88 "/var/www/localhost/htdocs/rt/Widgets/Form/Select"
+$m->print( '>' );
+#line 88 "/var/www/localhost/htdocs/rt/Widgets/Form/Select"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $DefaultLabel )) );
+#line 88 "/var/www/localhost/htdocs/rt/Widgets/Form/Select"
+$m->print( '</option>
+' );
+#line 89 "/var/www/localhost/htdocs/rt/Widgets/Form/Select"
+ }
+$m->print( '
+' );
+#line 91 "/var/www/localhost/htdocs/rt/Widgets/Form/Select"
+ foreach my $v( @Values ) {
+ my $selected = '';
+ $selected = 'selected="selected"' if delete $CurrentValue{ $v };
+$m->print( '<option value="' );
+#line 94 "/var/www/localhost/htdocs/rt/Widgets/Form/Select"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $v )) );
+#line 94 "/var/www/localhost/htdocs/rt/Widgets/Form/Select"
+$m->print( '" ' );
+#line 94 "/var/www/localhost/htdocs/rt/Widgets/Form/Select"
+$m->print(  $selected );
+#line 94 "/var/www/localhost/htdocs/rt/Widgets/Form/Select"
+$m->print( '>' );
+#line 94 "/var/www/localhost/htdocs/rt/Widgets/Form/Select"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( loc($ValuesLabel{ $v } || $v) )) );
+#line 94 "/var/www/localhost/htdocs/rt/Widgets/Form/Select"
+$m->print( '</option>
+' );
+#line 95 "/var/www/localhost/htdocs/rt/Widgets/Form/Select"
+ }
+$m->print( '
+' );
+#line 97 "/var/www/localhost/htdocs/rt/Widgets/Form/Select"
+ if ( $Alternative ) {
+     my $selected = '';
+     $selected = 'selected="selected"' if keys %CurrentValue;
+$m->print( '<option value="__alternative_value__" ' );
+#line 100 "/var/www/localhost/htdocs/rt/Widgets/Form/Select"
+$m->print(  $selected );
+#line 100 "/var/www/localhost/htdocs/rt/Widgets/Form/Select"
+$m->print( '>' );
+#line 100 "/var/www/localhost/htdocs/rt/Widgets/Form/Select"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $AlternativeLabel )) );
+#line 100 "/var/www/localhost/htdocs/rt/Widgets/Form/Select"
+$m->print( '</option>
+' );
+#line 101 "/var/www/localhost/htdocs/rt/Widgets/Form/Select"
+ }
+$m->print( '
+</select>
+' );
+#line 104 "/var/www/localhost/htdocs/rt/Widgets/Form/Select"
+ if ( $Alternative ) {
+$m->print( '<input type="text" class="alternative" name="Alternative-' );
+#line 105 "/var/www/localhost/htdocs/rt/Widgets/Form/Select"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $Name )) );
+#line 105 "/var/www/localhost/htdocs/rt/Widgets/Form/Select"
+$m->print( '" value="' );
+#line 105 "/var/www/localhost/htdocs/rt/Widgets/Form/Select"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( join ', ', @CurrentValue )) );
+#line 105 "/var/www/localhost/htdocs/rt/Widgets/Form/Select"
+$m->print( '" />
+' );
+#line 106 "/var/www/localhost/htdocs/rt/Widgets/Form/Select"
+ }
+;return;
+},
+'declared_args' => {
+  '$Alternative' => { default => ' 0,' },
+  '$AlternativeLabel' => { default => ' loc(\'other...\'),' },
+  '$Default' => { default => ' 1,' },
+  '$DefaultLabel' => { default => ' undef,' },
+  '$Description' => { default => ' undef,' },
+  '$Multiple' => { default => ' 0,' },
+  '$Name' => { default => undef },
+  '$ValuesCallback' => { default => ' undef,' },
+  '%ValuesLabel' => { default => ' (),' },
+  '@CurrentValue' => { default => ' (),' },
+  '@DefaultValue' => { default => ' (),' },
+  '@Values' => { default => ' (),' }
+},
+
+)
+,
+'Process' => HTML::Mason::Component::Subcomponent->new(
+'code' => sub {
+HTML::Mason::Exception::Params->throw
+    ( error =>
+      "Odd number of parameters passed to component expecting name/value pairs"
+    ) if @_ % 2;
+my ( $Name, $Arguments, @Values, %ValuesLabel, $Default, @DefaultValue, $Alternative, $Multiple );
+{
+    my %pos;
+    for ( my $x = 0; $x < @_; $x += 2 )
+    {
+        $pos{ $_[$x] } = $x + 1;
+    }
+
+    foreach my $arg ( qw( Name ) )
+    {
+        HTML::Mason::Exception::Params->throw
+            ( error => "no value sent for required parameter '$arg'" )
+                unless exists $pos{$arg};
+    }
+#line 132 "/var/www/localhost/htdocs/rt/Widgets/Form/Select"
+    $Name = $_[ $pos{'Name'} ];
+#line 134 "/var/www/localhost/htdocs/rt/Widgets/Form/Select"
+     $Arguments = exists $pos{'Arguments'} ? $_[ $pos{'Arguments'} ] :  {},;
+#line 136 "/var/www/localhost/htdocs/rt/Widgets/Form/Select"
+     @Values = exists $pos{'Values'} ? HTML::Mason::Tools::coerce_to_array( $_[ $pos{'Values'} ], '@Values') :  (),;
+#line 137 "/var/www/localhost/htdocs/rt/Widgets/Form/Select"
+     %ValuesLabel = exists $pos{'ValuesLabel'} ? HTML::Mason::Tools::coerce_to_hash( $_[ $pos{'ValuesLabel'} ], '%ValuesLabel') :  (),;
+#line 139 "/var/www/localhost/htdocs/rt/Widgets/Form/Select"
+     $Default = exists $pos{'Default'} ? $_[ $pos{'Default'} ] :  0,;
+#line 140 "/var/www/localhost/htdocs/rt/Widgets/Form/Select"
+     @DefaultValue = exists $pos{'DefaultValue'} ? HTML::Mason::Tools::coerce_to_array( $_[ $pos{'DefaultValue'} ], '@DefaultValue') :  (),;
+#line 142 "/var/www/localhost/htdocs/rt/Widgets/Form/Select"
+     $Alternative = exists $pos{'Alternative'} ? $_[ $pos{'Alternative'} ] :  0,;
+#line 143 "/var/www/localhost/htdocs/rt/Widgets/Form/Select"
+     $Multiple = exists $pos{'Multiple'} ? $_[ $pos{'Multiple'} ] :  0,;
+}
+$m->debug_hook( $m->current_comp->path ) if ( HTML::Mason::Compiler::IN_PERL_DB() );
+
+#line 145 "/var/www/localhost/htdocs/rt/Widgets/Form/Select"
+
+my $value = $Arguments->{ $Name };
+if( !defined $value || $value eq '__empty_value__' ) {
+    return undef if $Default;
+    return [ @DefaultValue ] if $Multiple;
+    return $DefaultValue[0];
+}
+$value = [$value] unless ref $value;
+
+if ( $Alternative ) {
+    my $alt = $Arguments->{ "Alternative-". $Name };
+    if( $Multiple ) {
+        push @$value, split /\s*,\s*/, $alt;
+    } else {
+        push @$value, $alt;
+    }
+}
+
+splice @$value, 1 unless $Multiple;
+
+# XXX: check values
+
+return $value->[0] unless $Multiple;
+return $value;
+#line 130 "/var/www/localhost/htdocs/rt/Widgets/Form/Select"
+$m->print( '
+' );
+;return;
+},
+'declared_args' => {
+  '$Alternative' => { default => ' 0,' },
+  '$Arguments' => { default => ' {},' },
+  '$Default' => { default => ' 0,' },
+  '$Multiple' => { default => ' 0,' },
+  '$Name' => { default => undef },
+  '%ValuesLabel' => { default => ' (),' },
+  '@DefaultValue' => { default => ' (),' },
+  '@Values' => { default => ' (),' }
+},
+
+)
+,
+
+);
+HTML::Mason::Component::FileBased->new(
+'code' => sub {
+HTML::Mason::Exception::Params->throw
+    ( error =>
+      "Odd number of parameters passed to component expecting name/value pairs"
+    ) if @_ % 2;
+my %ARGS = @_;
+my ( $Name, $Description, $Hints );
+{
+    my %pos;
+    for ( my $x = 0; $x < @_; $x += 2 )
+    {
+        $pos{ $_[$x] } = $x + 1;
+    }
+
+    foreach my $arg ( qw( Name ) )
+    {
+        HTML::Mason::Exception::Params->throw
+            ( error => "no value sent for required parameter '$arg'" )
+                unless exists $pos{$arg};
+    }
+#line 59 "/var/www/localhost/htdocs/rt/Widgets/Form/Select"
+    $Name = $_[ $pos{'Name'} ];
+#line 60 "/var/www/localhost/htdocs/rt/Widgets/Form/Select"
+     $Description = exists $pos{'Description'} ? $_[ $pos{'Description'} ] :  undef,;
+#line 61 "/var/www/localhost/htdocs/rt/Widgets/Form/Select"
+     $Hints = exists $pos{'Hints'} ? $_[ $pos{'Hints'} ] :  '';
+}
+$m->debug_hook( $m->current_comp->path ) if ( HTML::Mason::Compiler::IN_PERL_DB() );
+
+#line 1 "/var/www/localhost/htdocs/rt/Widgets/Form/Select"
+# BEGIN BPS TAGGED BLOCK {{{
+#
+# COPYRIGHT:
+#
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
+#                                          <sales@bestpractical.com>
+#
+# (Except where explicitly superseded by other copyright notices)
+#
+#
+# LICENSE:
+#
+# This work is made available to you under the terms of Version 2 of
+# the GNU General Public License. A copy of that license should have
+# been provided with this software, but in any event can be snarfed
+# from www.gnu.org.
+#
+# This work is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
+#
+#
+# CONTRIBUTION SUBMISSION POLICY:
+#
+# (The following paragraph is not intended to limit the rights granted
+# to you to modify and distribute this software under the terms of
+# the GNU General Public License and is only of importance to you if
+# you choose to contribute your changes and enhancements to the
+# community by submitting them to Best Practical Solutions, LLC.)
+#
+# By intentionally submitting any modifications, corrections or
+# derivatives to this work, or any other work intended for use with
+# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+# you are the copyright holder for those contributions and you grant
+# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+# royalty-free, perpetual, license to use, copy, create derivative
+# works based on those contributions, and sublicense and distribute
+# those contributions and any derivatives thereof.
+#
+# END BPS TAGGED BLOCK }}}
+$m->print( '<div id="form-box-' );
+#line 51 "/var/www/localhost/htdocs/rt/Widgets/Form/Select"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( lc $Name )) );
+#line 51 "/var/www/localhost/htdocs/rt/Widgets/Form/Select"
+$m->print( '" class="widget">
+' );
+#line 52 "/var/www/localhost/htdocs/rt/Widgets/Form/Select"
+ if ( $Description ) {
+$m->print( '<span class="label">' );
+#line 53 "/var/www/localhost/htdocs/rt/Widgets/Form/Select"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $Description )) );
+#line 53 "/var/www/localhost/htdocs/rt/Widgets/Form/Select"
+$m->print( '</span>
+' );
+#line 54 "/var/www/localhost/htdocs/rt/Widgets/Form/Select"
+ }
+$m->print( '<span class="value">' );
+#line 55 "/var/www/localhost/htdocs/rt/Widgets/Form/Select"
+$m->comp(   'SELF:InputOnly', %ARGS   
+); #line 55 "/var/www/localhost/htdocs/rt/Widgets/Form/Select"
+$m->print( '</span>
+<span class="hints">' );
+#line 56 "/var/www/localhost/htdocs/rt/Widgets/Form/Select"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $Hints )) );
+#line 56 "/var/www/localhost/htdocs/rt/Widgets/Form/Select"
+$m->print( '</span>
+</div>
+' );
+#line 63 "/var/www/localhost/htdocs/rt/Widgets/Form/Select"
+$m->print( '
+' );
+#line 129 "/var/www/localhost/htdocs/rt/Widgets/Form/Select"
+$m->print( '
+' );
+;return;
+},
+'declared_args' => {
+  '$Description' => { default => ' undef,' },
+  '$Hints' => { default => ' \'\'' },
+  '$Name' => { default => undef }
+},
+'load_time' => 1434740264,
+'methods' => \%_method,
+
+)
+;

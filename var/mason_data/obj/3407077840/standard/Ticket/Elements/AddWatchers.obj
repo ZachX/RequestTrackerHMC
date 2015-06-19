@@ -1,0 +1,331 @@
+package HTML::Mason::Commands;
+use strict;
+use vars qw($m $DECODED_ARGS $r %session);
+HTML::Mason::Component::FileBased->new(
+'code' => sub {
+HTML::Mason::Exception::Params->throw
+    ( error =>
+      "Odd number of parameters passed to component expecting name/value pairs"
+    ) if @_ % 2;
+my ( $UserField, $UserOp, $UserString, $GroupField, $GroupOp, $GroupString, $PrivilegedOnly, $Ticket );
+{
+    my %pos;
+    for ( my $x = 0; $x < @_; $x += 2 )
+    {
+        $pos{ $_[$x] } = $x + 1;
+    }
+#line 139 "/var/www/localhost/htdocs/rt/Ticket/Elements/AddWatchers"
+     $UserField = exists $pos{'UserField'} ? $_[ $pos{'UserField'} ] :  'Name';
+#line 140 "/var/www/localhost/htdocs/rt/Ticket/Elements/AddWatchers"
+     $UserOp = exists $pos{'UserOp'} ? $_[ $pos{'UserOp'} ] :  '=';
+#line 141 "/var/www/localhost/htdocs/rt/Ticket/Elements/AddWatchers"
+     $UserString = exists $pos{'UserString'} ? $_[ $pos{'UserString'} ] :  undef;
+#line 142 "/var/www/localhost/htdocs/rt/Ticket/Elements/AddWatchers"
+     $GroupField = exists $pos{'GroupField'} ? $_[ $pos{'GroupField'} ] :  'Name';
+#line 143 "/var/www/localhost/htdocs/rt/Ticket/Elements/AddWatchers"
+     $GroupOp = exists $pos{'GroupOp'} ? $_[ $pos{'GroupOp'} ] :  '=';
+#line 144 "/var/www/localhost/htdocs/rt/Ticket/Elements/AddWatchers"
+     $GroupString = exists $pos{'GroupString'} ? $_[ $pos{'GroupString'} ] :  undef;
+#line 145 "/var/www/localhost/htdocs/rt/Ticket/Elements/AddWatchers"
+     $PrivilegedOnly = exists $pos{'PrivilegedOnly'} ? $_[ $pos{'PrivilegedOnly'} ] :  undef;
+#line 146 "/var/www/localhost/htdocs/rt/Ticket/Elements/AddWatchers"
+     $Ticket = exists $pos{'Ticket'} ? $_[ $pos{'Ticket'} ] :  undef;
+}
+$m->debug_hook( $m->current_comp->path ) if ( HTML::Mason::Compiler::IN_PERL_DB() );
+
+#line 108 "/var/www/localhost/htdocs/rt/Ticket/Elements/AddWatchers"
+
+my ($Users, $Groups);
+
+if ($UserString) {
+    $Users = RT::Users->new($session{'CurrentUser'});
+    $Users->Limit(FIELD => $UserField, VALUE => $UserString, OPERATOR => $UserOp, CASESENSITIVE => 0);
+    $Users->LimitToPrivileged if $PrivilegedOnly;
+}
+
+if ($GroupString) {
+    $Groups = RT::Groups->new($session{'CurrentUser'});
+    $Groups->LimitToUserDefinedGroups;
+    $Groups->Limit(FIELD => $GroupField, VALUE => $GroupString, OPERATOR => $GroupOp, CASESENSITIVE => 0);
+}
+
+my @extras;
+for my $addr ( values %{$Ticket->TransactionAddresses} ) {
+    my $is_watcher;
+    for my $type ( qw/Owner Requestor Cc AdminCc/ ) {
+        if ($Ticket->IsWatcher( Email => $addr->address, Type => $type )) {
+            $is_watcher = 1;
+            last;
+        }
+    }
+    push @extras, $addr unless $is_watcher;
+}
+
+
+#line 1 "/var/www/localhost/htdocs/rt/Ticket/Elements/AddWatchers"
+# BEGIN BPS TAGGED BLOCK {{{
+#
+# COPYRIGHT:
+#
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
+#                                          <sales@bestpractical.com>
+#
+# (Except where explicitly superseded by other copyright notices)
+#
+#
+# LICENSE:
+#
+# This work is made available to you under the terms of Version 2 of
+# the GNU General Public License. A copy of that license should have
+# been provided with this software, but in any event can be snarfed
+# from www.gnu.org.
+#
+# This work is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
+#
+#
+# CONTRIBUTION SUBMISSION POLICY:
+#
+# (The following paragraph is not intended to limit the rights granted
+# to you to modify and distribute this software under the terms of
+# the GNU General Public License and is only of importance to you if
+# you choose to contribute your changes and enhancements to the
+# community by submitting them to Best Practical Solutions, LLC.)
+#
+# By intentionally submitting any modifications, corrections or
+# derivatives to this work, or any other work intended for use with
+# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+# you are the copyright holder for those contributions and you grant
+# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+# royalty-free, perpetual, license to use, copy, create derivative
+# works based on those contributions, and sublicense and distribute
+# those contributions and any derivatives thereof.
+#
+# END BPS TAGGED BLOCK }}}
+$m->print( '<br />
+<br />
+
+' );
+#line 51 "/var/www/localhost/htdocs/rt/Ticket/Elements/AddWatchers"
+$m->comp( { content => sub {
+#line 51 "/var/www/localhost/htdocs/rt/Ticket/Elements/AddWatchers"
+$m->print( 'Add new watchers' );
+#line 51 "/var/www/localhost/htdocs/rt/Ticket/Elements/AddWatchers"
+} }, '/l'
+ );
+#line 51 "/var/www/localhost/htdocs/rt/Ticket/Elements/AddWatchers"
+$m->print( ':<br />
+
+<table>
+' );
+#line 54 "/var/www/localhost/htdocs/rt/Ticket/Elements/AddWatchers"
+ if ($Users and $Users->Count) {
+$m->print( '<tr><td>
+' );
+#line 56 "/var/www/localhost/htdocs/rt/Ticket/Elements/AddWatchers"
+$m->comp( { content => sub {
+#line 56 "/var/www/localhost/htdocs/rt/Ticket/Elements/AddWatchers"
+$m->print( 'Type' );
+#line 56 "/var/www/localhost/htdocs/rt/Ticket/Elements/AddWatchers"
+} }, '/l'
+ );
+#line 56 "/var/www/localhost/htdocs/rt/Ticket/Elements/AddWatchers"
+$m->print( '
+</td><td>
+' );
+#line 58 "/var/www/localhost/htdocs/rt/Ticket/Elements/AddWatchers"
+$m->comp( { content => sub {
+#line 58 "/var/www/localhost/htdocs/rt/Ticket/Elements/AddWatchers"
+$m->print( 'Username' );
+#line 58 "/var/www/localhost/htdocs/rt/Ticket/Elements/AddWatchers"
+} }, '/l'
+ );
+#line 58 "/var/www/localhost/htdocs/rt/Ticket/Elements/AddWatchers"
+$m->print( '
+</td></tr>
+' );
+#line 60 "/var/www/localhost/htdocs/rt/Ticket/Elements/AddWatchers"
+ while (my $u = $Users->Next ) {
+$m->print( '<tr><td>' );
+#line 61 "/var/www/localhost/htdocs/rt/Ticket/Elements/AddWatchers"
+$m->comp(  '/Elements/SelectWatcherType', Name => "Ticket-AddWatcher-Principal-". $u->PrincipalId   
+); #line 61 "/var/www/localhost/htdocs/rt/Ticket/Elements/AddWatchers"
+$m->print( '</td><td>' );
+#line 61 "/var/www/localhost/htdocs/rt/Ticket/Elements/AddWatchers"
+$m->comp(   '/Elements/ShowUser', User => $u, style=>'verbose'   
+); #line 61 "/var/www/localhost/htdocs/rt/Ticket/Elements/AddWatchers"
+$m->print( '</td></tr>
+' );
+#line 62 "/var/www/localhost/htdocs/rt/Ticket/Elements/AddWatchers"
+ }
+ }
+$m->print( '
+' );
+#line 65 "/var/www/localhost/htdocs/rt/Ticket/Elements/AddWatchers"
+ if ($Groups and $Groups->Count) {
+$m->print( '<tr><td>
+' );
+#line 67 "/var/www/localhost/htdocs/rt/Ticket/Elements/AddWatchers"
+$m->comp( { content => sub {
+#line 67 "/var/www/localhost/htdocs/rt/Ticket/Elements/AddWatchers"
+$m->print( 'Type' );
+#line 67 "/var/www/localhost/htdocs/rt/Ticket/Elements/AddWatchers"
+} }, '/l'
+ );
+#line 67 "/var/www/localhost/htdocs/rt/Ticket/Elements/AddWatchers"
+$m->print( '
+</td><td>
+' );
+#line 69 "/var/www/localhost/htdocs/rt/Ticket/Elements/AddWatchers"
+$m->comp( { content => sub {
+#line 69 "/var/www/localhost/htdocs/rt/Ticket/Elements/AddWatchers"
+$m->print( 'Group' );
+#line 69 "/var/www/localhost/htdocs/rt/Ticket/Elements/AddWatchers"
+} }, '/l'
+ );
+#line 69 "/var/www/localhost/htdocs/rt/Ticket/Elements/AddWatchers"
+$m->print( '
+</td></tr>
+' );
+#line 71 "/var/www/localhost/htdocs/rt/Ticket/Elements/AddWatchers"
+ while (my $g = $Groups->Next ) {
+$m->print( '<tr><td>' );
+#line 72 "/var/www/localhost/htdocs/rt/Ticket/Elements/AddWatchers"
+$m->comp(  '/Elements/SelectWatcherType', Name => "Ticket-AddWatcher-Principal-".$g->PrincipalId   
+); #line 72 "/var/www/localhost/htdocs/rt/Ticket/Elements/AddWatchers"
+$m->print( '</td><td>' );
+#line 72 "/var/www/localhost/htdocs/rt/Ticket/Elements/AddWatchers"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($g->Name)) );
+#line 72 "/var/www/localhost/htdocs/rt/Ticket/Elements/AddWatchers"
+$m->print( ' (' );
+#line 72 "/var/www/localhost/htdocs/rt/Ticket/Elements/AddWatchers"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($g->Description)) );
+#line 72 "/var/www/localhost/htdocs/rt/Ticket/Elements/AddWatchers"
+$m->print( ')</td></tr>
+' );
+#line 73 "/var/www/localhost/htdocs/rt/Ticket/Elements/AddWatchers"
+ }
+ }
+$m->print( '
+<tr><td>
+' );
+#line 77 "/var/www/localhost/htdocs/rt/Ticket/Elements/AddWatchers"
+$m->comp( { content => sub {
+#line 77 "/var/www/localhost/htdocs/rt/Ticket/Elements/AddWatchers"
+$m->print( 'Type' );
+#line 77 "/var/www/localhost/htdocs/rt/Ticket/Elements/AddWatchers"
+} }, '/l'
+ );
+#line 77 "/var/www/localhost/htdocs/rt/Ticket/Elements/AddWatchers"
+$m->print( '
+</td><td>
+' );
+#line 79 "/var/www/localhost/htdocs/rt/Ticket/Elements/AddWatchers"
+$m->comp( { content => sub {
+#line 79 "/var/www/localhost/htdocs/rt/Ticket/Elements/AddWatchers"
+$m->print( 'Email' );
+#line 79 "/var/www/localhost/htdocs/rt/Ticket/Elements/AddWatchers"
+} }, '/l'
+ );
+#line 79 "/var/www/localhost/htdocs/rt/Ticket/Elements/AddWatchers"
+$m->print( '
+</td></tr>
+' );
+#line 81 "/var/www/localhost/htdocs/rt/Ticket/Elements/AddWatchers"
+ my $counter = 4;
+ for my $email (@extras) {
+ $counter++;
+$m->print( '<tr><td>
+' );
+#line 85 "/var/www/localhost/htdocs/rt/Ticket/Elements/AddWatchers"
+$m->comp(  '/Elements/SelectWatcherType', Name => "WatcherTypeEmail".$counter   
+); #line 85 "/var/www/localhost/htdocs/rt/Ticket/Elements/AddWatchers"
+$m->print( '
+</td><td>
+<input type="hidden" name="WatcherAddressEmail' );
+#line 87 "/var/www/localhost/htdocs/rt/Ticket/Elements/AddWatchers"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($counter)) );
+#line 87 "/var/www/localhost/htdocs/rt/Ticket/Elements/AddWatchers"
+$m->print( '" value="' );
+#line 87 "/var/www/localhost/htdocs/rt/Ticket/Elements/AddWatchers"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($email->format)) );
+#line 87 "/var/www/localhost/htdocs/rt/Ticket/Elements/AddWatchers"
+$m->print( '">
+' );
+#line 88 "/var/www/localhost/htdocs/rt/Ticket/Elements/AddWatchers"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($email->format)) );
+#line 88 "/var/www/localhost/htdocs/rt/Ticket/Elements/AddWatchers"
+$m->print( '
+</td></tr>
+' );
+#line 90 "/var/www/localhost/htdocs/rt/Ticket/Elements/AddWatchers"
+ }
+$m->print( '<tr><td>
+' );
+#line 92 "/var/www/localhost/htdocs/rt/Ticket/Elements/AddWatchers"
+$m->comp(  '/Elements/SelectWatcherType', Name => "WatcherTypeEmail1"   
+); #line 92 "/var/www/localhost/htdocs/rt/Ticket/Elements/AddWatchers"
+$m->print( '
+</td><td>
+' );
+#line 94 "/var/www/localhost/htdocs/rt/Ticket/Elements/AddWatchers"
+$m->comp(   '/Elements/EmailInput', Name => 'WatcherAddressEmail1', Size => '20'   
+); #line 94 "/var/www/localhost/htdocs/rt/Ticket/Elements/AddWatchers"
+$m->print( '
+</td></tr>
+<tr><td>
+' );
+#line 97 "/var/www/localhost/htdocs/rt/Ticket/Elements/AddWatchers"
+$m->comp(  '/Elements/SelectWatcherType', Name => "WatcherTypeEmail2"   
+); #line 97 "/var/www/localhost/htdocs/rt/Ticket/Elements/AddWatchers"
+$m->print( ' 
+</td><td>
+' );
+#line 99 "/var/www/localhost/htdocs/rt/Ticket/Elements/AddWatchers"
+$m->comp(   '/Elements/EmailInput', Name => 'WatcherAddressEmail2', Size => '20'   
+); #line 99 "/var/www/localhost/htdocs/rt/Ticket/Elements/AddWatchers"
+$m->print( '
+</td></tr>
+<tr><td>
+' );
+#line 102 "/var/www/localhost/htdocs/rt/Ticket/Elements/AddWatchers"
+$m->comp(  '/Elements/SelectWatcherType', Name => "WatcherTypeEmail3"   
+); #line 102 "/var/www/localhost/htdocs/rt/Ticket/Elements/AddWatchers"
+$m->print( '
+</td><td>
+' );
+#line 104 "/var/www/localhost/htdocs/rt/Ticket/Elements/AddWatchers"
+$m->comp(   '/Elements/EmailInput', Name => 'WatcherAddressEmail3', Size => '20'   
+); #line 104 "/var/www/localhost/htdocs/rt/Ticket/Elements/AddWatchers"
+$m->print( '
+</td></tr>
+</table>
+
+' );
+#line 137 "/var/www/localhost/htdocs/rt/Ticket/Elements/AddWatchers"
+$m->print( '
+' );
+;return;
+},
+'declared_args' => {
+  '$GroupField' => { default => ' \'Name\'' },
+  '$GroupOp' => { default => ' \'=\'' },
+  '$GroupString' => { default => ' undef' },
+  '$PrivilegedOnly' => { default => ' undef' },
+  '$Ticket' => { default => ' undef' },
+  '$UserField' => { default => ' \'Name\'' },
+  '$UserOp' => { default => ' \'=\'' },
+  '$UserString' => { default => ' undef' }
+},
+'load_time' => 1433312862,
+
+)
+;

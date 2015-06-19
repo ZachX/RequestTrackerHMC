@@ -1,0 +1,286 @@
+package HTML::Mason::Commands;
+use strict;
+use vars qw($m $DECODED_ARGS $r %session);
+HTML::Mason::Component::FileBased->new(
+'code' => sub {
+HTML::Mason::Exception::Params->throw
+    ( error =>
+      "Odd number of parameters passed to component expecting name/value pairs"
+    ) if @_ % 2;
+my %ARGS = @_;
+my ( $Object, $CustomFields, $ARGSRef );
+{
+    my %pos;
+    for ( my $x = 0; $x < @_; $x += 2 )
+    {
+        $pos{ $_[$x] } = $x + 1;
+    }
+#line 49 "/var/www/localhost/htdocs/rt/Elements/AddLinks"
+     $Object = exists $pos{'Object'} ? $_[ $pos{'Object'} ] :  undef;
+#line 50 "/var/www/localhost/htdocs/rt/Elements/AddLinks"
+     $CustomFields = exists $pos{'CustomFields'} ? $_[ $pos{'CustomFields'} ] :  undef;
+#line 51 "/var/www/localhost/htdocs/rt/Elements/AddLinks"
+     $ARGSRef = exists $pos{'ARGSRef'} ? $_[ $pos{'ARGSRef'} ] :  $DECODED_ARGS;
+}
+$m->debug_hook( $m->current_comp->path ) if ( HTML::Mason::Compiler::IN_PERL_DB() );
+
+#line 53 "/var/www/localhost/htdocs/rt/Elements/AddLinks"
+
+my $id = ($Object and $Object->id)
+    ? $Object->id
+    : "new";
+
+my $exclude = qq| data-autocomplete="Tickets" data-autocomplete-multiple="1"|;
+$exclude .= qq| data-autocomplete-exclude="$id"| if $Object->id;
+#line 1 "/var/www/localhost/htdocs/rt/Elements/AddLinks"
+# BEGIN BPS TAGGED BLOCK {{{
+#
+# COPYRIGHT:
+#
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
+#                                          <sales@bestpractical.com>
+#
+# (Except where explicitly superseded by other copyright notices)
+#
+#
+# LICENSE:
+#
+# This work is made available to you under the terms of Version 2 of
+# the GNU General Public License. A copy of that license should have
+# been provided with this software, but in any event can be snarfed
+# from www.gnu.org.
+#
+# This work is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
+#
+#
+# CONTRIBUTION SUBMISSION POLICY:
+#
+# (The following paragraph is not intended to limit the rights granted
+# to you to modify and distribute this software under the terms of
+# the GNU General Public License and is only of importance to you if
+# you choose to contribute your changes and enhancements to the
+# community by submitting them to Best Practical Solutions, LLC.)
+#
+# By intentionally submitting any modifications, corrections or
+# derivatives to this work, or any other work intended for use with
+# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+# you are the copyright holder for those contributions and you grant
+# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+# royalty-free, perpetual, license to use, copy, create derivative
+# works based on those contributions, and sublicense and distribute
+# those contributions and any derivatives thereof.
+#
+# END BPS TAGGED BLOCK }}}
+ if (ref($Object) eq 'RT::Ticket') {
+$m->print( '<i>' );
+#line 62 "/var/www/localhost/htdocs/rt/Elements/AddLinks"
+$m->comp( { content => sub {
+#line 62 "/var/www/localhost/htdocs/rt/Elements/AddLinks"
+$m->print( 'Enter tickets or URIs to link tickets to. Separate multiple entries with spaces.' );
+#line 62 "/var/www/localhost/htdocs/rt/Elements/AddLinks"
+} }, '/l'
+ );
+#line 62 "/var/www/localhost/htdocs/rt/Elements/AddLinks"
+$m->print( '
+<br />' );
+#line 63 "/var/www/localhost/htdocs/rt/Elements/AddLinks"
+$m->comp( { content => sub {
+#line 63 "/var/www/localhost/htdocs/rt/Elements/AddLinks"
+$m->print( 'You may enter links to Articles as "a:###", where ### represents the number of the Article.' );
+#line 63 "/var/www/localhost/htdocs/rt/Elements/AddLinks"
+} }, '/l'
+ );
+#line 63 "/var/www/localhost/htdocs/rt/Elements/AddLinks"
+$m->print( '
+' );
+#line 64 "/var/www/localhost/htdocs/rt/Elements/AddLinks"
+ $m->callback( CallbackName => 'ExtraLinkInstructions' );
+$m->print( '</i><br />
+' );
+#line 66 "/var/www/localhost/htdocs/rt/Elements/AddLinks"
+ } elsif (ref($Object) eq 'RT::Queue') {
+$m->print( '<i>' );
+#line 67 "/var/www/localhost/htdocs/rt/Elements/AddLinks"
+$m->comp( { content => sub {
+#line 67 "/var/www/localhost/htdocs/rt/Elements/AddLinks"
+$m->print( 'Enter queues or URIs to link queues to. Separate multiple entries with spaces.' );
+#line 67 "/var/www/localhost/htdocs/rt/Elements/AddLinks"
+} }, '/l'
+ );
+#line 67 "/var/www/localhost/htdocs/rt/Elements/AddLinks"
+$m->print( '
+</i><br />
+' );
+#line 69 "/var/www/localhost/htdocs/rt/Elements/AddLinks"
+ } else {
+$m->print( '<i>' );
+#line 70 "/var/www/localhost/htdocs/rt/Elements/AddLinks"
+$m->comp( { content => sub {
+#line 70 "/var/www/localhost/htdocs/rt/Elements/AddLinks"
+$m->print( 'Enter objects or URIs to link objects to. Separate multiple entries with spaces.' );
+#line 70 "/var/www/localhost/htdocs/rt/Elements/AddLinks"
+} }, '/l'
+ );
+#line 70 "/var/www/localhost/htdocs/rt/Elements/AddLinks"
+$m->print( '</i><br />
+' );
+#line 71 "/var/www/localhost/htdocs/rt/Elements/AddLinks"
+ }
+$m->print( '<table>
+  <tr>
+    <td class="label">' );
+#line 74 "/var/www/localhost/htdocs/rt/Elements/AddLinks"
+$m->comp(   'ShowRelationLabel', Object => $Object, Label => loc('Depends on').':', Relation => 'DependsOn'   
+); #line 74 "/var/www/localhost/htdocs/rt/Elements/AddLinks"
+$m->print( '</td>
+    <td class="entry"><input name="' );
+#line 75 "/var/www/localhost/htdocs/rt/Elements/AddLinks"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($id)) );
+#line 75 "/var/www/localhost/htdocs/rt/Elements/AddLinks"
+$m->print( '-DependsOn" value="' );
+#line 75 "/var/www/localhost/htdocs/rt/Elements/AddLinks"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $ARGSRef->{"$id-DependsOn"} || '' )) );
+#line 75 "/var/www/localhost/htdocs/rt/Elements/AddLinks"
+$m->print( '" ' );
+#line 75 "/var/www/localhost/htdocs/rt/Elements/AddLinks"
+$m->print(  $exclude );
+#line 75 "/var/www/localhost/htdocs/rt/Elements/AddLinks"
+$m->print( '/></td>
+  </tr>
+  <tr>
+    <td class="label">' );
+#line 78 "/var/www/localhost/htdocs/rt/Elements/AddLinks"
+$m->comp(   'ShowRelationLabel', Object => $Object, Label => loc('Depended on by').':', Relation => 'DependedOnBy'   
+); #line 78 "/var/www/localhost/htdocs/rt/Elements/AddLinks"
+$m->print( '</td>
+    <td class="entry"><input name="DependsOn-' );
+#line 79 "/var/www/localhost/htdocs/rt/Elements/AddLinks"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($id)) );
+#line 79 "/var/www/localhost/htdocs/rt/Elements/AddLinks"
+$m->print( '" value="' );
+#line 79 "/var/www/localhost/htdocs/rt/Elements/AddLinks"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $ARGSRef->{"DependsOn-$id"} || '' )) );
+#line 79 "/var/www/localhost/htdocs/rt/Elements/AddLinks"
+$m->print( '" ' );
+#line 79 "/var/www/localhost/htdocs/rt/Elements/AddLinks"
+$m->print(  $exclude );
+#line 79 "/var/www/localhost/htdocs/rt/Elements/AddLinks"
+$m->print( '/></td>
+  </tr>
+  <tr>
+    <td class="label">' );
+#line 82 "/var/www/localhost/htdocs/rt/Elements/AddLinks"
+$m->comp(   'ShowRelationLabel', Object => $Object, Label => loc('Parents').':', Relation => 'Parents'   
+); #line 82 "/var/www/localhost/htdocs/rt/Elements/AddLinks"
+$m->print( '</td>
+    <td class="entry"><input name="' );
+#line 83 "/var/www/localhost/htdocs/rt/Elements/AddLinks"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($id)) );
+#line 83 "/var/www/localhost/htdocs/rt/Elements/AddLinks"
+$m->print( '-MemberOf" value="' );
+#line 83 "/var/www/localhost/htdocs/rt/Elements/AddLinks"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $ARGSRef->{"$id-MemberOf"} || '' )) );
+#line 83 "/var/www/localhost/htdocs/rt/Elements/AddLinks"
+$m->print( '" ' );
+#line 83 "/var/www/localhost/htdocs/rt/Elements/AddLinks"
+$m->print(  $exclude );
+#line 83 "/var/www/localhost/htdocs/rt/Elements/AddLinks"
+$m->print( '/></td>
+  </tr>
+  <tr>
+    <td class="label">' );
+#line 86 "/var/www/localhost/htdocs/rt/Elements/AddLinks"
+$m->comp(   'ShowRelationLabel', Object => $Object, Label => loc('Children').':', Relation => 'Children'   
+); #line 86 "/var/www/localhost/htdocs/rt/Elements/AddLinks"
+$m->print( '</td>
+    <td class="entry"> <input name="MemberOf-' );
+#line 87 "/var/www/localhost/htdocs/rt/Elements/AddLinks"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($id)) );
+#line 87 "/var/www/localhost/htdocs/rt/Elements/AddLinks"
+$m->print( '" value="' );
+#line 87 "/var/www/localhost/htdocs/rt/Elements/AddLinks"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $ARGSRef->{"MemberOf-$id"} || '' )) );
+#line 87 "/var/www/localhost/htdocs/rt/Elements/AddLinks"
+$m->print( '" ' );
+#line 87 "/var/www/localhost/htdocs/rt/Elements/AddLinks"
+$m->print(  $exclude );
+#line 87 "/var/www/localhost/htdocs/rt/Elements/AddLinks"
+$m->print( '/></td>
+  </tr>
+  <tr>
+    <td class="label">' );
+#line 90 "/var/www/localhost/htdocs/rt/Elements/AddLinks"
+$m->comp(   'ShowRelationLabel', Object => $Object, Label => loc('Refers to').':', Relation => 'RefersTo'   
+); #line 90 "/var/www/localhost/htdocs/rt/Elements/AddLinks"
+$m->print( '</td>
+    <td class="entry"><input name="' );
+#line 91 "/var/www/localhost/htdocs/rt/Elements/AddLinks"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($id)) );
+#line 91 "/var/www/localhost/htdocs/rt/Elements/AddLinks"
+$m->print( '-RefersTo" value="' );
+#line 91 "/var/www/localhost/htdocs/rt/Elements/AddLinks"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $ARGSRef->{"$id-RefersTo"} || '' )) );
+#line 91 "/var/www/localhost/htdocs/rt/Elements/AddLinks"
+$m->print( '" ' );
+#line 91 "/var/www/localhost/htdocs/rt/Elements/AddLinks"
+$m->print(  $exclude );
+#line 91 "/var/www/localhost/htdocs/rt/Elements/AddLinks"
+$m->print( '/></td>
+  </tr>
+  <tr>
+    <td class="label">' );
+#line 94 "/var/www/localhost/htdocs/rt/Elements/AddLinks"
+$m->comp(   'ShowRelationLabel', Object => $Object, Label => loc('Referred to by').':', Relation => 'ReferredToBy'   
+); #line 94 "/var/www/localhost/htdocs/rt/Elements/AddLinks"
+$m->print( '</td>
+    <td class="entry"> <input name="RefersTo-' );
+#line 95 "/var/www/localhost/htdocs/rt/Elements/AddLinks"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($id)) );
+#line 95 "/var/www/localhost/htdocs/rt/Elements/AddLinks"
+$m->print( '" value="' );
+#line 95 "/var/www/localhost/htdocs/rt/Elements/AddLinks"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $ARGSRef->{"RefersTo-$id"} || '' )) );
+#line 95 "/var/www/localhost/htdocs/rt/Elements/AddLinks"
+$m->print( '" ' );
+#line 95 "/var/www/localhost/htdocs/rt/Elements/AddLinks"
+$m->print(  $exclude );
+#line 95 "/var/www/localhost/htdocs/rt/Elements/AddLinks"
+$m->print( '/></td>
+  </tr>
+  ' );
+#line 97 "/var/www/localhost/htdocs/rt/Elements/AddLinks"
+$m->comp(   '/Elements/EditCustomFields',
+        Object          => $Object,
+        Grouping        => 'Links',
+        InTable         => 1,
+        ($CustomFields
+            ? (CustomFields => $CustomFields)
+            : ()),
+          
+); #line 104 "/var/www/localhost/htdocs/rt/Elements/AddLinks"
+$m->print( '
+' );
+#line 105 "/var/www/localhost/htdocs/rt/Elements/AddLinks"
+ $m->callback( CallbackName => 'NewLink' );
+$m->print( '</table>
+' );
+;return;
+},
+'declared_args' => {
+  '$ARGSRef' => { default => ' $DECODED_ARGS' },
+  '$CustomFields' => { default => ' undef' },
+  '$Object' => { default => ' undef' }
+},
+'load_time' => 1434737749,
+
+)
+;

@@ -1,0 +1,415 @@
+package HTML::Mason::Commands;
+use strict;
+use vars qw($m $DECODED_ARGS $r %session);
+HTML::Mason::Component::FileBased->new(
+'code' => sub {
+HTML::Mason::Exception::Params->throw
+    ( error =>
+      "Odd number of parameters passed to component expecting name/value pairs"
+    ) if @_ % 2;
+my %ARGS = @_;
+my ( $OnlySearchForPeople, $OnlySearchForGroup, $UserField, $UserOp, $UserString, $GroupField, $GroupOp, $GroupString, $Type, $id );
+{
+    my %pos;
+    for ( my $x = 0; $x < @_; $x += 2 )
+    {
+        $pos{ $_[$x] } = $x + 1;
+    }
+#line 189 "/var/www/localhost/htdocs/rt/Admin/Queues/People.html"
+     $OnlySearchForPeople = exists $pos{'OnlySearchForPeople'} ? $_[ $pos{'OnlySearchForPeople'} ] :  undef;
+#line 190 "/var/www/localhost/htdocs/rt/Admin/Queues/People.html"
+     $OnlySearchForGroup = exists $pos{'OnlySearchForGroup'} ? $_[ $pos{'OnlySearchForGroup'} ] :  undef;
+#line 191 "/var/www/localhost/htdocs/rt/Admin/Queues/People.html"
+     $UserField = exists $pos{'UserField'} ? $_[ $pos{'UserField'} ] :  'Name';
+#line 192 "/var/www/localhost/htdocs/rt/Admin/Queues/People.html"
+     $UserOp = exists $pos{'UserOp'} ? $_[ $pos{'UserOp'} ] :  '=';
+#line 193 "/var/www/localhost/htdocs/rt/Admin/Queues/People.html"
+     $UserString = exists $pos{'UserString'} ? $_[ $pos{'UserString'} ] :  undef;
+#line 194 "/var/www/localhost/htdocs/rt/Admin/Queues/People.html"
+     $GroupField = exists $pos{'GroupField'} ? $_[ $pos{'GroupField'} ] :  'Name';
+#line 195 "/var/www/localhost/htdocs/rt/Admin/Queues/People.html"
+     $GroupOp = exists $pos{'GroupOp'} ? $_[ $pos{'GroupOp'} ] :  '=';
+#line 196 "/var/www/localhost/htdocs/rt/Admin/Queues/People.html"
+     $GroupString = exists $pos{'GroupString'} ? $_[ $pos{'GroupString'} ] :  undef;
+#line 197 "/var/www/localhost/htdocs/rt/Admin/Queues/People.html"
+     $Type = exists $pos{'Type'} ? $_[ $pos{'Type'} ] :  undef;
+#line 198 "/var/www/localhost/htdocs/rt/Admin/Queues/People.html"
+     $id = exists $pos{'id'} ? $_[ $pos{'id'} ] :  undef;
+}
+$m->debug_hook( $m->current_comp->path ) if ( HTML::Mason::Compiler::IN_PERL_DB() );
+
+#line 127 "/var/www/localhost/htdocs/rt/Admin/Queues/People.html"
+
+
+my ($field, @results, $User, $Users, $Groups, $watcher, $user_msg, $group_msg);
+
+my $QueueObj = RT::Queue->new($session{'CurrentUser'});
+$QueueObj->Load($id) || Abort(loc("Couldn't load queue", $id));
+
+unless ($OnlySearchForPeople or $OnlySearchForGroup) {
+# Delete deletable watchers
+
+    foreach my $key (keys %ARGS) {
+            my $id = $QueueObj->Id;
+
+        if (($key =~ /^Queue-$id-DeleteWatcher-Type-(.*?)-Principal-(\d*)$/)) {;
+            my ($code, $msg) = $QueueObj->DeleteWatcher(Type => $1,
+                                                        PrincipalId => $2);
+            push @results, $msg;
+        }
+    }
+
+# Add new watchers
+    foreach my $key (keys %ARGS) {
+        my $type = $ARGS{$key};
+
+        next unless $key =~ /^Queue-AddWatcher-Principal-(\d*)$/;
+        my $id = $1;
+
+        next unless RT::Queue->IsManageableRoleGroupType($type);
+
+        my ($code, $msg) = $QueueObj->AddWatcher(
+            Type => $type,
+            PrincipalId => $id,
+        );
+        push @results, $msg;
+    }
+}
+ 
+
+if ( $ARGS{'UserString'} ) {
+    $Users = RT::Users->new( $session{'CurrentUser'} );
+    $Users->Limit( FIELD    => $ARGS{'UserField'},
+                   VALUE    => $ARGS{'UserString'},
+                   OPERATOR => $ARGS{'UserOp'}
+                 );
+} else {
+    $user_msg = loc("No principals selected.");
+    }
+
+if ( $ARGS{'GroupString'} ) {
+    $Groups = RT::Groups->new( $session{'CurrentUser'} );
+    $Groups->LimitToUserDefinedGroups;
+    $Groups->Limit( FIELD    => $ARGS{'GroupField'},
+                    VALUE    => $ARGS{'GroupString'},
+                    OPERATOR => $ARGS{'GroupOp'}
+                  );
+} else {
+    $group_msg = loc("No principals selected.");
+}
+my $title = loc('People related to queue [_1]', $QueueObj->Name);
+#line 1 "/var/www/localhost/htdocs/rt/Admin/Queues/People.html"
+# BEGIN BPS TAGGED BLOCK {{{
+#
+# COPYRIGHT:
+#
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
+#                                          <sales@bestpractical.com>
+#
+# (Except where explicitly superseded by other copyright notices)
+#
+#
+# LICENSE:
+#
+# This work is made available to you under the terms of Version 2 of
+# the GNU General Public License. A copy of that license should have
+# been provided with this software, but in any event can be snarfed
+# from www.gnu.org.
+#
+# This work is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
+#
+#
+# CONTRIBUTION SUBMISSION POLICY:
+#
+# (The following paragraph is not intended to limit the rights granted
+# to you to modify and distribute this software under the terms of
+# the GNU General Public License and is only of importance to you if
+# you choose to contribute your changes and enhancements to the
+# community by submitting them to Best Practical Solutions, LLC.)
+#
+# By intentionally submitting any modifications, corrections or
+# derivatives to this work, or any other work intended for use with
+# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+# you are the copyright holder for those contributions and you grant
+# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+# royalty-free, perpetual, license to use, copy, create derivative
+# works based on those contributions, and sublicense and distribute
+# those contributions and any derivatives thereof.
+#
+# END BPS TAGGED BLOCK }}}
+$m->comp(   '/Elements/Header', Title => $title   
+); #line 48 "/var/www/localhost/htdocs/rt/Admin/Queues/People.html"
+$m->print( '
+
+' );
+#line 50 "/var/www/localhost/htdocs/rt/Admin/Queues/People.html"
+$m->comp(   '/Elements/Tabs'  
+); #line 50 "/var/www/localhost/htdocs/rt/Admin/Queues/People.html"
+$m->print( '
+
+' );
+#line 52 "/var/www/localhost/htdocs/rt/Admin/Queues/People.html"
+$m->comp(   '/Elements/ListActions', actions => \@results   
+); #line 52 "/var/www/localhost/htdocs/rt/Admin/Queues/People.html"
+$m->print( '
+
+ 
+<form method="post" action="People.html">
+<input type="hidden" class="hidden" name="id" value="' );
+#line 56 "/var/www/localhost/htdocs/rt/Admin/Queues/People.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($QueueObj->Id)) );
+#line 56 "/var/www/localhost/htdocs/rt/Admin/Queues/People.html"
+$m->print( '" />
+
+<table width="100%">
+<tr>
+<td valign="top" >
+
+<h3>' );
+#line 62 "/var/www/localhost/htdocs/rt/Admin/Queues/People.html"
+$m->comp( { content => sub {
+#line 62 "/var/www/localhost/htdocs/rt/Admin/Queues/People.html"
+$m->print( 'Current watchers' );
+#line 62 "/var/www/localhost/htdocs/rt/Admin/Queues/People.html"
+} }, '/l'
+ );
+#line 62 "/var/www/localhost/htdocs/rt/Admin/Queues/People.html"
+$m->print( '</h3>
+
+' );
+#line 64 "/var/www/localhost/htdocs/rt/Admin/Queues/People.html"
+ for my $Name (RT::Queue->ManageableRoleGroupTypes) {
+$m->comp(   '/Admin/Elements/EditQueueWatcherGroup', Label => loc($Name), QueueObj => $QueueObj, Watchers => $QueueObj->$Name   
+); #line 65 "/var/www/localhost/htdocs/rt/Admin/Queues/People.html"
+$m->print( '
+' );
+#line 66 "/var/www/localhost/htdocs/rt/Admin/Queues/People.html"
+ }
+$m->print( '
+' );
+#line 68 "/var/www/localhost/htdocs/rt/Admin/Queues/People.html"
+ $m->callback(CallbackName => 'CurrentWatchers', QueueObj => $QueueObj);
+$m->print( '
+</td>
+<td valign="top">
+<h3>' );
+#line 72 "/var/www/localhost/htdocs/rt/Admin/Queues/People.html"
+$m->comp( { content => sub {
+#line 72 "/var/www/localhost/htdocs/rt/Admin/Queues/People.html"
+$m->print( 'New watchers' );
+#line 72 "/var/www/localhost/htdocs/rt/Admin/Queues/People.html"
+} }, '/l'
+ );
+#line 72 "/var/www/localhost/htdocs/rt/Admin/Queues/People.html"
+$m->print( '</h3>
+
+' );
+#line 74 "/var/www/localhost/htdocs/rt/Admin/Queues/People.html"
+$m->comp( { content => sub {
+#line 74 "/var/www/localhost/htdocs/rt/Admin/Queues/People.html"
+$m->print( 'Find people whose' );
+#line 74 "/var/www/localhost/htdocs/rt/Admin/Queues/People.html"
+} }, '/l'
+ );
+#line 74 "/var/www/localhost/htdocs/rt/Admin/Queues/People.html"
+$m->print( '<br />
+' );
+#line 75 "/var/www/localhost/htdocs/rt/Admin/Queues/People.html"
+$m->comp(   '/Elements/SelectUsers'  
+); #line 75 "/var/www/localhost/htdocs/rt/Admin/Queues/People.html"
+$m->print( '
+<input type="submit" class="button" name="OnlySearchForPeople" value="' );
+#line 76 "/var/www/localhost/htdocs/rt/Admin/Queues/People.html"
+$m->comp( { content => sub {
+#line 76 "/var/www/localhost/htdocs/rt/Admin/Queues/People.html"
+$m->print( 'Go!' );
+#line 76 "/var/www/localhost/htdocs/rt/Admin/Queues/People.html"
+} }, '/l'
+ );
+#line 76 "/var/www/localhost/htdocs/rt/Admin/Queues/People.html"
+$m->print( '" />
+<br />
+' );
+#line 78 "/var/www/localhost/htdocs/rt/Admin/Queues/People.html"
+$m->comp( { content => sub {
+#line 78 "/var/www/localhost/htdocs/rt/Admin/Queues/People.html"
+$m->print( 'Find groups whose' );
+#line 78 "/var/www/localhost/htdocs/rt/Admin/Queues/People.html"
+} }, '/l'
+ );
+#line 78 "/var/www/localhost/htdocs/rt/Admin/Queues/People.html"
+$m->print( '<br />
+' );
+#line 79 "/var/www/localhost/htdocs/rt/Admin/Queues/People.html"
+$m->comp(   '/Elements/SelectGroups'  
+); #line 79 "/var/www/localhost/htdocs/rt/Admin/Queues/People.html"
+$m->print( '
+<input type="submit" class="button" name="OnlySearchForGroup" value="' );
+#line 80 "/var/www/localhost/htdocs/rt/Admin/Queues/People.html"
+$m->comp( { content => sub {
+#line 80 "/var/www/localhost/htdocs/rt/Admin/Queues/People.html"
+$m->print( 'Go!' );
+#line 80 "/var/www/localhost/htdocs/rt/Admin/Queues/People.html"
+} }, '/l'
+ );
+#line 80 "/var/www/localhost/htdocs/rt/Admin/Queues/People.html"
+$m->print( '" />
+
+<p>
+' );
+#line 83 "/var/www/localhost/htdocs/rt/Admin/Queues/People.html"
+$m->comp( { content => sub {
+#line 83 "/var/www/localhost/htdocs/rt/Admin/Queues/People.html"
+$m->print( 'Add new watchers' );
+#line 83 "/var/www/localhost/htdocs/rt/Admin/Queues/People.html"
+} }, '/l'
+ );
+#line 83 "/var/www/localhost/htdocs/rt/Admin/Queues/People.html"
+$m->print( ':<br />
+<p>
+<strong>' );
+#line 85 "/var/www/localhost/htdocs/rt/Admin/Queues/People.html"
+$m->comp( { content => sub {
+#line 85 "/var/www/localhost/htdocs/rt/Admin/Queues/People.html"
+$m->print( 'Users' );
+#line 85 "/var/www/localhost/htdocs/rt/Admin/Queues/People.html"
+} }, '/l'
+ );
+#line 85 "/var/www/localhost/htdocs/rt/Admin/Queues/People.html"
+$m->print( '</strong>
+' );
+#line 86 "/var/www/localhost/htdocs/rt/Admin/Queues/People.html"
+ if ($user_msg) {
+$m->print( '<br />
+<em>' );
+#line 88 "/var/www/localhost/htdocs/rt/Admin/Queues/People.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($user_msg)) );
+#line 88 "/var/www/localhost/htdocs/rt/Admin/Queues/People.html"
+$m->print( '</em>
+' );
+#line 89 "/var/www/localhost/htdocs/rt/Admin/Queues/People.html"
+ } elsif ($Users) {
+$m->print( '<ul>
+' );
+#line 91 "/var/www/localhost/htdocs/rt/Admin/Queues/People.html"
+ while (my $u = $Users->Next ) {
+$m->print( '<li>' );
+#line 92 "/var/www/localhost/htdocs/rt/Admin/Queues/People.html"
+$m->comp(   '/Elements/SelectWatcherType',
+    Scope => 'queue',
+    Name => "Queue-AddWatcher-Principal-". $u->PrincipalId,
+  
+); #line 95 "/var/www/localhost/htdocs/rt/Admin/Queues/People.html"
+$m->print( '
+' );
+#line 96 "/var/www/localhost/htdocs/rt/Admin/Queues/People.html"
+$m->comp(   '/Elements/ShowUser', User => $u   
+); #line 96 "/var/www/localhost/htdocs/rt/Admin/Queues/People.html"
+$m->print( '</li>
+' );
+#line 97 "/var/www/localhost/htdocs/rt/Admin/Queues/People.html"
+ }
+$m->print( '</ul>
+' );
+#line 99 "/var/www/localhost/htdocs/rt/Admin/Queues/People.html"
+ }
+$m->print( '
+<p>
+<strong>' );
+#line 102 "/var/www/localhost/htdocs/rt/Admin/Queues/People.html"
+$m->comp( { content => sub {
+#line 102 "/var/www/localhost/htdocs/rt/Admin/Queues/People.html"
+$m->print( 'Groups' );
+#line 102 "/var/www/localhost/htdocs/rt/Admin/Queues/People.html"
+} }, '/l'
+ );
+#line 102 "/var/www/localhost/htdocs/rt/Admin/Queues/People.html"
+$m->print( '</strong>
+
+' );
+#line 104 "/var/www/localhost/htdocs/rt/Admin/Queues/People.html"
+ if ($group_msg) {
+$m->print( '<br />
+<em>' );
+#line 106 "/var/www/localhost/htdocs/rt/Admin/Queues/People.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($group_msg)) );
+#line 106 "/var/www/localhost/htdocs/rt/Admin/Queues/People.html"
+$m->print( '</em>
+' );
+#line 107 "/var/www/localhost/htdocs/rt/Admin/Queues/People.html"
+ } elsif ($Groups) {
+$m->print( '<ul>
+' );
+#line 109 "/var/www/localhost/htdocs/rt/Admin/Queues/People.html"
+ while (my $g = $Groups->Next ) {
+$m->print( '<li>' );
+#line 110 "/var/www/localhost/htdocs/rt/Admin/Queues/People.html"
+$m->comp(  '/Elements/SelectWatcherType', Scope=>'queue', Name =>
+"Queue-AddWatcher-Principal-".$g->PrincipalId   
+); #line 111 "/var/www/localhost/htdocs/rt/Admin/Queues/People.html"
+$m->print( ' ' );
+#line 111 "/var/www/localhost/htdocs/rt/Admin/Queues/People.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($g->Name)) );
+#line 111 "/var/www/localhost/htdocs/rt/Admin/Queues/People.html"
+$m->print( '
+(' );
+#line 112 "/var/www/localhost/htdocs/rt/Admin/Queues/People.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($g->Description)) );
+#line 112 "/var/www/localhost/htdocs/rt/Admin/Queues/People.html"
+$m->print( ')
+' );
+#line 113 "/var/www/localhost/htdocs/rt/Admin/Queues/People.html"
+ }
+$m->print( '</ul>
+' );
+#line 115 "/var/www/localhost/htdocs/rt/Admin/Queues/People.html"
+ }
+$m->print( '
+</td>
+</tr>
+</table>
+
+
+
+
+' );
+#line 124 "/var/www/localhost/htdocs/rt/Admin/Queues/People.html"
+$m->comp(   '/Elements/Submit', Label => loc('Save Changes'), Caption => loc("If you've updated anything above, be sure to"), Reset => 1   
+); #line 124 "/var/www/localhost/htdocs/rt/Admin/Queues/People.html"
+$m->print( '
+</form>
+
+' );
+#line 187 "/var/www/localhost/htdocs/rt/Admin/Queues/People.html"
+$m->print( '
+' );
+#line 200 "/var/www/localhost/htdocs/rt/Admin/Queues/People.html"
+$m->print( '
+' );
+;return;
+},
+'declared_args' => {
+  '$GroupField' => { default => ' \'Name\'' },
+  '$GroupOp' => { default => ' \'=\'' },
+  '$GroupString' => { default => ' undef' },
+  '$OnlySearchForGroup' => { default => ' undef' },
+  '$OnlySearchForPeople' => { default => ' undef' },
+  '$Type' => { default => ' undef' },
+  '$UserField' => { default => ' \'Name\'' },
+  '$UserOp' => { default => ' \'=\'' },
+  '$UserString' => { default => ' undef' },
+  '$id' => { default => ' undef' }
+},
+'load_time' => 1434746351,
+
+)
+;

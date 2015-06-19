@@ -1,0 +1,163 @@
+package HTML::Mason::Commands;
+use strict;
+use vars qw($m $DECODED_ARGS $r %session);
+HTML::Mason::Component::FileBased->new(
+'code' => sub {
+HTML::Mason::Exception::Params->throw
+    ( error =>
+      "Odd number of parameters passed to component expecting name/value pairs"
+    ) if @_ % 2;
+my ( $UserField, $UserOp, $UserString, $Fields );
+{
+    my %pos;
+    for ( my $x = 0; $x < @_; $x += 2 )
+    {
+        $pos{ $_[$x] } = $x + 1;
+    }
+#line 77 "/var/www/localhost/htdocs/rt/Elements/SelectUsers"
+     $UserField = exists $pos{'UserField'} ? $_[ $pos{'UserField'} ] :  '';
+#line 78 "/var/www/localhost/htdocs/rt/Elements/SelectUsers"
+     $UserOp = exists $pos{'UserOp'} ? $_[ $pos{'UserOp'} ] :  '';
+#line 79 "/var/www/localhost/htdocs/rt/Elements/SelectUsers"
+     $UserString = exists $pos{'UserString'} ? $_[ $pos{'UserString'} ] :  '';
+#line 80 "/var/www/localhost/htdocs/rt/Elements/SelectUsers"
+     $Fields = exists $pos{'Fields'} ? $_[ $pos{'Fields'} ] :  undef;
+}
+$m->debug_hook( $m->current_comp->path ) if ( HTML::Mason::Compiler::IN_PERL_DB() );
+
+#line 59 "/var/www/localhost/htdocs/rt/Elements/SelectUsers"
+
+my $CFs = RT::CustomFields->new($session{'CurrentUser'});
+$CFs->LimitToChildType('RT::User');
+$CFs->OrderBy( FIELD => 'Name' );
+
+my @fields = RT::User->BasicColumns;
+
+if ( $Fields and ref $Fields eq 'ARRAY' ) {
+    if ( ref $Fields->[0] eq 'ARRAY' ) {
+        @fields = @$Fields;
+    }
+    else {
+        # make the name equal the label
+        @fields = [ @$Fields, @$Fields ];
+    }
+}
+#line 1 "/var/www/localhost/htdocs/rt/Elements/SelectUsers"
+# BEGIN BPS TAGGED BLOCK {{{
+#
+# COPYRIGHT:
+#
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
+#                                          <sales@bestpractical.com>
+#
+# (Except where explicitly superseded by other copyright notices)
+#
+#
+# LICENSE:
+#
+# This work is made available to you under the terms of Version 2 of
+# the GNU General Public License. A copy of that license should have
+# been provided with this software, but in any event can be snarfed
+# from www.gnu.org.
+#
+# This work is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
+#
+#
+# CONTRIBUTION SUBMISSION POLICY:
+#
+# (The following paragraph is not intended to limit the rights granted
+# to you to modify and distribute this software under the terms of
+# the GNU General Public License and is only of importance to you if
+# you choose to contribute your changes and enhancements to the
+# community by submitting them to Best Practical Solutions, LLC.)
+#
+# By intentionally submitting any modifications, corrections or
+# derivatives to this work, or any other work intended for use with
+# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+# you are the copyright holder for those contributions and you grant
+# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+# royalty-free, perpetual, license to use, copy, create derivative
+# works based on those contributions, and sublicense and distribute
+# those contributions and any derivatives thereof.
+#
+# END BPS TAGGED BLOCK }}}
+$m->print( '<select name="UserField">
+' );
+#line 49 "/var/www/localhost/htdocs/rt/Elements/SelectUsers"
+ foreach my $col (@fields) {
+$m->print( '<option ' );
+#line 50 "/var/www/localhost/htdocs/rt/Elements/SelectUsers"
+$m->print(  ($UserField eq $col->[0]) ? 'selected="selected"' : '' );
+#line 50 "/var/www/localhost/htdocs/rt/Elements/SelectUsers"
+$m->print( ' value="' );
+#line 50 "/var/www/localhost/htdocs/rt/Elements/SelectUsers"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $col->[0] )) );
+#line 50 "/var/www/localhost/htdocs/rt/Elements/SelectUsers"
+$m->print( '">' );
+#line 50 "/var/www/localhost/htdocs/rt/Elements/SelectUsers"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( loc($col->[1]) )) );
+#line 50 "/var/www/localhost/htdocs/rt/Elements/SelectUsers"
+$m->print( '</option>
+' );
+#line 51 "/var/www/localhost/htdocs/rt/Elements/SelectUsers"
+ }
+ while (my $CF = $CFs->Next) {
+   my $val = "CustomField-" . $CF->Id;
+$m->print( '<option ' );
+#line 54 "/var/www/localhost/htdocs/rt/Elements/SelectUsers"
+$m->print(  ($UserField eq $val) ? 'selected="selected"' : '' );
+#line 54 "/var/www/localhost/htdocs/rt/Elements/SelectUsers"
+$m->print( ' value="' );
+#line 54 "/var/www/localhost/htdocs/rt/Elements/SelectUsers"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $val )) );
+#line 54 "/var/www/localhost/htdocs/rt/Elements/SelectUsers"
+$m->print( '">' );
+#line 54 "/var/www/localhost/htdocs/rt/Elements/SelectUsers"
+$m->comp( { content => sub {
+#line 54 "/var/www/localhost/htdocs/rt/Elements/SelectUsers"
+$m->print( 'CustomField' );
+#line 54 "/var/www/localhost/htdocs/rt/Elements/SelectUsers"
+} }, '/l'
+ );
+#line 54 "/var/www/localhost/htdocs/rt/Elements/SelectUsers"
+$m->print( ': ' );
+#line 54 "/var/www/localhost/htdocs/rt/Elements/SelectUsers"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $CF->Name )) );
+#line 54 "/var/www/localhost/htdocs/rt/Elements/SelectUsers"
+$m->print( '</option>
+' );
+#line 55 "/var/www/localhost/htdocs/rt/Elements/SelectUsers"
+ }
+$m->print( '</select>
+' );
+#line 57 "/var/www/localhost/htdocs/rt/Elements/SelectUsers"
+$m->comp(   '/Elements/SelectMatch', Name => 'UserOp', Default => $UserOp   
+); #line 57 "/var/www/localhost/htdocs/rt/Elements/SelectUsers"
+$m->print( '
+<input size="8" name="UserString" value="' );
+#line 58 "/var/www/localhost/htdocs/rt/Elements/SelectUsers"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $UserString )) );
+#line 58 "/var/www/localhost/htdocs/rt/Elements/SelectUsers"
+$m->print( '" />
+' );
+;return;
+},
+'declared_args' => {
+  '$Fields' => { default => ' undef' },
+  '$UserField' => { default => ' \'\'' },
+  '$UserOp' => { default => ' \'\'' },
+  '$UserString' => { default => ' \'\'' }
+},
+'load_time' => 1434739335,
+
+)
+;

@@ -1,0 +1,655 @@
+package HTML::Mason::Commands;
+use strict;
+use vars qw($m $DECODED_ARGS $r %session);
+my %_method =
+(
+'NewReminder' => HTML::Mason::Component::Subcomponent->new(
+'code' => sub {
+HTML::Mason::Exception::Params->throw
+    ( error =>
+      "Odd number of parameters passed to component expecting name/value pairs"
+    ) if @_ % 2;
+my ( $Ticket );
+{
+    my %pos;
+    for ( my $x = 0; $x < @_; $x += 2 )
+    {
+        $pos{ $_[$x] } = $x + 1;
+    }
+
+    foreach my $arg ( qw( Ticket ) )
+    {
+        HTML::Mason::Exception::Params->throw
+            ( error => "no value sent for required parameter '$arg'" )
+                unless exists $pos{$arg};
+    }
+#line 129 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+    $Ticket = $_[ $pos{'Ticket'} ];
+}
+$m->debug_hook( $m->current_comp->path ) if ( HTML::Mason::Compiler::IN_PERL_DB() );
+
+#line 127 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->print( '
+' );
+#line 131 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->print( '<table>
+<tr>
+<td class="label">' );
+#line 133 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->comp( { content => sub {
+#line 133 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->print( 'Subject' );
+#line 133 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+} }, '/l'
+ );
+#line 133 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->print( ':</td>
+<td class="entry" colspan="3"><input type="text" size="50" name="NewReminder-Subject" id="NewReminder-Subject" /></td>
+</tr>
+<tr>
+<td class="label">' );
+#line 137 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->comp( { content => sub {
+#line 137 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->print( 'Owner' );
+#line 137 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+} }, '/l'
+ );
+#line 137 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->print( ':</td>
+<td class="entry">' );
+#line 138 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->comp(   '/Elements/SelectOwner', Name => 'NewReminder-Owner', QueueObj => $Ticket->QueueObj, Default=>$session{'CurrentUser'}->id, DefaultValue => 0   
+); #line 138 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->print( '</td>
+</tr>
+<tr>
+<td class="label">' );
+#line 141 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->comp( { content => sub {
+#line 141 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->print( 'Due' );
+#line 141 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+} }, '/l'
+ );
+#line 141 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->print( ':</td>
+<td class="entry">' );
+#line 142 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->comp(   '/Elements/SelectDate', Name => "NewReminder-Due", Default => ""   
+); #line 142 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->print( '</td>
+</tr>
+</table>
+' );
+;return;
+},
+'declared_args' => {
+  '$Ticket' => { default => undef }
+},
+
+)
+,
+'EditEntry' => HTML::Mason::Component::Subcomponent->new(
+'code' => sub {
+HTML::Mason::Exception::Params->throw
+    ( error =>
+      "Odd number of parameters passed to component expecting name/value pairs"
+    ) if @_ % 2;
+my ( $Reminder, $Ticket, $Index );
+{
+    my %pos;
+    for ( my $x = 0; $x < @_; $x += 2 )
+    {
+        $pos{ $_[$x] } = $x + 1;
+    }
+
+    foreach my $arg ( qw( Reminder Ticket Index ) )
+    {
+        HTML::Mason::Exception::Params->throw
+            ( error => "no value sent for required parameter '$arg'" )
+                unless exists $pos{$arg};
+    }
+#line 148 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+    $Reminder = $_[ $pos{'Reminder'} ];
+#line 149 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+    $Ticket = $_[ $pos{'Ticket'} ];
+#line 150 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+    $Index = $_[ $pos{'Index'} ];
+}
+$m->debug_hook( $m->current_comp->path ) if ( HTML::Mason::Compiler::IN_PERL_DB() );
+
+#line 146 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->print( '
+' );
+#line 152 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->print( '<tr class="' );
+#line 152 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $Index%2 ? 'oddline' : 'evenline' )) );
+#line 152 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->print( '" id="reminder-' );
+#line 152 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $Reminder->id )) );
+#line 152 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->print( '">
+<td class="entry">
+' );
+#line 154 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+ unless ( $Reminder->CurrentUserHasRight('ModifyTicket') ) {
+$m->print( '<input name="Complete-Reminder-' );
+#line 155 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $Reminder->id )) );
+#line 155 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->print( '" type="hidden" 
+value=' );
+#line 156 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $Reminder->Status eq $Reminder->LifecycleObj->ReminderStatusOnResolve ? 1 : 0 )) );
+#line 156 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->print( ' />
+' );
+#line 157 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+ }
+$m->print( '
+<input type="checkbox" value="1" name="Complete-Reminder-' );
+#line 159 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $Reminder->id )) );
+#line 159 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->print( '" ' );
+#line 159 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->print(  $Reminder->Status eq $Reminder->LifecycleObj->ReminderStatusOnResolve ? 'checked="checked"' : '' );
+#line 159 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->print( '
+' );
+#line 160 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+ unless ( $Reminder->CurrentUserHasRight('ModifyTicket') ) {
+$m->print( 'disabled="disabled" 
+' );
+#line 162 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+ }
+$m->print( '/></td>
+<td class="label">' );
+#line 164 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->comp( { content => sub {
+#line 164 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->print( 'Subject' );
+#line 164 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+} }, '/l'
+ );
+#line 164 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->print( ':</td>
+<td class="entry" colspan="3">
+<input type="text" size="50" name="Reminder-Subject-' );
+#line 166 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $Reminder->id )) );
+#line 166 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->print( '" value="' );
+#line 166 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $Reminder->Subject )) );
+#line 166 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->print( '" 
+' );
+#line 167 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+ unless ( $Reminder->CurrentUserHasRight('ModifyTicket') ) {
+$m->print( 'readonly="readonly" 
+' );
+#line 169 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+ }
+$m->print( '/>
+</td>
+</tr>
+<tr class="' );
+#line 173 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $Index%2 ? 'oddline' : 'evenline' )) );
+#line 173 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->print( '">
+<td class="entry">&nbsp;</td>
+<td class="label">' );
+#line 175 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->comp( { content => sub {
+#line 175 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->print( 'Owner' );
+#line 175 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+} }, '/l'
+ );
+#line 175 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->print( ':</td>
+<td class="entry">' );
+#line 176 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->comp(   '/Elements/SelectOwner', Name => 'Reminder-Owner-'.$Reminder->id, QueueObj => $Ticket->QueueObj, Default => $Reminder->Owner, DefaultValue => 0    
+); #line 176 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->print( '</td>
+<td class="label">' );
+#line 177 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->comp( { content => sub {
+#line 177 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->print( 'Due' );
+#line 177 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+} }, '/l'
+ );
+#line 177 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->print( ':</td>
+<td class="entry">
+' );
+#line 179 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+ if ( $Reminder->CurrentUserHasRight('ModifyTicket') ) {
+$m->comp(   '/Elements/SelectDate', Name => 'Reminder-Due-'.$Reminder->id   
+); #line 180 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->print( '
+' );
+#line 181 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+ }
+$m->print( '(' );
+#line 182 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $Reminder->DueObj->AsString )) );
+#line 182 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->print( ')
+</td>
+</tr>
+' );
+;return;
+},
+'declared_args' => {
+  '$Index' => { default => undef },
+  '$Reminder' => { default => undef },
+  '$Ticket' => { default => undef }
+},
+
+)
+,
+'ShowEntry' => HTML::Mason::Component::Subcomponent->new(
+'code' => sub {
+HTML::Mason::Exception::Params->throw
+    ( error =>
+      "Odd number of parameters passed to component expecting name/value pairs"
+    ) if @_ % 2;
+my ( $Reminder, $Ticket, $Index );
+{
+    my %pos;
+    for ( my $x = 0; $x < @_; $x += 2 )
+    {
+        $pos{ $_[$x] } = $x + 1;
+    }
+
+    foreach my $arg ( qw( Reminder Ticket Index ) )
+    {
+        HTML::Mason::Exception::Params->throw
+            ( error => "no value sent for required parameter '$arg'" )
+                unless exists $pos{$arg};
+    }
+#line 188 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+    $Reminder = $_[ $pos{'Reminder'} ];
+#line 189 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+    $Ticket = $_[ $pos{'Ticket'} ];
+#line 190 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+    $Index = $_[ $pos{'Index'} ];
+}
+$m->debug_hook( $m->current_comp->path ) if ( HTML::Mason::Compiler::IN_PERL_DB() );
+
+#line 186 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->print( '
+' );
+#line 192 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+ my $dueobj = $Reminder->DueObj;
+ my $overdue = $dueobj->IsSet && $dueobj->Diff < 0 ? 1 : 0;
+$m->print( '<tr class="' );
+#line 194 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $Index%2 ? 'oddline' : 'evenline' )) );
+#line 194 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->print( '" id="reminder-' );
+#line 194 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $Reminder->id )) );
+#line 194 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->print( '">
+
+<td class="collection-as-table">
+' );
+#line 197 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+ unless ( $Reminder->CurrentUserHasRight('ModifyTicket') ) {
+$m->print( '<input name="Complete-Reminder-' );
+#line 198 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $Reminder->id )) );
+#line 198 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->print( '" type="hidden" 
+value=' );
+#line 199 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $Reminder->Status eq $Reminder->LifecycleObj->ReminderStatusOnResolve ? 1 : 0 )) );
+#line 199 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->print( ' />
+' );
+#line 200 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+ }
+$m->print( '<input type="checkbox" value="1" id="Complete-Reminder-' );
+#line 201 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $Reminder->id )) );
+#line 201 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->print( '" name="Complete-Reminder-' );
+#line 201 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $Reminder->id )) );
+#line 201 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->print( '" ' );
+#line 201 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->print(  $Reminder->Status eq $Reminder->LifecycleObj->ReminderStatusOnResolve ? 'checked="checked"' : '' );
+#line 201 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->print( '
+' );
+#line 202 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+ unless ( $Reminder->CurrentUserHasRight('ModifyTicket') ) {
+$m->print( 'disabled="disabled" 
+' );
+#line 204 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+ }
+$m->print( '/></td>
+<td class="collection-as-table"><label for="Complete-Reminder-' );
+#line 206 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $Reminder->id )) );
+#line 206 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->print( '">' );
+#line 206 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $Reminder->Subject )) );
+#line 206 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->print( '</label></td>
+<td class="collection-as-table">' );
+#line 207 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->print(  $overdue ? '<span class="overdue">' : '' );
+#line 207 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $dueobj->AgeAsString || loc('Not set') )) );
+#line 207 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->print(  $overdue ? '</span>' : '' );
+#line 207 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->print( '</td>
+<td class="collection-as-table">' );
+#line 208 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->comp(   '/Elements/ShowUser', User => $Reminder->OwnerObj   
+); #line 208 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->print( '</td>
+</tr>
+' );
+;return;
+},
+'declared_args' => {
+  '$Index' => { default => undef },
+  '$Reminder' => { default => undef },
+  '$Ticket' => { default => undef }
+},
+
+)
+,
+
+);
+HTML::Mason::Component::FileBased->new(
+'code' => sub {
+HTML::Mason::Exception::Params->throw
+    ( error =>
+      "Odd number of parameters passed to component expecting name/value pairs"
+    ) if @_ % 2;
+my ( $Ticket, $id, $ShowCompleted, $Edit, $ShowSave );
+{
+    my %pos;
+    for ( my $x = 0; $x < @_; $x += 2 )
+    {
+        $pos{ $_[$x] } = $x + 1;
+    }
+#line 49 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+     $Ticket = exists $pos{'Ticket'} ? $_[ $pos{'Ticket'} ] :  undef;
+#line 50 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+     $id = exists $pos{'id'} ? $_[ $pos{'id'} ] :  undef;
+#line 51 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+     $ShowCompleted = exists $pos{'ShowCompleted'} ? $_[ $pos{'ShowCompleted'} ] :  0;
+#line 52 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+     $Edit = exists $pos{'Edit'} ? $_[ $pos{'Edit'} ] :  0;
+#line 53 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+     $ShowSave = exists $pos{'ShowSave'} ? $_[ $pos{'ShowSave'} ] :  1;
+}
+$m->debug_hook( $m->current_comp->path ) if ( HTML::Mason::Compiler::IN_PERL_DB() );
+
+#line 55 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+
+
+$Ticket = LoadTicket($id) if ($id);
+my $resolve_status = $Ticket->LifecycleObj->ReminderStatusOnResolve;
+
+my $count_reminders = RT::Reminders->new($session{'CurrentUser'});
+$count_reminders->Ticket($Ticket->id);
+my $count_tickets = $count_reminders->Collection;
+if (!$ShowCompleted) {
+    # XXX: don't break encapsulation if we can avoid it
+    $count_tickets->FromSQL(q{Type = "reminder" AND RefersTo = "} .  $Ticket->id . qq{" AND Status != "$resolve_status" });
+}
+my $has_reminders = $count_tickets->Count;
+
+# We've made changes, let's reload our search
+my $reminder_collection = $count_reminders->Collection;
+#line 1 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+# BEGIN BPS TAGGED BLOCK {{{
+#
+# COPYRIGHT:
+#
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
+#                                          <sales@bestpractical.com>
+#
+# (Except where explicitly superseded by other copyright notices)
+#
+#
+# LICENSE:
+#
+# This work is made available to you under the terms of Version 2 of
+# the GNU General Public License. A copy of that license should have
+# been provided with this software, but in any event can be snarfed
+# from www.gnu.org.
+#
+# This work is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
+#
+#
+# CONTRIBUTION SUBMISSION POLICY:
+#
+# (The following paragraph is not intended to limit the rights granted
+# to you to modify and distribute this software under the terms of
+# the GNU General Public License and is only of importance to you if
+# you choose to contribute your changes and enhancements to the
+# community by submitting them to Best Practical Solutions, LLC.)
+#
+# By intentionally submitting any modifications, corrections or
+# derivatives to this work, or any other work intended for use with
+# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+# you are the copyright holder for those contributions and you grant
+# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+# royalty-free, perpetual, license to use, copy, create derivative
+# works based on those contributions, and sublicense and distribute
+# those contributions and any derivatives thereof.
+#
+# END BPS TAGGED BLOCK }}}
+$m->print( '<input type="hidden" class="hidden" name="id" value="' );
+#line 72 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $Ticket->id )) );
+#line 72 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->print( '" />
+<input type="hidden" class="hidden" name="update-reminders" value="1" />
+' );
+#line 74 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+ my $editable = 0;
+ if ($has_reminders) {
+$m->print( '<table border="0" cellpadding="1" cellspacing="0" class="collection-as-table"' );
+#line 76 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->print(  $Edit ? ' style="width: auto;"' : '' );
+#line 76 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->print( '>
+<tr>
+' );
+#line 78 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+ if ( $Edit ) {
+$m->print( '<th class="collection-as-table" colspan="5">' );
+#line 79 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->comp( { content => sub {
+#line 79 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->print( 'Reminders' );
+#line 79 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+} }, '/l'
+ );
+#line 79 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->print( '</th>
+' );
+#line 80 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+ } else {
+$m->print( '<th class="collection-as-table"></th>
+<th class="collection-as-table">' );
+#line 82 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->comp( { content => sub {
+#line 82 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->print( 'Reminder' );
+#line 82 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+} }, '/l'
+ );
+#line 82 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->print( '</th>
+<th class="collection-as-table">' );
+#line 83 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->comp( { content => sub {
+#line 83 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->print( 'Due' );
+#line 83 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+} }, '/l'
+ );
+#line 83 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->print( '</th>
+<th class="collection-as-table">' );
+#line 84 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->comp( { content => sub {
+#line 84 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->print( 'Owner' );
+#line 84 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+} }, '/l'
+ );
+#line 84 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->print( '</th>
+' );
+#line 85 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+ }
+$m->print( '</tr>
+' );
+#line 87 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+ my $i = 0;
+ while ( my $reminder = $reminder_collection->Next ) {
+ $i++;
+ if ( $reminder->Status eq $resolve_status && !$ShowCompleted ) {
+$m->print( '<tr class="hidden"><td><input type="hidden" class="hidden" name="Complete-Reminder-' );
+#line 91 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $reminder->id )) );
+#line 91 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->print( '" value="1" /></td></tr>
+' );
+#line 92 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+ $i++;
+ }
+ else {
+   $editable = 1 if !$editable && $reminder->CurrentUserHasRight( 'ModifyTicket' );
+   if ($Edit) {
+$m->comp(   'SELF:EditEntry', Reminder => $reminder, Ticket => $Ticket, Index => $i   
+); #line 97 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->print( '
+' );
+#line 98 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+   } else {
+$m->comp(   'SELF:ShowEntry', Reminder => $reminder, Ticket => $Ticket, Index => $i   
+); #line 99 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->print( '
+' );
+#line 100 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+   }
+ }
+ }
+$m->print( '</table>
+' );
+#line 104 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+ if ( $editable ) {
+$m->print( '<i>' );
+#line 105 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->comp( { content => sub {
+#line 105 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->print( '(Check box to complete)' );
+#line 105 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+} }, '/l'
+ );
+#line 105 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->print( '</i><br /><br />
+' );
+#line 106 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+ }
+ } else {
+$m->print( '
+' );
+#line 109 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+# we must always include resolved reminders due to the browser
+# checkbox-with-false-value issue
+ while ( my $reminder = $reminder_collection->Next ) {
+ if ( $reminder->Status eq $resolve_status && !$ShowCompleted ) {
+$m->print( '<input type="hidden" class="hidden" name="Complete-Reminder-' );
+#line 113 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $reminder->id )) );
+#line 113 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->print( '" value="1" />
+' );
+#line 114 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+ }
+ }
+ }
+$m->print( '
+' );
+#line 118 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+ if (lc $Ticket->Status ne "deleted" and $Ticket->QueueObj->CurrentUserHasRight('CreateTicket') and $Ticket->CurrentUserHasRight('ModifyTicket') ) {
+$m->comp( { content => sub {
+#line 119 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->print( 'New reminder:' );
+#line 119 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+} }, '/l'
+ );
+#line 119 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->print( '
+' );
+#line 120 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->comp(   'SELF:NewReminder', Ticket => $Ticket   
+); #line 120 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->print( '
+' );
+#line 121 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+ $editable = 1;
+ }
+$m->print( '
+' );
+#line 124 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+ if ( $editable && $ShowSave ) {
+$m->print( '<div align="right"><input type="submit" class="button" value="' );
+#line 125 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->comp( { content => sub {
+#line 125 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->print( 'Save' );
+#line 125 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+} }, '/l'
+ );
+#line 125 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+$m->print( '" /></div>
+' );
+#line 126 "/var/www/localhost/htdocs/rt/Ticket/Elements/Reminders"
+ }
+;return;
+},
+'declared_args' => {
+  '$Edit' => { default => ' 0' },
+  '$ShowCompleted' => { default => ' 0' },
+  '$ShowSave' => { default => ' 1' },
+  '$Ticket' => { default => ' undef' },
+  '$id' => { default => ' undef' }
+},
+'load_time' => 1432969539,
+'methods' => \%_method,
+
+)
+;

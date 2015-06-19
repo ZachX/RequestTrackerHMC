@@ -1,0 +1,284 @@
+package HTML::Mason::Commands;
+use strict;
+use vars qw($m $DECODED_ARGS $r %session);
+HTML::Mason::Component::FileBased->new(
+'code' => sub {
+HTML::Mason::Exception::Params->throw
+    ( error =>
+      "Odd number of parameters passed to component expecting name/value pairs"
+    ) if @_ % 2;
+my %ARGS = @_;
+my ( $Object, $ObjectType, $SubType, $UpdateCFs, @RemoveCustomField, @AddCustomField, $MoveCustomFieldUp, $MoveCustomFieldDown );
+{
+    my %pos;
+    for ( my $x = 0; $x < @_; $x += 2 )
+    {
+        $pos{ $_[$x] } = $x + 1;
+    }
+
+    foreach my $arg ( qw( Object ObjectType ) )
+    {
+        HTML::Mason::Exception::Params->throw
+            ( error => "no value sent for required parameter '$arg'" )
+                unless exists $pos{$arg};
+    }
+#line 175 "/var/www/localhost/htdocs/rt/Admin/Elements/EditCustomFields"
+    $Object = $_[ $pos{'Object'} ];
+#line 176 "/var/www/localhost/htdocs/rt/Admin/Elements/EditCustomFields"
+    $ObjectType = $_[ $pos{'ObjectType'} ];
+#line 177 "/var/www/localhost/htdocs/rt/Admin/Elements/EditCustomFields"
+     $SubType = exists $pos{'SubType'} ? $_[ $pos{'SubType'} ] :  '';
+#line 179 "/var/www/localhost/htdocs/rt/Admin/Elements/EditCustomFields"
+     $UpdateCFs = exists $pos{'UpdateCFs'} ? $_[ $pos{'UpdateCFs'} ] :  undef;
+#line 180 "/var/www/localhost/htdocs/rt/Admin/Elements/EditCustomFields"
+     @RemoveCustomField = exists $pos{'RemoveCustomField'} ? HTML::Mason::Tools::coerce_to_array( $_[ $pos{'RemoveCustomField'} ], '@RemoveCustomField') :  ();
+#line 181 "/var/www/localhost/htdocs/rt/Admin/Elements/EditCustomFields"
+     @AddCustomField = exists $pos{'AddCustomField'} ? HTML::Mason::Tools::coerce_to_array( $_[ $pos{'AddCustomField'} ], '@AddCustomField') :  ();
+#line 182 "/var/www/localhost/htdocs/rt/Admin/Elements/EditCustomFields"
+     $MoveCustomFieldUp = exists $pos{'MoveCustomFieldUp'} ? $_[ $pos{'MoveCustomFieldUp'} ] :  undef;
+#line 183 "/var/www/localhost/htdocs/rt/Admin/Elements/EditCustomFields"
+     $MoveCustomFieldDown = exists $pos{'MoveCustomFieldDown'} ? $_[ $pos{'MoveCustomFieldDown'} ] :  undef;
+}
+$m->debug_hook( $m->current_comp->path ) if ( HTML::Mason::Compiler::IN_PERL_DB() );
+
+#line 92 "/var/www/localhost/htdocs/rt/Admin/Elements/EditCustomFields"
+
+my $id = $Object->Id || 0;
+if ($id and !$Object->CurrentUserHasRight('AssignCustomFields')) {
+    $m->out('<p><i>', loc('(No custom fields)'), '</i></p>');
+    return;
+}
+
+my @results;
+
+my $lookup = $ObjectType;
+$lookup .= "-$SubType" if $SubType;
+
+## deal with moving sortorder of custom fields
+if ( $MoveCustomFieldUp ) { {
+    my $record = RT::ObjectCustomField->new( $session{'CurrentUser'} );
+    $record->LoadByCols( ObjectId => $id, CustomField => $MoveCustomFieldUp );
+    unless ( $record->id ) {
+        push @results, loc("Custom field #[_1] is not applied to this object", $MoveCustomFieldUp);
+        last;
+    }
+
+    my ($status, $msg) = $record->MoveUp;
+    push @results, $msg;
+} }
+if ( $MoveCustomFieldDown ) { {
+    my $record = RT::ObjectCustomField->new( $session{'CurrentUser'} );
+    $record->LoadByCols( ObjectId => $id, CustomField => $MoveCustomFieldDown );
+    unless ( $record->id ) {
+        push @results, loc("Custom field #[_1] is not applied to this object", $MoveCustomFieldDown);
+        last;
+    }
+
+    my ($status, $msg) = $record->MoveDown;
+    push @results, $msg;
+} }
+
+if ( $UpdateCFs ) {
+    foreach my $cf_id ( @AddCustomField ) {
+        my $CF = RT::CustomField->new( $session{'CurrentUser'} );
+        $CF->SetContextObject( $Object );
+        $CF->Load( $cf_id );
+        unless ( $CF->id ) {
+            push @results, loc("Couldn't load CustomField #[_1]", $cf_id);
+            next;
+        }
+        my ($status, $msg) = $CF->AddToObject( $Object );
+        push @results, $msg;
+    }
+    foreach my $cf_id ( @RemoveCustomField ) {
+        my $CF = RT::CustomField->new( $session{'CurrentUser'} );
+        $CF->SetContextObject( $Object );
+        $CF->Load( $cf_id );
+        unless ( $CF->id ) {
+            push @results, loc("Couldn't load CustomField #[_1]", $cf_id);
+            next;
+        }
+        my ($status, $msg) = $CF->RemoveFromObject( $Object );
+        push @results, $msg;
+    }
+}
+
+$m->callback(CallbackName => 'UpdateExtraFields', Results => \@results, Object => $Object, %ARGS);
+
+my $added_cfs = RT::CustomFields->new( $session{'CurrentUser'} );
+$added_cfs->LimitToLookupType($lookup);
+$added_cfs->LimitToGlobalOrObjectId($id);
+$added_cfs->SetContextObject( $Object );
+$added_cfs->ApplySortOrder;
+
+my $not_added_cfs = RT::CustomFields->new( $session{'CurrentUser'} );
+$not_added_cfs->LimitToLookupType($lookup);
+$not_added_cfs->LimitToNotAdded( $id ? ($id, 0) : (0) );
+
+my $format = RT->Config->Get('AdminSearchResultFormat')->{'CustomFields'};
+my $rows = RT->Config->Get('AdminSearchResultRows')->{'CustomFields'} || 50;
+
+my $display_format = $id
+            ? ("'__RemoveCheckBox.{$id}__',". $format .", '__MoveCF.{$id}__'")
+            : ("'__CheckBox.{RemoveCustomField}__',". $format .", '__MoveCF.{$id}__'");
+$m->callback(CallbackName => 'EditDisplayFormat', DisplayFormat => \$display_format, id => $id);
+
+#line 1 "/var/www/localhost/htdocs/rt/Admin/Elements/EditCustomFields"
+# BEGIN BPS TAGGED BLOCK {{{
+#
+# COPYRIGHT:
+#
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
+#                                          <sales@bestpractical.com>
+#
+# (Except where explicitly superseded by other copyright notices)
+#
+#
+# LICENSE:
+#
+# This work is made available to you under the terms of Version 2 of
+# the GNU General Public License. A copy of that license should have
+# been provided with this software, but in any event can be snarfed
+# from www.gnu.org.
+#
+# This work is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
+#
+#
+# CONTRIBUTION SUBMISSION POLICY:
+#
+# (The following paragraph is not intended to limit the rights granted
+# to you to modify and distribute this software under the terms of
+# the GNU General Public License and is only of importance to you if
+# you choose to contribute your changes and enhancements to the
+# community by submitting them to Best Practical Solutions, LLC.)
+#
+# By intentionally submitting any modifications, corrections or
+# derivatives to this work, or any other work intended for use with
+# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+# you are the copyright holder for those contributions and you grant
+# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+# royalty-free, perpetual, license to use, copy, create derivative
+# works based on those contributions, and sublicense and distribute
+# those contributions and any derivatives thereof.
+#
+# END BPS TAGGED BLOCK }}}
+$m->comp(   '/Elements/ListActions', actions => \@results   
+); #line 48 "/var/www/localhost/htdocs/rt/Admin/Elements/EditCustomFields"
+$m->print( '
+
+<form action="' );
+#line 50 "/var/www/localhost/htdocs/rt/Admin/Elements/EditCustomFields"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } (RT->Config->Get('WebPath'))) );
+#line 50 "/var/www/localhost/htdocs/rt/Admin/Elements/EditCustomFields"
+$m->print(  $m->request_comp->path );
+#line 50 "/var/www/localhost/htdocs/rt/Admin/Elements/EditCustomFields"
+$m->print( '" method="post" name="EditCustomFields">
+<input type="hidden" class="hidden" name="id" value="' );
+#line 51 "/var/www/localhost/htdocs/rt/Admin/Elements/EditCustomFields"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $Object->Id || '')) );
+#line 51 "/var/www/localhost/htdocs/rt/Admin/Elements/EditCustomFields"
+$m->print( '" />
+<input type="hidden" class="hidden" name="ObjectType" value="' );
+#line 52 "/var/www/localhost/htdocs/rt/Admin/Elements/EditCustomFields"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $ObjectType )) );
+#line 52 "/var/www/localhost/htdocs/rt/Admin/Elements/EditCustomFields"
+$m->print( '" />
+<input type="hidden" class="hidden" name="SubType" value="' );
+#line 53 "/var/www/localhost/htdocs/rt/Admin/Elements/EditCustomFields"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $SubType )) );
+#line 53 "/var/www/localhost/htdocs/rt/Admin/Elements/EditCustomFields"
+$m->print( '" />
+
+<h2>' );
+#line 55 "/var/www/localhost/htdocs/rt/Admin/Elements/EditCustomFields"
+$m->comp( { content => sub {
+#line 55 "/var/www/localhost/htdocs/rt/Admin/Elements/EditCustomFields"
+$m->print( 'Selected Custom Fields' );
+#line 55 "/var/www/localhost/htdocs/rt/Admin/Elements/EditCustomFields"
+} }, '/l'
+ );
+#line 55 "/var/www/localhost/htdocs/rt/Admin/Elements/EditCustomFields"
+$m->print( '</h2>
+' );
+#line 56 "/var/www/localhost/htdocs/rt/Admin/Elements/EditCustomFields"
+$m->comp(   '/Elements/CollectionList',
+    %ARGS,
+    Collection    => $added_cfs,
+    Rows          => 0,
+    Page          => 1,
+    Format        => $format,
+    DisplayFormat => $display_format,
+    AllowSorting  => 0,
+    ShowEmpty     => 0,
+    PassArguments => [
+        qw(Page Order OrderBy),
+        qw(id ObjectType SubType),
+    ],
+  
+); #line 69 "/var/www/localhost/htdocs/rt/Admin/Elements/EditCustomFields"
+$m->print( '
+
+<h2>' );
+#line 71 "/var/www/localhost/htdocs/rt/Admin/Elements/EditCustomFields"
+$m->comp( { content => sub {
+#line 71 "/var/www/localhost/htdocs/rt/Admin/Elements/EditCustomFields"
+$m->print( 'Unselected Custom Fields' );
+#line 71 "/var/www/localhost/htdocs/rt/Admin/Elements/EditCustomFields"
+} }, '/l'
+ );
+#line 71 "/var/www/localhost/htdocs/rt/Admin/Elements/EditCustomFields"
+$m->print( '</h2>
+' );
+#line 72 "/var/www/localhost/htdocs/rt/Admin/Elements/EditCustomFields"
+$m->comp(   '/Elements/CollectionList',
+    OrderBy       => 'Name',
+    Order         => 'ASC',
+    %ARGS,
+    Collection    => $not_added_cfs,
+    Rows          => $rows,
+    Format        => $format,
+    DisplayFormat => "'__CheckBox.{AddCustomField}__',". $format,
+    AllowSorting  => 1,
+    ShowEmpty     => 0,
+    PassArguments => [
+        qw(Page Order OrderBy),
+        qw(id ObjectType SubType),
+    ],
+  
+); #line 86 "/var/www/localhost/htdocs/rt/Admin/Elements/EditCustomFields"
+$m->print( '
+
+' );
+#line 88 "/var/www/localhost/htdocs/rt/Admin/Elements/EditCustomFields"
+$m->comp(   '/Elements/Submit', Name => 'UpdateCFs'   
+); #line 88 "/var/www/localhost/htdocs/rt/Admin/Elements/EditCustomFields"
+$m->print( '
+</form>
+
+
+' );
+;return;
+},
+'declared_args' => {
+  '$MoveCustomFieldDown' => { default => ' undef' },
+  '$MoveCustomFieldUp' => { default => ' undef' },
+  '$Object' => { default => undef },
+  '$ObjectType' => { default => undef },
+  '$SubType' => { default => ' \'\'' },
+  '$UpdateCFs' => { default => ' undef' },
+  '@AddCustomField' => { default => ' ()' },
+  '@RemoveCustomField' => { default => ' ()' }
+},
+'load_time' => 1434740168,
+
+)
+;

@@ -1,0 +1,274 @@
+package HTML::Mason::Commands;
+use strict;
+use vars qw($m $DECODED_ARGS $r %session);
+HTML::Mason::Component::FileBased->new(
+'code' => sub {
+HTML::Mason::Exception::Params->throw
+    ( error =>
+      "Odd number of parameters passed to component expecting name/value pairs"
+    ) if @_ % 2;
+my %ARGS = @_;
+my ( $q );
+{
+    my %pos;
+    for ( my $x = 0; $x < @_; $x += 2 )
+    {
+        $pos{ $_[$x] } = $x + 1;
+    }
+#line 127 "/var/www/localhost/htdocs/rt/Search/Simple.html"
+     $q = exists $pos{'q'} ? $_[ $pos{'q'} ] :  undef;
+}
+$m->debug_hook( $m->current_comp->path ) if ( HTML::Mason::Compiler::IN_PERL_DB() );
+
+#line 99 "/var/www/localhost/htdocs/rt/Search/Simple.html"
+
+my $title = loc("Search for tickets");
+use RT::Search::Simple;
+
+if ($q) {
+    my $tickets = RT::Tickets->new( $session{'CurrentUser'} );
+    $m->callback( %ARGS, query => \$q, CallbackName => 'ModifyQuery' );
+
+    if ($q =~ /^#?(\d+)$/) {
+        RT::Interface::Web::Redirect(RT->Config->Get('WebURL')."Ticket/Display.html?id=".$1);
+    }
+
+    my %args = (
+        Argument   => $q,
+        TicketsObj => $tickets,
+    );
+
+    $m->callback( %ARGS, CallbackName => 'SearchArgs', args => \%args);
+
+    my $search = RT::Search::Simple->new(%args);
+
+    $m->comp( "Results.html", Query => $search->QueryToSQL() );
+    $m->comp( "/Elements/Footer" );
+    $m->abort();
+}
+#line 1 "/var/www/localhost/htdocs/rt/Search/Simple.html"
+# BEGIN BPS TAGGED BLOCK {{{
+#
+# COPYRIGHT:
+#
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
+#                                          <sales@bestpractical.com>
+#
+# (Except where explicitly superseded by other copyright notices)
+#
+#
+# LICENSE:
+#
+# This work is made available to you under the terms of Version 2 of
+# the GNU General Public License. A copy of that license should have
+# been provided with this software, but in any event can be snarfed
+# from www.gnu.org.
+#
+# This work is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
+#
+#
+# CONTRIBUTION SUBMISSION POLICY:
+#
+# (The following paragraph is not intended to limit the rights granted
+# to you to modify and distribute this software under the terms of
+# the GNU General Public License and is only of importance to you if
+# you choose to contribute your changes and enhancements to the
+# community by submitting them to Best Practical Solutions, LLC.)
+#
+# By intentionally submitting any modifications, corrections or
+# derivatives to this work, or any other work intended for use with
+# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+# you are the copyright holder for those contributions and you grant
+# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+# royalty-free, perpetual, license to use, copy, create derivative
+# works based on those contributions, and sublicense and distribute
+# those contributions and any derivatives thereof.
+#
+# END BPS TAGGED BLOCK }}}
+$m->comp(   '/Elements/Header', Title => $title   
+); #line 48 "/var/www/localhost/htdocs/rt/Search/Simple.html"
+$m->print( '
+' );
+#line 49 "/var/www/localhost/htdocs/rt/Search/Simple.html"
+$m->comp(   '/Elements/Tabs'  
+); #line 50 "/var/www/localhost/htdocs/rt/Search/Simple.html"
+$m->print( '
+
+' );
+#line 52 "/var/www/localhost/htdocs/rt/Search/Simple.html"
+ $m->callback( %ARGS, CallbackName => 'PreForm' );
+$m->print( '
+<div id="SimpleSearchForm">
+<form action="Simple.html" method="get">
+
+<div align="center">
+<input name="q" size="60" /><input type="submit" class="button" value="' );
+#line 58 "/var/www/localhost/htdocs/rt/Search/Simple.html"
+$m->comp( { content => sub {
+#line 58 "/var/www/localhost/htdocs/rt/Search/Simple.html"
+$m->print( 'Search' );
+#line 58 "/var/www/localhost/htdocs/rt/Search/Simple.html"
+} }, '/l'
+ );
+#line 58 "/var/www/localhost/htdocs/rt/Search/Simple.html"
+$m->print( '" />
+</div>
+
+' );
+#line 61 "/var/www/localhost/htdocs/rt/Search/Simple.html"
+ my @strong = qw(<strong> </strong>);
+$m->print( '
+<p>' );
+#line 63 "/var/www/localhost/htdocs/rt/Search/Simple.html"
+$m->comp( { content => sub {
+#line 63 "/var/www/localhost/htdocs/rt/Search/Simple.html"
+$m->print( 'Search for tickets by entering [_1]id[_2] numbers, subject words [_1]"in quotes"[_2], [_1]queues[_2] by name, Owners by [_1]username[_2], Requestors by [_1]email address[_2], and ticket [_1]statuses[_2].  Searching for [_1]@domainname.com[_2] will return tickets with requestors from that domain.' );
+#line 63 "/var/www/localhost/htdocs/rt/Search/Simple.html"
+} }, '/l_unsafe', @strong
+ );
+#line 63 "/var/www/localhost/htdocs/rt/Search/Simple.html"
+$m->print( '</p>
+
+<p>' );
+#line 65 "/var/www/localhost/htdocs/rt/Search/Simple.html"
+$m->comp( { content => sub {
+#line 65 "/var/www/localhost/htdocs/rt/Search/Simple.html"
+$m->print( 'Any word not recognized by RT is searched for in ticket subjects.' );
+#line 65 "/var/www/localhost/htdocs/rt/Search/Simple.html"
+} }, '/l'
+ );
+#line 65 "/var/www/localhost/htdocs/rt/Search/Simple.html"
+$m->print( '</p>
+
+' );
+#line 67 "/var/www/localhost/htdocs/rt/Search/Simple.html"
+ my $config = RT->Config->Get('FullTextSearch') || {};
+ my $fulltext_keyword = 'fulltext:';
+ if ( $config->{'Enable'} ) {
+ if ( $config->{'Indexed'} ) {
+$m->print( '<p>' );
+#line 71 "/var/www/localhost/htdocs/rt/Search/Simple.html"
+$m->comp( { content => sub {
+#line 71 "/var/www/localhost/htdocs/rt/Search/Simple.html"
+$m->print( 'You can search for any word in full ticket history by typing <b>[_1]<i>word</i></b>.' );
+#line 71 "/var/www/localhost/htdocs/rt/Search/Simple.html"
+} }, '/l', $fulltext_keyword
+ );
+#line 71 "/var/www/localhost/htdocs/rt/Search/Simple.html"
+$m->print( '</p>
+' );
+#line 72 "/var/www/localhost/htdocs/rt/Search/Simple.html"
+ } else {
+$m->print( '<p>' );
+#line 73 "/var/www/localhost/htdocs/rt/Search/Simple.html"
+$m->comp( { content => sub {
+#line 73 "/var/www/localhost/htdocs/rt/Search/Simple.html"
+$m->print( 'Searching the full text of every ticket can take a long time, but if you need to do it, you can search for any word in full ticket history by typing <b>[_1]<i>word</i></b>.' );
+#line 73 "/var/www/localhost/htdocs/rt/Search/Simple.html"
+} }, '/l', $fulltext_keyword
+ );
+#line 73 "/var/www/localhost/htdocs/rt/Search/Simple.html"
+$m->print( '</p>
+' );
+#line 74 "/var/www/localhost/htdocs/rt/Search/Simple.html"
+ }
+ }
+$m->print( '
+<p>' );
+#line 77 "/var/www/localhost/htdocs/rt/Search/Simple.html"
+$m->comp( { content => sub {
+#line 77 "/var/www/localhost/htdocs/rt/Search/Simple.html"
+$m->print( 'Entering [_1], [_2], [_3], or [_4] limits results to tickets with one of the respective types of statuses.  Any individual status name limits results to just the statuses named.' );
+#line 77 "/var/www/localhost/htdocs/rt/Search/Simple.html"
+} }, '/l_unsafe', map { "<strong>$_</strong>" } qw(initial active inactive any)
+ );
+#line 77 "/var/www/localhost/htdocs/rt/Search/Simple.html"
+$m->print( '
+
+' );
+#line 79 "/var/www/localhost/htdocs/rt/Search/Simple.html"
+ if (RT->Config->Get('OnlySearchActiveTicketsInSimpleSearch', $session{'CurrentUser'})) {
+ my $status_str  = join ', ', map { loc($_) } RT::Queue->ActiveStatusArray;
+$m->comp( { content => sub {
+#line 81 "/var/www/localhost/htdocs/rt/Search/Simple.html"
+$m->print( 'Unless you specify a specific status, only tickets with active statuses ([_1]) are searched.' );
+#line 81 "/var/www/localhost/htdocs/rt/Search/Simple.html"
+} }, '/l', $status_str
+ );
+#line 81 "/var/www/localhost/htdocs/rt/Search/Simple.html"
+$m->print( '
+' );
+#line 82 "/var/www/localhost/htdocs/rt/Search/Simple.html"
+ }
+$m->print( '</p>
+
+<p>' );
+#line 85 "/var/www/localhost/htdocs/rt/Search/Simple.html"
+$m->comp( { content => sub {
+#line 85 "/var/www/localhost/htdocs/rt/Search/Simple.html"
+$m->print( 'Start the search term with the name of a supported field followed by a colon, as in [_1] and [_2], to explicitly specify the search type.' );
+#line 85 "/var/www/localhost/htdocs/rt/Search/Simple.html"
+} }, '/l_unsafe', map { "<strong>$_</strong>" } 'queue:"Example Queue"', 'owner:email@example.com'
+ );
+#line 85 "/var/www/localhost/htdocs/rt/Search/Simple.html"
+$m->print( '</p>
+
+<p>' );
+#line 87 "/var/www/localhost/htdocs/rt/Search/Simple.html"
+$m->comp( { content => sub {
+#line 87 "/var/www/localhost/htdocs/rt/Search/Simple.html"
+$m->print( 'CFs may be searched using a similar syntax as above with [_1].' );
+#line 87 "/var/www/localhost/htdocs/rt/Search/Simple.html"
+} }, '/l_unsafe', '<strong>cf.Name:value</strong>'
+ );
+#line 87 "/var/www/localhost/htdocs/rt/Search/Simple.html"
+$m->print( '</p>
+
+' );
+#line 89 "/var/www/localhost/htdocs/rt/Search/Simple.html"
+ my $link_start  = '<a href="' . RT->Config->Get('WebPath') . '/Search/Build.html">';
+ my $link_end    = '</a>';
+$m->print( '<p>' );
+#line 91 "/var/www/localhost/htdocs/rt/Search/Simple.html"
+$m->comp( { content => sub {
+#line 91 "/var/www/localhost/htdocs/rt/Search/Simple.html"
+$m->print( 'For the full power of RT\'s searches, please visit the [_1]search builder interface[_2].' );
+#line 91 "/var/www/localhost/htdocs/rt/Search/Simple.html"
+} }, '/l_unsafe', $link_start, $link_end
+ );
+#line 91 "/var/www/localhost/htdocs/rt/Search/Simple.html"
+$m->print( '</p>
+
+</form>
+
+' );
+#line 95 "/var/www/localhost/htdocs/rt/Search/Simple.html"
+ $m->callback( %ARGS, CallbackName => 'PostForm' );
+$m->print( '
+</div>
+
+' );
+#line 125 "/var/www/localhost/htdocs/rt/Search/Simple.html"
+$m->print( '
+' );
+#line 129 "/var/www/localhost/htdocs/rt/Search/Simple.html"
+$m->print( '
+' );
+;return;
+},
+'declared_args' => {
+  '$q' => { default => ' undef' }
+},
+'load_time' => 1434754672,
+
+)
+;

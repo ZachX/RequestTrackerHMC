@@ -1,0 +1,480 @@
+package HTML::Mason::Commands;
+use strict;
+use vars qw($m $DECODED_ARGS $r %session);
+HTML::Mason::Component::FileBased->new(
+'code' => sub {
+HTML::Mason::Exception::Params->throw
+    ( error =>
+      "Odd number of parameters passed to component expecting name/value pairs"
+    ) if @_ % 2;
+my %ARGS = @_;
+my ( $OnlySearchForPeople, $OnlySearchForGroup, $UserField, $UserOp, $UserString, $GroupString, $GroupOp, $GroupField, $id );
+{
+    my %pos;
+    for ( my $x = 0; $x < @_; $x += 2 )
+    {
+        $pos{ $_[$x] } = $x + 1;
+    }
+#line 225 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+     $OnlySearchForPeople = exists $pos{'OnlySearchForPeople'} ? $_[ $pos{'OnlySearchForPeople'} ] :  undef;
+#line 226 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+     $OnlySearchForGroup = exists $pos{'OnlySearchForGroup'} ? $_[ $pos{'OnlySearchForGroup'} ] :  undef;
+#line 227 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+     $UserField = exists $pos{'UserField'} ? $_[ $pos{'UserField'} ] :  undef;
+#line 228 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+     $UserOp = exists $pos{'UserOp'} ? $_[ $pos{'UserOp'} ] :  undef;
+#line 229 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+     $UserString = exists $pos{'UserString'} ? $_[ $pos{'UserString'} ] :  undef;
+#line 230 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+     $GroupString = exists $pos{'GroupString'} ? $_[ $pos{'GroupString'} ] :  undef;
+#line 231 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+     $GroupOp = exists $pos{'GroupOp'} ? $_[ $pos{'GroupOp'} ] :  undef;
+#line 232 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+     $GroupField = exists $pos{'GroupField'} ? $_[ $pos{'GroupField'} ] :  undef;
+#line 233 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+     $id = exists $pos{'id'} ? $_[ $pos{'id'} ] :  undef;
+}
+$m->debug_hook( $m->current_comp->path ) if ( HTML::Mason::Compiler::IN_PERL_DB() );
+
+#line 143 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+
+
+
+
+my $Ticket = LoadTicket($id);
+my $CustomFields = $Ticket->CustomFields;
+
+my $CanRespond = 0;
+my $CanComment = 0;
+
+
+$CanRespond = 1 if ( $Ticket->CurrentUserHasRight('ReplyToTicket') or
+                     $Ticket->CurrentUserHasRight('ModifyTicket') ); 
+
+$CanComment = 1 if ( $Ticket->CurrentUserHasRight('CommentOnTicket') or
+                     $Ticket->CurrentUserHasRight('ModifyTicket') );
+
+ProcessAttachments(ARGSRef => \%ARGS);
+
+my @results;
+my $skip_update = 0;
+$m->callback( TicketObj => $Ticket, ARGSRef => \%ARGS, skip_update => \$skip_update, results => \@results );
+
+{
+    my ($status, @msg) = $m->comp(
+        '/Elements/ValidateCustomFields',
+        Object       => $Ticket,
+        CustomFields => $CustomFields,
+        ARGSRef      => \%ARGS,
+    );
+    unless ($status) {
+        push @results, @msg;
+        $skip_update = 1;
+    }
+}
+
+# There might be two owners.
+if ( ref ($ARGS{'Owner'} )) {
+    my @owners =@{$ARGS{'Owner'}};
+    delete $ARGS{'Owner'};
+    foreach my $owner(@owners){
+        if (defined($owner) && $owner =~ /\D/) {
+            $ARGS{'Owner'} = $owner unless ($Ticket->OwnerObj->Name eq $owner);
+        }
+        elsif (length $owner) {
+            $ARGS{'Owner'} = $owner unless ($Ticket->OwnerObj->id == $owner);
+        }
+    }
+}
+
+unless ($skip_update or $OnlySearchForPeople or $OnlySearchForGroup or $ARGS{'AddMoreAttach'} ) {
+    push @results, ProcessTicketWatchers( TicketObj => $Ticket, ARGSRef => \%ARGS);
+    push @results, ProcessObjectCustomFieldUpdates( Object => $Ticket, ARGSRef => \%ARGS);
+    push @results, ProcessTicketDates( TicketObj => $Ticket, ARGSRef => \%ARGS);
+    push @results, ProcessUpdateMessage( TicketObj => $Ticket, ARGSRef=>\%ARGS );
+    push @results, ProcessTicketBasics( TicketObj => $Ticket, ARGSRef => \%ARGS );
+    push @results, ProcessTicketLinks( TicketObj => $Ticket, ARGSRef => \%ARGS);
+
+    $Ticket->ApplyTransactionBatch;
+
+    MaybeRedirectForResults(
+        Actions   => \@results,
+        Path      => "/Ticket/ModifyAll.html",
+        Arguments => { id => $Ticket->id },
+    );
+}
+
+# If they've gone and moved the ticket to somewhere they can't see, etc...
+unless ($Ticket->CurrentUserHasRight('ShowTicket')) {
+    if (@results) {
+        Abort("A change was applied successfully, but you no longer have permissions to view the ticket", Actions => \@results);
+    } else {
+        Abort("No permission to view ticket");
+    }
+}
+
+
+#line 1 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+# BEGIN BPS TAGGED BLOCK {{{
+#
+# COPYRIGHT:
+#
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
+#                                          <sales@bestpractical.com>
+#
+# (Except where explicitly superseded by other copyright notices)
+#
+#
+# LICENSE:
+#
+# This work is made available to you under the terms of Version 2 of
+# the GNU General Public License. A copy of that license should have
+# been provided with this software, but in any event can be snarfed
+# from www.gnu.org.
+#
+# This work is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
+#
+#
+# CONTRIBUTION SUBMISSION POLICY:
+#
+# (The following paragraph is not intended to limit the rights granted
+# to you to modify and distribute this software under the terms of
+# the GNU General Public License and is only of importance to you if
+# you choose to contribute your changes and enhancements to the
+# community by submitting them to Best Practical Solutions, LLC.)
+#
+# By intentionally submitting any modifications, corrections or
+# derivatives to this work, or any other work intended for use with
+# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+# you are the copyright holder for those contributions and you grant
+# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+# royalty-free, perpetual, license to use, copy, create derivative
+# works based on those contributions, and sublicense and distribute
+# those contributions and any derivatives thereof.
+#
+# END BPS TAGGED BLOCK }}}
+$m->comp(   '/Elements/Header', Title => loc("Ticket #[_1] Jumbo update: [_2]", $Ticket->Id, $Ticket->Subject)   
+); #line 48 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+$m->print( '
+' );
+#line 49 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+$m->comp(   '/Elements/Tabs'  
+); #line 49 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+$m->print( '
+
+' );
+#line 51 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+ $m->callback(CallbackName => 'BeforeActionList', Actions => \@results, ARGSRef => \%ARGS, Ticket => $Ticket);
+$m->comp(   '/Elements/ListActions', actions => \@results   
+); #line 52 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+$m->print( '
+
+<form method="post" action="ModifyAll.html" name="TicketModifyAll" enctype="multipart/form-data">
+' );
+#line 55 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+ $m->callback( CallbackName => 'FormStart', ARGSRef => \%ARGS );
+$m->print( '<input type="submit" name="SubmitTicket" value="Save Changes" style="display:none">
+<input type="hidden" class="hidden" name="id" value="' );
+#line 57 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($Ticket->Id)) );
+#line 57 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+$m->print( '" />
+<input type="hidden" class="hidden" name="Token" value="' );
+#line 58 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $ARGS{'Token'} )) );
+#line 58 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+$m->print( '" />
+
+' );
+#line 60 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+$m->comp( { content => sub {
+#line 60 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+$m->print( '
+' );
+#line 61 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+$m->comp(   'Elements/EditBasics', TicketObj => $Ticket, defaults => \%ARGS   
+); #line 61 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+$m->print( '
+' );
+#line 62 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+$m->comp(   '/Elements/EditCustomFields', Object => $Ticket, Grouping => 'Basics'   
+); #line 62 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+$m->print( '
+' );
+#line 63 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+} }, '/Widgets/TitleBox', title => loc('Modify ticket # [_1]', $Ticket->Id), class=>'ticket-info-basics'
+ );
+#line 63 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+$m->print( '
+
+' );
+#line 65 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+ $m->callback(CallbackName => 'AfterBasics', Ticket => $Ticket);
+$m->print( '
+' );
+#line 67 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+$m->comp(   '/Elements/EditCustomFieldCustomGroupings', Object => $Ticket   
+); #line 67 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+$m->print( '
+
+' );
+#line 69 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+$m->comp( { content => sub {
+#line 69 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+$m->print( '
+' );
+#line 70 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+$m->comp(   'Elements/EditDates', TicketObj => $Ticket   
+); #line 70 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+$m->print( '
+' );
+#line 71 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+} }, '/Widgets/TitleBox', title => loc('Dates'), class=>'ticket-info-dates'
+ );
+#line 71 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+$m->print( '
+
+<br />
+
+
+' );
+#line 76 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+$m->comp( { content => sub {
+#line 76 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+$m->print( '
+' );
+#line 77 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+$m->comp(   'Elements/EditPeople', Ticket => $Ticket, UserField => $UserField, UserString => $UserString, UserOp => $UserOp, GroupString => $GroupString, GroupOp => $GroupOp, GroupField => $GroupField   
+); #line 77 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+$m->print( '
+' );
+#line 78 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+} }, '/Widgets/TitleBox', title => loc('People'), class=>'ticket-info-people'
+ );
+#line 78 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+$m->print( '
+
+<br />
+
+' );
+#line 82 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+$m->comp( { content => sub {
+#line 82 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+$m->print( '
+' );
+#line 83 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+$m->comp(   '/Elements/EditLinks', Object => $Ticket   
+); #line 83 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+$m->print( '
+' );
+#line 84 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+} }, '/Widgets/TitleBox', title => loc('Links'), class=>'ticket-info-links'
+ );
+#line 84 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+$m->print( '
+
+<br />
+
+' );
+#line 88 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+$m->comp( { content => sub {
+#line 88 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+$m->print( '
+' );
+#line 89 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+$m->comp(   'Elements/EditMerge', Ticket => $Ticket, %ARGS   
+); #line 89 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+$m->print( '
+' );
+#line 90 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+} }, '/Widgets/TitleBox', title => loc('Merge'), class=>'ticket-info-merge'
+ );
+#line 90 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+$m->print( '
+
+<br />
+
+' );
+#line 94 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+$m->comp( { content => sub {
+#line 94 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+$m->print( '
+<table>
+  <tr>
+    <td class="label">' );
+#line 97 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+$m->comp( { content => sub {
+#line 97 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+$m->print( 'Update Type' );
+#line 97 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+} }, '/l'
+ );
+#line 97 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+$m->print( ':</td>
+    <td class="entry">
+      <select name="UpdateType" id="UpdateType">
+' );
+#line 100 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+ if ($CanComment) {
+$m->print( '        <option value="private" >' );
+#line 101 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+$m->comp( { content => sub {
+#line 101 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+$m->print( 'Comments (Not sent to requestors)' );
+#line 101 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+} }, '/l'
+ );
+#line 101 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+$m->print( '</option>
+' );
+#line 102 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+ }
+ if ($CanRespond) {
+$m->print( '        <option value="response">' );
+#line 104 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+$m->comp( { content => sub {
+#line 104 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+$m->print( 'Reply to requestors' );
+#line 104 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+} }, '/l'
+ );
+#line 104 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+$m->print( '</option>
+' );
+#line 105 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+ }
+$m->print( '      </select> 
+' );
+#line 107 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+ $m->callback( %ARGS, CallbackName => 'AfterUpdateType' );
+$m->print( '    </td>
+  </tr>
+  <tr>
+    <td class="label">' );
+#line 111 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+$m->comp( { content => sub {
+#line 111 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+$m->print( 'Subject' );
+#line 111 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+} }, '/l'
+ );
+#line 111 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+$m->print( ':</td>
+    <td class="entry"><input name="UpdateSubject" size="60" value="' );
+#line 112 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($Ticket->Subject)) );
+#line 112 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+$m->print( '" />
+' );
+#line 113 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+ $m->callback( %ARGS, CallbackName => 'AfterSubject' );
+$m->print( '    </td>
+  </tr>
+
+  <tr><td colspan="2">' );
+#line 117 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+$m->comp(   '/Ticket/Elements/EditTransactionCustomFields', %ARGS, TicketObj => $Ticket, KeepValue => 1,   
+); #line 117 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+$m->print( '</td></tr>
+
+' );
+#line 119 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+$m->comp(   '/Ticket/Elements/AddAttachments', %ARGS, TicketObj => $Ticket   
+); #line 119 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+$m->print( '
+
+  <tr>
+    <td class="labeltop">' );
+#line 122 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+$m->comp( { content => sub {
+#line 122 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+$m->print( 'Content' );
+#line 122 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+} }, '/l'
+ );
+#line 122 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+$m->print( ':</td>
+    <td class="entry messagebox-container action-' );
+#line 123 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $ARGS{UpdateType} || ($CanComment ? 'private' : 'response') )) );
+#line 123 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+$m->print( '">
+' );
+#line 124 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+ $m->callback( %ARGS, CallbackName => 'BeforeMessageBox' );
+ if (defined $ARGS{UpdateContent} && length($ARGS{UpdateContent})) {
+$m->print( '    ' );
+#line 126 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+$m->comp(   '/Elements/MessageBox', Name=>"UpdateContent", Default=>$ARGS{UpdateContent}, IncludeSignature => 0   
+); #line 126 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+$m->print( '
+' );
+#line 127 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+ } else {
+$m->print( '    ' );
+#line 128 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+$m->comp(   '/Elements/MessageBox', Name=>"UpdateContent", QuoteTransaction=>$ARGS{QuoteTransaction}   
+); #line 128 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+$m->print( '
+' );
+#line 129 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+ }
+$m->print( '  </td></tr>
+</table>
+' );
+#line 132 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+} }, '/Widgets/TitleBox', title => loc('Update ticket')
+ );
+#line 132 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+$m->print( '
+  
+
+' );
+#line 135 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+$m->comp(   '/Elements/Submit', 
+    Name    => 'SubmitTicket',
+    Label   => loc('Save Changes'), 
+    Caption => loc("If you've updated anything above, be sure to"), color => "#333399"   
+); #line 138 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+$m->print( '
+</form>
+
+' );
+#line 141 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+ $m->callback(CallbackName => 'AfterForm', ARGSRef => \%ARGS, Ticket => $Ticket);
+$m->print( '
+' );
+#line 221 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+$m->print( '
+
+
+' );
+#line 235 "/var/www/localhost/htdocs/rt/Ticket/ModifyAll.html"
+$m->print( '
+' );
+;return;
+},
+'declared_args' => {
+  '$GroupField' => { default => ' undef' },
+  '$GroupOp' => { default => ' undef' },
+  '$GroupString' => { default => ' undef' },
+  '$OnlySearchForGroup' => { default => ' undef' },
+  '$OnlySearchForPeople' => { default => ' undef' },
+  '$UserField' => { default => ' undef' },
+  '$UserOp' => { default => ' undef' },
+  '$UserString' => { default => ' undef' },
+  '$id' => { default => ' undef' }
+},
+'load_time' => 1433312862,
+
+)
+;

@@ -1,0 +1,365 @@
+package HTML::Mason::Commands;
+use strict;
+use vars qw($m $DECODED_ARGS $r %session);
+HTML::Mason::Component::FileBased->new(
+'code' => sub {
+HTML::Mason::Exception::Params->throw
+    ( error =>
+      "Odd number of parameters passed to component expecting name/value pairs"
+    ) if @_ % 2;
+my %ARGS = @_;
+my ( $Context, $Principals, $AddPrincipal );
+{
+    my %pos;
+    for ( my $x = 0; $x < @_; $x += 2 )
+    {
+        $pos{ $_[$x] } = $x + 1;
+    }
+
+    foreach my $arg ( qw( Context Principals ) )
+    {
+        HTML::Mason::Exception::Params->throw
+            ( error => "no value sent for required parameter '$arg'" )
+                unless exists $pos{$arg};
+    }
+#line 49 "/var/www/localhost/htdocs/rt/Admin/Elements/EditRights"
+    $Context = $_[ $pos{'Context'} ];
+#line 50 "/var/www/localhost/htdocs/rt/Admin/Elements/EditRights"
+    $Principals = $_[ $pos{'Principals'} ];
+#line 51 "/var/www/localhost/htdocs/rt/Admin/Elements/EditRights"
+     $AddPrincipal = exists $pos{'AddPrincipal'} ? $_[ $pos{'AddPrincipal'} ] :  undef;
+}
+$m->debug_hook( $m->current_comp->path ) if ( HTML::Mason::Compiler::IN_PERL_DB() );
+
+#line 53 "/var/www/localhost/htdocs/rt/Admin/Elements/EditRights"
+
+# Let callbacks get at principals and context before we do anything with them
+$m->callback( Principals => $Principals, Context => $Context );
+
+# Try to detect if we want to include an add user/group box
+unless ( $AddPrincipal ) {
+    my $last = $Principals->[-1];
+    if ( $last->[0] =~ /Groups/i ) {
+        $AddPrincipal = 'group'; # loc
+    }
+    elsif ( $last->[0] =~ /Users/i ) {
+        $AddPrincipal = 'user'; # loc
+    }
+}
+
+my $anchor = $DECODED_ARGS->{Anchor} || '';
+if ($anchor =~ /AddPrincipal/) {
+    for my $type ("group", "user") {
+        my $record = _ParseACLNewPrincipal($DECODED_ARGS, $type)
+            or next;
+        if ($record->PrincipalId) {
+            $anchor = "#acl-" . $record->PrincipalId;
+            last;
+        }
+    }
+}
+#line 1 "/var/www/localhost/htdocs/rt/Admin/Elements/EditRights"
+# BEGIN BPS TAGGED BLOCK {{{
+#
+# COPYRIGHT:
+#
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
+#                                          <sales@bestpractical.com>
+#
+# (Except where explicitly superseded by other copyright notices)
+#
+#
+# LICENSE:
+#
+# This work is made available to you under the terms of Version 2 of
+# the GNU General Public License. A copy of that license should have
+# been provided with this software, but in any event can be snarfed
+# from www.gnu.org.
+#
+# This work is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
+#
+#
+# CONTRIBUTION SUBMISSION POLICY:
+#
+# (The following paragraph is not intended to limit the rights granted
+# to you to modify and distribute this software under the terms of
+# the GNU General Public License and is only of importance to you if
+# you choose to contribute your changes and enhancements to the
+# community by submitting them to Best Practical Solutions, LLC.)
+#
+# By intentionally submitting any modifications, corrections or
+# derivatives to this work, or any other work intended for use with
+# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+# you are the copyright holder for those contributions and you grant
+# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+# royalty-free, perpetual, license to use, copy, create derivative
+# works based on those contributions, and sublicense and distribute
+# those contributions and any derivatives thereof.
+#
+# END BPS TAGGED BLOCK }}}
+# Principals is an array of arrays, where the inner arrays are like:
+#      [ 'Category name' => $CollectionObj => 'DisplayColumn' => 1 ]
+# The last value is a boolen determining if the value of DisplayColumn
+# should be loc()-ed before display.
+$m->print( '
+<script type="text/javascript">
+  jQuery(function() {
+      function sync_anchor(hash) {
+          if (!hash.length) return;
+          window.location.hash = hash;
+          jQuery(".rights-editor input[name=Anchor]").val(hash);
+      }
+      sync_anchor(' );
+#line 92 "/var/www/localhost/htdocs/rt/Admin/Elements/EditRights"
+$m->print( (map {; $m->interp->apply_escapes($_, 'j') } ( $anchor)) );
+#line 92 "/var/www/localhost/htdocs/rt/Admin/Elements/EditRights"
+$m->print( ');
+
+      jQuery(".rights-editor").tabs({
+          beforeActivate: function(ev, ui) {
+              sync_anchor(ui.newPanel.selector);
+              if ( ui.newTab.find(\'input[type=text]\').size() > 0 ) {
+                  ui.newTab.find(\'input[type=text]:first\').focus();
+              }
+          }
+      });
+
+      jQuery(".rights-editor .category-tabs").tabs({
+          active: jQuery.cookie(\'rights-category-tab\') || 0,
+          activate: function(ev, ui) {
+              jQuery.cookie(\'rights-category-tab\', ui.newTab.index());
+              jQuery(".rights-editor .category-tabs").not(this).each(function() {
+                  var item     = jQuery(this);
+                  var selected = item.tabs("option", "active") || 0;
+                  if (selected != ui.newTab.index())
+                      item.tabs("option", "active", ui.newTab.index());
+              });
+          }
+      });
+  });
+</script>
+
+<div class="rights-editor clearfix">
+  <input type="hidden" value="" name="Anchor" />
+
+  <ul>
+' );
+#line 122 "/var/www/localhost/htdocs/rt/Admin/Elements/EditRights"
+
+for my $category (@$Principals) {
+    my ($name, $collection, $col, $loc) = @$category;
+#line 126 "/var/www/localhost/htdocs/rt/Admin/Elements/EditRights"
+$m->print( '<li class="category">' );
+#line 126 "/var/www/localhost/htdocs/rt/Admin/Elements/EditRights"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( loc($name) )) );
+#line 126 "/var/www/localhost/htdocs/rt/Admin/Elements/EditRights"
+$m->print( '</li>
+' );
+#line 127 "/var/www/localhost/htdocs/rt/Admin/Elements/EditRights"
+
+    while ( my $obj = $collection->Next ) {
+        my $display = ref $col eq 'CODE' ? $col->($obj) : $obj->$col;
+        my $id = "acl-" . $obj->PrincipalId;
+#line 132 "/var/www/localhost/htdocs/rt/Admin/Elements/EditRights"
+$m->print( '<li><a href="#' );
+#line 132 "/var/www/localhost/htdocs/rt/Admin/Elements/EditRights"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $id )) );
+#line 132 "/var/www/localhost/htdocs/rt/Admin/Elements/EditRights"
+$m->print( '">' );
+#line 132 "/var/www/localhost/htdocs/rt/Admin/Elements/EditRights"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $loc ? loc($display) : $display )) );
+#line 132 "/var/www/localhost/htdocs/rt/Admin/Elements/EditRights"
+$m->print( '</a></li>
+' );
+#line 133 "/var/www/localhost/htdocs/rt/Admin/Elements/EditRights"
+
+    }
+}
+#line 137 "/var/www/localhost/htdocs/rt/Admin/Elements/EditRights"
+ if ( $AddPrincipal ) {
+$m->print( '    <li class="category">' );
+#line 138 "/var/www/localhost/htdocs/rt/Admin/Elements/EditRights"
+$m->comp( { content => sub {
+#line 138 "/var/www/localhost/htdocs/rt/Admin/Elements/EditRights"
+$m->print( 'Add [_1]' );
+#line 138 "/var/www/localhost/htdocs/rt/Admin/Elements/EditRights"
+} }, '/l', loc($AddPrincipal)
+ );
+#line 138 "/var/www/localhost/htdocs/rt/Admin/Elements/EditRights"
+$m->print( '</li>
+    <li class="addprincipal">
+      <a href="#acl-AddPrincipal">
+        <input type="text" value=""
+            data-autocomplete="' );
+#line 142 "/var/www/localhost/htdocs/rt/Admin/Elements/EditRights"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( lc $AddPrincipal eq 'user' ? 'Users' : 'Groups' )) );
+#line 142 "/var/www/localhost/htdocs/rt/Admin/Elements/EditRights"
+$m->print( '"
+' );
+#line 143 "/var/www/localhost/htdocs/rt/Admin/Elements/EditRights"
+ if ( lc $AddPrincipal eq 'user' ) {
+$m->print( '            data-autocomplete-return="Name"
+            data-autocomplete-privileged="1"
+' );
+#line 146 "/var/www/localhost/htdocs/rt/Admin/Elements/EditRights"
+ }
+$m->print( '               name="AddPrincipalForRights-' );
+#line 147 "/var/www/localhost/htdocs/rt/Admin/Elements/EditRights"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( lc $AddPrincipal )) );
+#line 147 "/var/www/localhost/htdocs/rt/Admin/Elements/EditRights"
+$m->print( '"
+               id="AddPrincipalForRights-' );
+#line 148 "/var/www/localhost/htdocs/rt/Admin/Elements/EditRights"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( lc $AddPrincipal )) );
+#line 148 "/var/www/localhost/htdocs/rt/Admin/Elements/EditRights"
+$m->print( '" />
+        <script type="text/javascript">
+        jQuery(function() {
+            jQuery("#AddPrincipalForRights-"+' );
+#line 151 "/var/www/localhost/htdocs/rt/Admin/Elements/EditRights"
+$m->print( (map {; $m->interp->apply_escapes($_, 'j') } ( lc $AddPrincipal)) );
+#line 151 "/var/www/localhost/htdocs/rt/Admin/Elements/EditRights"
+$m->print( ').keyup(function(){
+                toggle_addprincipal_validity(this, true);
+            }).keydown(function(event){
+                event.stopPropagation() // Disable tabs keyboard nav
+            });
+
+            jQuery("#AddPrincipalForRights-"+' );
+#line 157 "/var/www/localhost/htdocs/rt/Admin/Elements/EditRights"
+$m->print( (map {; $m->interp->apply_escapes($_, 'j') } ( lc $AddPrincipal)) );
+#line 157 "/var/www/localhost/htdocs/rt/Admin/Elements/EditRights"
+$m->print( ').on("autocompleteselect", addprincipal_onselect);
+            jQuery("#AddPrincipalForRights-"+' );
+#line 158 "/var/www/localhost/htdocs/rt/Admin/Elements/EditRights"
+$m->print( (map {; $m->interp->apply_escapes($_, 'j') } ( lc $AddPrincipal)) );
+#line 158 "/var/www/localhost/htdocs/rt/Admin/Elements/EditRights"
+$m->print( ').on("autocompletechange", addprincipal_onchange);
+        });
+        </script>
+' );
+#line 161 "/var/www/localhost/htdocs/rt/Admin/Elements/EditRights"
+ my $type = lc $AddPrincipal eq 'user' ? loc('username') : loc($AddPrincipal);
+$m->print( '        <span class="warning">' );
+#line 162 "/var/www/localhost/htdocs/rt/Admin/Elements/EditRights"
+$m->comp( { content => sub {
+#line 162 "/var/www/localhost/htdocs/rt/Admin/Elements/EditRights"
+$m->print( 'Invalid [_1]' );
+#line 162 "/var/www/localhost/htdocs/rt/Admin/Elements/EditRights"
+} }, '/l', $type
+ );
+#line 162 "/var/www/localhost/htdocs/rt/Admin/Elements/EditRights"
+$m->print( '</span>
+      </a>
+    </li>
+' );
+#line 165 "/var/www/localhost/htdocs/rt/Admin/Elements/EditRights"
+ }
+$m->print( '  </ul>
+
+' );
+#line 168 "/var/www/localhost/htdocs/rt/Admin/Elements/EditRights"
+
+# Now generate our rights panels for each principal
+for my $category (@$Principals) {
+    my ($name, $collection, $col, $loc) = @$category;
+    while ( my $obj = $collection->Next ) {
+        my $display = ref $col eq 'CODE' ? $col->($obj) : $obj->$col;
+        my $id = "acl-" . $obj->PrincipalId;
+#line 176 "/var/www/localhost/htdocs/rt/Admin/Elements/EditRights"
+$m->print( '
+  <div id="' );
+#line 177 "/var/www/localhost/htdocs/rt/Admin/Elements/EditRights"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $id )) );
+#line 177 "/var/www/localhost/htdocs/rt/Admin/Elements/EditRights"
+$m->print( '">
+    <h3>
+      ' );
+#line 179 "/var/www/localhost/htdocs/rt/Admin/Elements/EditRights"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $loc ? loc($display) : $display )) );
+#line 179 "/var/www/localhost/htdocs/rt/Admin/Elements/EditRights"
+$m->print( '
+' );
+#line 180 "/var/www/localhost/htdocs/rt/Admin/Elements/EditRights"
+
+if ($obj->isa('RT::Group') and $obj->Domain eq 'UserDefined') {
+    my $subgroups = $obj->GroupMembersObj( Recursively => 1 );
+    $subgroups->LimitToUserDefinedGroups;
+    $subgroups->Limit( FIELD => 'Name', OPERATOR => '!=', VALUE => $obj->Name, CASESENSITIVE => 0 );
+
+    if ( $subgroups->Count ) {
+        my $inc = join ", ", map $_->Name, @{$subgroups->ItemsArrayRef};
+#line 189 "/var/www/localhost/htdocs/rt/Admin/Elements/EditRights"
+$m->print( '      <span class="subgroups">' );
+#line 189 "/var/www/localhost/htdocs/rt/Admin/Elements/EditRights"
+$m->comp( { content => sub {
+#line 189 "/var/www/localhost/htdocs/rt/Admin/Elements/EditRights"
+$m->print( 'includes [_1]' );
+#line 189 "/var/www/localhost/htdocs/rt/Admin/Elements/EditRights"
+} }, '/l', $inc
+ );
+#line 189 "/var/www/localhost/htdocs/rt/Admin/Elements/EditRights"
+$m->print( '</span>' );
+#line 190 "/var/www/localhost/htdocs/rt/Admin/Elements/EditRights"
+
+    }
+}
+#line 194 "/var/www/localhost/htdocs/rt/Admin/Elements/EditRights"
+$m->print( '    </h3>
+    ' );
+#line 195 "/var/www/localhost/htdocs/rt/Admin/Elements/EditRights"
+$m->comp(   'EditRightsCategoryTabs', Context => $Context, Principal => $obj, id => $id   
+); #line 195 "/var/www/localhost/htdocs/rt/Admin/Elements/EditRights"
+$m->print( '
+  </div>
+' );
+#line 197 "/var/www/localhost/htdocs/rt/Admin/Elements/EditRights"
+
+    }
+}
+
+if ( $AddPrincipal ) {
+#line 203 "/var/www/localhost/htdocs/rt/Admin/Elements/EditRights"
+$m->print( '  <div id="acl-AddPrincipal">
+    <h3>' );
+#line 204 "/var/www/localhost/htdocs/rt/Admin/Elements/EditRights"
+$m->comp( { content => sub {
+#line 204 "/var/www/localhost/htdocs/rt/Admin/Elements/EditRights"
+$m->print( 'Add rights for this [_1]' );
+#line 204 "/var/www/localhost/htdocs/rt/Admin/Elements/EditRights"
+} }, '/l', loc($AddPrincipal)
+ );
+#line 204 "/var/www/localhost/htdocs/rt/Admin/Elements/EditRights"
+$m->print( '</h3>
+    ' );
+#line 205 "/var/www/localhost/htdocs/rt/Admin/Elements/EditRights"
+$m->comp(   'EditRightsCategoryTabs', Context => $Context, id => 'acl-AddPrincipal'   
+); #line 205 "/var/www/localhost/htdocs/rt/Admin/Elements/EditRights"
+$m->print( '
+  </div>
+' );
+#line 207 "/var/www/localhost/htdocs/rt/Admin/Elements/EditRights"
+ }
+$m->print( '
+</div>
+' );
+;return;
+},
+'declared_args' => {
+  '$AddPrincipal' => { default => ' undef' },
+  '$Context' => { default => undef },
+  '$Principals' => { default => undef }
+},
+'load_time' => 1434739225,
+
+)
+;

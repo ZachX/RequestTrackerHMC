@@ -1,0 +1,327 @@
+package HTML::Mason::Commands;
+use strict;
+use vars qw($m $DECODED_ARGS $r %session);
+HTML::Mason::Component::FileBased->new(
+'code' => sub {
+HTML::Mason::Exception::Params->throw
+    ( error =>
+      "Odd number of parameters passed to component expecting name/value pairs"
+    ) if @_ % 2;
+my %ARGS = @_;
+my ( $id, $TicketObj, $ShowHeaders, $ForceShowHistory );
+{
+    my %pos;
+    for ( my $x = 0; $x < @_; $x += 2 )
+    {
+        $pos{ $_[$x] } = $x + 1;
+    }
+#line 98 "/var/www/localhost/htdocs/rt/Ticket/Display.html"
+     $id = exists $pos{'id'} ? $_[ $pos{'id'} ] :  undef;
+#line 99 "/var/www/localhost/htdocs/rt/Ticket/Display.html"
+     $TicketObj = exists $pos{'TicketObj'} ? $_[ $pos{'TicketObj'} ] :  undef;
+#line 100 "/var/www/localhost/htdocs/rt/Ticket/Display.html"
+     $ShowHeaders = exists $pos{'ShowHeaders'} ? $_[ $pos{'ShowHeaders'} ] :  0;
+#line 101 "/var/www/localhost/htdocs/rt/Ticket/Display.html"
+     $ForceShowHistory = exists $pos{'ForceShowHistory'} ? $_[ $pos{'ForceShowHistory'} ] :  0;
+}
+$m->debug_hook( $m->current_comp->path ) if ( HTML::Mason::Compiler::IN_PERL_DB() );
+
+#line 104 "/var/www/localhost/htdocs/rt/Ticket/Display.html"
+
+
+$m->callback( TicketObj => $TicketObj, ARGSRef => \%ARGS, CallbackName => 'Initial' );
+
+if ( ! $ARGS{'NoRedirect'} && RT::Interface::Web->MobileClient()) {
+    $id ||= $TicketObj->id if $TicketObj;
+    RT::Interface::Web::Redirect(RT->Config->Get('WebURL').'m/ticket/show?id='.$id);
+    $m->abort;
+}
+
+
+my (@Actions, $title);
+
+
+unless ($id || $TicketObj) {
+    Abort('No ticket specified');
+}
+
+if ($ARGS{'id'} eq 'new') {
+    # Create a new ticket
+
+    my $Queue = RT::Queue->new( $session{'CurrentUser'} );
+    $Queue->Load($ARGS{'Queue'});
+    unless ( $Queue->id ) {
+        Abort('Queue not found');
+    }
+
+    unless ( $Queue->CurrentUserHasRight('CreateTicket') ) {
+        Abort('You have no permission to create tickets in that queue.');
+    }
+
+    ($TicketObj, @Actions) = CreateTicket( %ARGS );
+    unless ( $TicketObj->CurrentUserHasRight('ShowTicket') ) {
+        Abort("No permission to view newly created ticket #".$TicketObj->id.".");
+    }
+} else { 
+    $TicketObj ||= LoadTicket($ARGS{'id'});
+
+    $TicketObj->CurrentUser->PrincipalObj->HasRights( Object => $TicketObj );
+
+    my $SkipProcessing;
+
+    $m->callback( CallbackName => 'BeforeProcessArguments',
+        TicketObj => $TicketObj,
+        ActionsRef => \@Actions, ARGSRef => \%ARGS,
+        SkipProcessing => \$SkipProcessing );
+
+    if ( !$SkipProcessing ) {
+        if ( defined $ARGS{'Action'} ) {
+            if ($ARGS{'Action'} =~ /^(Steal|Delete|Take|SetTold)$/) {
+                my $action = $1;
+                my ($res, $msg) = $TicketObj->$action();
+                push(@Actions, $msg);
+            }
+        }
+
+        $m->callback(CallbackName => 'ProcessArguments', 
+                Ticket => $TicketObj, 
+                ARGSRef => \%ARGS, 
+                Actions => \@Actions);
+        
+        push @Actions, ProcessUpdateMessage(
+            ARGSRef   => \%ARGS,
+            Actions   => \@Actions,
+            TicketObj => $TicketObj,
+        );
+
+        #Process status updates
+        push @Actions, ProcessTicketWatchers(ARGSRef => \%ARGS, TicketObj => $TicketObj );
+        push @Actions, ProcessTicketBasics(  ARGSRef => \%ARGS, TicketObj => $TicketObj );
+        push @Actions, ProcessTicketLinks(   ARGSRef => \%ARGS, TicketObj => $TicketObj );
+        push @Actions, ProcessTicketDates(   ARGSRef => \%ARGS, TicketObj => $TicketObj );
+        push @Actions, ProcessObjectCustomFieldUpdates(ARGSRef => \%ARGS, TicketObj => $TicketObj );
+        push @Actions, ProcessTicketReminders( ARGSRef => \%ARGS, TicketObj => $TicketObj );
+
+        unless ($TicketObj->CurrentUserHasRight('ShowTicket')) {
+            if (@Actions) {
+                Abort("A change was applied successfully, but you no longer have permissions to view the ticket", Actions => \@Actions);
+            } else {
+                Abort("No permission to view ticket");
+            }
+        }
+        if ( $ARGS{'MarkAsSeen'} ) {
+            $TicketObj->SetAttribute(
+                Name => 'User-'. $TicketObj->CurrentUser->id .'-SeenUpTo',
+                Content => $TicketObj->LastUpdated,
+            );
+            push @Actions, loc('Marked all messages as seen');
+        }
+    }
+}
+
+
+$title = loc("#[_1]: [_2]", $TicketObj->Id, $TicketObj->Subject || '');
+
+$m->callback(
+    CallbackName => 'BeforeDisplay',
+    TicketObj => \$TicketObj,
+    Actions => \@Actions,
+    title => \$title,
+    ARGSRef => \%ARGS,
+);
+
+# This code does automatic redirection if any updates happen. 
+MaybeRedirectForResults(
+    Actions   => \@Actions,
+    $TicketObj->Type eq 'approval' && RT->Config->Get('ForceApprovalsView')
+        ? (Path      => "/Approvals/Display.html", Force => 1)
+        : (Path      => "/Ticket/Display.html")
+    ,
+    Anchor    => $ARGS{'Anchor'},
+    Arguments => { id => $TicketObj->id },
+);
+
+my $transactions = $TicketObj->SortedTransactions;
+my $attachments = $TicketObj->Attachments;
+my $attachment_content = $TicketObj->TextAttachments;
+
+my %link_rel;
+if (defined $session{'tickets'} and ($ARGS{'Query'} or $session{'CurrentSearchHash'}->{'Query'})) {
+    my $item_map = $session{'tickets'}->ItemMap;
+    $link_rel{first} = "Ticket/Display.html?id=" . $item_map->{first}                if $item_map->{$TicketObj->Id}{prev};
+    $link_rel{prev}  = "Ticket/Display.html?id=" . $item_map->{$TicketObj->Id}{prev} if $item_map->{$TicketObj->Id}{prev};
+    $link_rel{next}  = "Ticket/Display.html?id=" . $item_map->{$TicketObj->Id}{next} if $item_map->{$TicketObj->Id}{next};
+    $link_rel{last}  = "Ticket/Display.html?id=" . $item_map->{last}                 if $item_map->{$TicketObj->Id}{next} && $item_map->{last};
+}
+#line 1 "/var/www/localhost/htdocs/rt/Ticket/Display.html"
+# BEGIN BPS TAGGED BLOCK {{{
+#
+# COPYRIGHT:
+#
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
+#                                          <sales@bestpractical.com>
+#
+# (Except where explicitly superseded by other copyright notices)
+#
+#
+# LICENSE:
+#
+# This work is made available to you under the terms of Version 2 of
+# the GNU General Public License. A copy of that license should have
+# been provided with this software, but in any event can be snarfed
+# from www.gnu.org.
+#
+# This work is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
+#
+#
+# CONTRIBUTION SUBMISSION POLICY:
+#
+# (The following paragraph is not intended to limit the rights granted
+# to you to modify and distribute this software under the terms of
+# the GNU General Public License and is only of importance to you if
+# you choose to contribute your changes and enhancements to the
+# community by submitting them to Best Practical Solutions, LLC.)
+#
+# By intentionally submitting any modifications, corrections or
+# derivatives to this work, or any other work intended for use with
+# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+# you are the copyright holder for those contributions and you grant
+# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+# royalty-free, perpetual, license to use, copy, create derivative
+# works based on those contributions, and sublicense and distribute
+# those contributions and any derivatives thereof.
+#
+# END BPS TAGGED BLOCK }}}
+$m->comp(   '/Elements/Header', 
+    Title => $title,
+    LinkRel => \%link_rel   
+); #line 50 "/var/www/localhost/htdocs/rt/Ticket/Display.html"
+$m->print( '
+' );
+#line 51 "/var/www/localhost/htdocs/rt/Ticket/Display.html"
+$m->comp(   '/Elements/Tabs'  
+); #line 51 "/var/www/localhost/htdocs/rt/Ticket/Display.html"
+$m->print( '
+
+' );
+#line 53 "/var/www/localhost/htdocs/rt/Ticket/Display.html"
+ $m->callback(CallbackName => 'BeforeActionList', %ARGS, Actions => \@Actions, ARGSRef => \%ARGS, Ticket => $TicketObj);
+$m->print( '
+' );
+#line 55 "/var/www/localhost/htdocs/rt/Ticket/Display.html"
+$m->comp(   '/Elements/ListActions', actions => \@Actions   
+); #line 55 "/var/www/localhost/htdocs/rt/Ticket/Display.html"
+$m->print( '
+' );
+#line 56 "/var/www/localhost/htdocs/rt/Ticket/Display.html"
+$m->comp(   'Elements/ShowUpdateStatus', Ticket => $TicketObj   
+); #line 56 "/var/www/localhost/htdocs/rt/Ticket/Display.html"
+$m->print( '
+' );
+#line 57 "/var/www/localhost/htdocs/rt/Ticket/Display.html"
+$m->comp(   'Elements/ShowDependencyStatus', Ticket => $TicketObj   
+); #line 57 "/var/www/localhost/htdocs/rt/Ticket/Display.html"
+$m->print( '
+
+' );
+#line 59 "/var/www/localhost/htdocs/rt/Ticket/Display.html"
+ $m->callback( %ARGS, Ticket => $TicketObj, Transactions => $transactions, Attachments => $attachments, CallbackName => 'BeforeShowSummary' );
+$m->print( '<div class="summary">
+' );
+#line 61 "/var/www/localhost/htdocs/rt/Ticket/Display.html"
+$m->comp( { content => sub {
+#line 61 "/var/www/localhost/htdocs/rt/Ticket/Display.html"
+$m->print( '
+' );
+#line 62 "/var/www/localhost/htdocs/rt/Ticket/Display.html"
+$m->comp(   '/Ticket/Elements/ShowSummary',  Ticket => $TicketObj, Attachments => $attachments   
+); #line 62 "/var/www/localhost/htdocs/rt/Ticket/Display.html"
+$m->print( '
+' );
+#line 63 "/var/www/localhost/htdocs/rt/Ticket/Display.html"
+} }, '/Widgets/TitleBox', title => loc('Ticket metadata')
+ );
+#line 63 "/var/www/localhost/htdocs/rt/Ticket/Display.html"
+$m->print( '
+</div>
+<br />
+
+' );
+#line 67 "/var/www/localhost/htdocs/rt/Ticket/Display.html"
+ $m->callback( Ticket => $TicketObj, %ARGS, Transactions => $transactions, Attachments => $attachments, CallbackName => 'BeforeShowHistory' );
+$m->print( '
+' );
+#line 69 "/var/www/localhost/htdocs/rt/Ticket/Display.html"
+ my $ShowHistory = RT->Config->Get("ShowHistory", $session{'CurrentUser'});
+ if ($ShowHistory eq "delay") {
+$m->print( '    ' );
+#line 71 "/var/www/localhost/htdocs/rt/Ticket/Display.html"
+$m->comp(   '/Ticket/Elements/DelayShowHistory',
+        Ticket => $TicketObj,
+        ShowHeaders => $ARGS{'ShowHeaders'},
+      
+); #line 74 "/var/www/localhost/htdocs/rt/Ticket/Display.html"
+$m->print( '
+' );
+#line 75 "/var/www/localhost/htdocs/rt/Ticket/Display.html"
+ } elsif (not $ForceShowHistory and $ShowHistory eq "click") {
+$m->print( '    ' );
+#line 76 "/var/www/localhost/htdocs/rt/Ticket/Display.html"
+$m->comp(   '/Ticket/Elements/ClickToShowHistory',
+        Ticket => $TicketObj,
+        ShowHeaders => $ARGS{'ShowHeaders'},
+      
+); #line 79 "/var/www/localhost/htdocs/rt/Ticket/Display.html"
+$m->print( '
+' );
+#line 80 "/var/www/localhost/htdocs/rt/Ticket/Display.html"
+ } else {
+$m->print( '    ' );
+#line 81 "/var/www/localhost/htdocs/rt/Ticket/Display.html"
+$m->comp(   '/Elements/ShowHistory',
+          Object => $TicketObj,
+          Transactions => $transactions,
+          ShowHeaders => $ARGS{'ShowHeaders'},
+          Attachments => $attachments,
+          AttachmentContent => $attachment_content
+      
+); #line 87 "/var/www/localhost/htdocs/rt/Ticket/Display.html"
+$m->print( '
+' );
+#line 88 "/var/www/localhost/htdocs/rt/Ticket/Display.html"
+ }
+$m->print( '
+' );
+#line 90 "/var/www/localhost/htdocs/rt/Ticket/Display.html"
+ $m->callback( %ARGS,
+     Ticket       => $TicketObj,
+     Transactions => $transactions,
+     Attachments  => $attachments,
+     CallbackName => 'AfterShowHistory',
+ );
+$m->print( '
+' );
+#line 103 "/var/www/localhost/htdocs/rt/Ticket/Display.html"
+$m->print( '
+' );
+;return;
+},
+'declared_args' => {
+  '$ForceShowHistory' => { default => ' 0' },
+  '$ShowHeaders' => { default => ' 0' },
+  '$TicketObj' => { default => ' undef' },
+  '$id' => { default => ' undef' }
+},
+'load_time' => 1432969538,
+
+)
+;

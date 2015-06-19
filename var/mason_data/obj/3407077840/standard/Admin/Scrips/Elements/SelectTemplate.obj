@@ -1,0 +1,168 @@
+package HTML::Mason::Commands;
+use strict;
+use vars qw($m $DECODED_ARGS $r %session);
+HTML::Mason::Component::FileBased->new(
+'code' => sub {
+HTML::Mason::Exception::Params->throw
+    ( error =>
+      "Odd number of parameters passed to component expecting name/value pairs"
+    ) if @_ % 2;
+my ( $Name, $Queue, $Scrip, $Default );
+{
+    my %pos;
+    for ( my $x = 0; $x < @_; $x += 2 )
+    {
+        $pos{ $_[$x] } = $x + 1;
+    }
+#line 57 "/var/www/localhost/htdocs/rt/Admin/Scrips/Elements/SelectTemplate"
+     $Name = exists $pos{'Name'} ? $_[ $pos{'Name'} ] :  'Template';
+#line 58 "/var/www/localhost/htdocs/rt/Admin/Scrips/Elements/SelectTemplate"
+     $Queue = exists $pos{'Queue'} ? $_[ $pos{'Queue'} ] :  undef;
+#line 59 "/var/www/localhost/htdocs/rt/Admin/Scrips/Elements/SelectTemplate"
+     $Scrip = exists $pos{'Scrip'} ? $_[ $pos{'Scrip'} ] :  undef;
+#line 60 "/var/www/localhost/htdocs/rt/Admin/Scrips/Elements/SelectTemplate"
+     $Default = exists $pos{'Default'} ? $_[ $pos{'Default'} ] :  undef;
+}
+$m->debug_hook( $m->current_comp->path ) if ( HTML::Mason::Compiler::IN_PERL_DB() );
+
+#line 62 "/var/www/localhost/htdocs/rt/Admin/Scrips/Elements/SelectTemplate"
+
+
+my $current;
+$current = $Scrip->Template if $Scrip;
+
+my @list;
+if ( $Scrip && $Scrip->id && !$Scrip->IsAddedToAny ) {
+    my $templates = RT::Templates->new($session{'CurrentUser'});
+    $templates->UnLimit;
+    @list = $templates->DistinctFieldValues('Name');
+} else {
+    my $global = RT::Templates->new($session{'CurrentUser'});
+    $global->LimitToGlobal;
+
+    my %global;
+
+    while (my $t = $global->Next) {
+        $global{ lc $t->Name } = $t->Name
+    }
+
+    my @queues;
+    push @queues, @{ $Scrip->AddedTo->ItemsArrayRef } if $Scrip && $Scrip->id;
+    push @queues, $Queue if $Queue && $Queue->id;
+
+    my (%names, %counters);
+    foreach my $queue ( @queues ) {
+        my $templates = RT::Templates->new($session{'CurrentUser'});
+        $templates->LimitToQueue( $queue->id );
+        foreach my $name ( map $_->Name, @{ $templates->ItemsArrayRef } ) {
+            next if $global{ lc $name };
+            $counters{ lc $name }++;
+            $names{lc $name} = $name;
+        }
+    }
+    delete $counters{ $_ }
+        foreach grep $counters{$_} != @queues,
+        keys %counters;
+
+    @list =
+        map $global{$_} || $names{$_},
+        keys %global, keys %counters;
+}
+
+@list = sort { lc loc($a) cmp lc loc($b) } @list
+    if @list;
+
+#line 1 "/var/www/localhost/htdocs/rt/Admin/Scrips/Elements/SelectTemplate"
+# BEGIN BPS TAGGED BLOCK {{{
+#
+# COPYRIGHT:
+#
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
+#                                          <sales@bestpractical.com>
+#
+# (Except where explicitly superseded by other copyright notices)
+#
+#
+# LICENSE:
+#
+# This work is made available to you under the terms of Version 2 of
+# the GNU General Public License. A copy of that license should have
+# been provided with this software, but in any event can be snarfed
+# from www.gnu.org.
+#
+# This work is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
+#
+#
+# CONTRIBUTION SUBMISSION POLICY:
+#
+# (The following paragraph is not intended to limit the rights granted
+# to you to modify and distribute this software under the terms of
+# the GNU General Public License and is only of importance to you if
+# you choose to contribute your changes and enhancements to the
+# community by submitting them to Best Practical Solutions, LLC.)
+#
+# By intentionally submitting any modifications, corrections or
+# derivatives to this work, or any other work intended for use with
+# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+# you are the copyright holder for those contributions and you grant
+# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+# royalty-free, perpetual, license to use, copy, create derivative
+# works based on those contributions, and sublicense and distribute
+# those contributions and any derivatives thereof.
+#
+# END BPS TAGGED BLOCK }}}
+$m->print( '<select name="' );
+#line 48 "/var/www/localhost/htdocs/rt/Admin/Scrips/Elements/SelectTemplate"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $Name )) );
+#line 48 "/var/www/localhost/htdocs/rt/Admin/Scrips/Elements/SelectTemplate"
+$m->print( '">
+<option value="">' );
+#line 49 "/var/www/localhost/htdocs/rt/Admin/Scrips/Elements/SelectTemplate"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $current || '-' )) );
+#line 49 "/var/www/localhost/htdocs/rt/Admin/Scrips/Elements/SelectTemplate"
+$m->print( '</option>
+' );
+#line 50 "/var/www/localhost/htdocs/rt/Admin/Scrips/Elements/SelectTemplate"
+ foreach my $name ( @list ) {
+$m->print( '<option value="' );
+#line 51 "/var/www/localhost/htdocs/rt/Admin/Scrips/Elements/SelectTemplate"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $name )) );
+#line 51 "/var/www/localhost/htdocs/rt/Admin/Scrips/Elements/SelectTemplate"
+$m->print( '" ' );
+#line 52 "/var/www/localhost/htdocs/rt/Admin/Scrips/Elements/SelectTemplate"
+$m->print( '    ' );
+#line 52 "/var/www/localhost/htdocs/rt/Admin/Scrips/Elements/SelectTemplate"
+$m->print(  lc($Default||'') eq lc $name ? 'selected="selected"' : '' );
+#line 52 "/var/www/localhost/htdocs/rt/Admin/Scrips/Elements/SelectTemplate"
+$m->print( '
+>' );
+#line 53 "/var/www/localhost/htdocs/rt/Admin/Scrips/Elements/SelectTemplate"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( loc($name) )) );
+#line 53 "/var/www/localhost/htdocs/rt/Admin/Scrips/Elements/SelectTemplate"
+$m->print( '</option>
+' );
+#line 54 "/var/www/localhost/htdocs/rt/Admin/Scrips/Elements/SelectTemplate"
+ }
+$m->print( '</select>
+' );
+;return;
+},
+'declared_args' => {
+  '$Default' => { default => ' undef' },
+  '$Name' => { default => ' \'Template\'' },
+  '$Queue' => { default => ' undef' },
+  '$Scrip' => { default => ' undef' }
+},
+'load_time' => 1434746412,
+
+)
+;

@@ -1,0 +1,55 @@
+package HTML::Mason::Commands;
+use strict;
+use vars qw($m $DECODED_ARGS $r %session);
+HTML::Mason::Component::FileBased->new(
+'code' => sub {
+$m->debug_hook( $m->current_comp->path ) if ( HTML::Mason::Compiler::IN_PERL_DB() );
+
+#line 1 "/var/www/localhost/htdocs/rt/NoAuth/css/calendar.css"
+$m->print( '.tooltip{position:relative;z-index:1;}
+.tooltip:hover{z-index:5;color:#000;}
+.tooltip span.tip{display: none; text-align:left;}
+
+div.tooltip:hover span.tip{
+display:block;
+position:absolute;
+top:12px; left:24px; width:350px;
+border:1px solid #555;
+background-color:#fff;
+padding: 4px;
+font-size: 0.8em;
+color:#505050;
+}
+
+.date {
+text-align: right;
+}
+
+table.rtxcalendar {
+    width:100%;
+    border-collapse: collapse;
+    border: 1px dotted #d0d0d0;
+    margin-bottom: 6px;
+}
+
+table.rtxcalendar td {
+    border: 1px solid #d7d7d7;
+    vertical-align: top;
+}
+
+table.rtxcalendar th {
+    border: 1px solid #d7d7d7;
+    background: #eee;
+}
+table.rtxcalendar tbody th {
+    border: 1px solid #d7d7d7;
+    background: #eee;
+    font-weight: normal;
+}
+' );
+;return;
+},
+'load_time' => 1434735748,
+
+)
+;

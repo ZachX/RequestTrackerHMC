@@ -1,0 +1,147 @@
+package HTML::Mason::Commands;
+use strict;
+use vars qw($m $DECODED_ARGS $r %session);
+HTML::Mason::Component::FileBased->new(
+'code' => sub {
+HTML::Mason::Exception::Params->throw
+    ( error =>
+      "Odd number of parameters passed to component expecting name/value pairs"
+    ) if @_ % 2;
+my %ARGS = @_;
+my ( $User, $Address, $style, $Link );
+{
+    my %pos;
+    for ( my $x = 0; $x < @_; $x += 2 )
+    {
+        $pos{ $_[$x] } = $x + 1;
+    }
+#line 82 "/var/www/localhost/htdocs/rt/Elements/ShowUser"
+     $User = exists $pos{'User'} ? $_[ $pos{'User'} ] :  undef;
+#line 83 "/var/www/localhost/htdocs/rt/Elements/ShowUser"
+     $Address = exists $pos{'Address'} ? $_[ $pos{'Address'} ] :  undef;
+#line 84 "/var/www/localhost/htdocs/rt/Elements/ShowUser"
+     $style = exists $pos{'style'} ? $_[ $pos{'style'} ] :  undef;
+#line 85 "/var/www/localhost/htdocs/rt/Elements/ShowUser"
+     $Link = exists $pos{'Link'} ? $_[ $pos{'Link'} ] :  1;
+}
+$m->debug_hook( $m->current_comp->path ) if ( HTML::Mason::Compiler::IN_PERL_DB() );
+
+#line 48 "/var/www/localhost/htdocs/rt/Elements/ShowUser"
+
+# $User is an RT::User object
+# $Address is Email::Address object
+
+my $display = RT::User->Format(
+    User        => $User,
+    Address     => $Address,
+    CurrentUser => $session{CurrentUser},
+    Format      => $style,
+);
+
+# RT::User->Format does this itself, but we want to make sure we have a $User
+# if at all possible for the rest of our code below.
+if ($Address and not $User) {
+    $User = RT::User->new( $session{CurrentUser} );
+    $User->LoadByEmail( $Address->address );
+    undef $User unless $User->id;
+}
+
+my %system_user = (
+    RT->Nobody->id      => 1,
+    RT->SystemUser->id  => 1,
+);
+
+$m->callback(
+    ARGSRef         => \%ARGS,
+    User            => $User,
+    Address         => $Address,
+    display         => \$display,
+    system_user     => \%system_user,
+    CallbackName    => 'Modify',
+);
+#line 1 "/var/www/localhost/htdocs/rt/Elements/ShowUser"
+# BEGIN BPS TAGGED BLOCK {{{
+#
+# COPYRIGHT:
+#
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
+#                                          <sales@bestpractical.com>
+#
+# (Except where explicitly superseded by other copyright notices)
+#
+#
+# LICENSE:
+#
+# This work is made available to you under the terms of Version 2 of
+# the GNU General Public License. A copy of that license should have
+# been provided with this software, but in any event can be snarfed
+# from www.gnu.org.
+#
+# This work is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
+#
+#
+# CONTRIBUTION SUBMISSION POLICY:
+#
+# (The following paragraph is not intended to limit the rights granted
+# to you to modify and distribute this software under the terms of
+# the GNU General Public License and is only of importance to you if
+# you choose to contribute your changes and enhancements to the
+# community by submitting them to Best Practical Solutions, LLC.)
+#
+# By intentionally submitting any modifications, corrections or
+# derivatives to this work, or any other work intended for use with
+# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+# you are the copyright holder for those contributions and you grant
+# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+# royalty-free, perpetual, license to use, copy, create derivative
+# works based on those contributions, and sublicense and distribute
+# those contributions and any derivatives thereof.
+#
+# END BPS TAGGED BLOCK }}}
+$m->print( '<span class="user" ' );
+#line 87 "/var/www/localhost/htdocs/rt/Elements/ShowUser"
+$m->print(  $User && $User->id ? 'data-user-id="'.$User->id.'"' : "" );
+#line 87 "/var/www/localhost/htdocs/rt/Elements/ShowUser"
+$m->print( '>' );
+#line 88 "/var/www/localhost/htdocs/rt/Elements/ShowUser"
+ if ($Link and $User and $User->id and not $system_user{$User->id} and $session{CurrentUser}->Privileged) {
+$m->print( '<a href="' );
+#line 89 "/var/www/localhost/htdocs/rt/Elements/ShowUser"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( RT->Config->Get("WebPath") )) );
+#line 89 "/var/www/localhost/htdocs/rt/Elements/ShowUser"
+$m->print( '/User/Summary.html?id=' );
+#line 89 "/var/www/localhost/htdocs/rt/Elements/ShowUser"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $User->id )) );
+#line 89 "/var/www/localhost/htdocs/rt/Elements/ShowUser"
+$m->print( '">' );
+#line 90 "/var/www/localhost/htdocs/rt/Elements/ShowUser"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $display )) );
+#line 91 "/var/www/localhost/htdocs/rt/Elements/ShowUser"
+$m->print( '</a>' );
+#line 92 "/var/www/localhost/htdocs/rt/Elements/ShowUser"
+ } else {
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $display )) );
+#line 94 "/var/www/localhost/htdocs/rt/Elements/ShowUser"
+ }
+$m->print( '</span>' );
+;return;
+},
+'declared_args' => {
+  '$Address' => { default => ' undef' },
+  '$Link' => { default => ' 1' },
+  '$User' => { default => ' undef' },
+  '$style' => { default => ' undef' }
+},
+'load_time' => 1434735744,
+
+)
+;

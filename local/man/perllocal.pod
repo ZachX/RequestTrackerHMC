@@ -1,0 +1,110 @@
+=head2 Mon Jun  8 21:43:17 2015: C<Module> L<RTx::Calendar|RTx::Calendar>
+
+=over 4
+
+=item *
+
+C<installed into: /var/www/localhost/rt-4.2.11/local/lib>
+
+=item *
+
+C<LINKTYPE: dynamic>
+
+=item *
+
+C<VERSION: 0.07>
+
+=item *
+
+C<EXE_FILES: >
+
+=back
+
+=head2 Mon Jun  8 23:22:11 2015: C<Module> L<RTx::Calendar|RTx::Calendar>
+
+=over 4
+
+=item *
+
+C<installed into: /var/www/localhost/rt-4.2.11/local/lib>
+
+=item *
+
+C<LINKTYPE: dynamic>
+
+=item *
+
+C<VERSION: 0.07>
+
+=item *
+
+C<EXE_FILES: >
+
+=back
+
+=head2 Mon Jun  8 23:44:14 2015: C<Module> L<RT::Extension::PriorityAsString|RT::Extension::PriorityAsString>
+
+=over 4
+
+=item *
+
+C<installed into: /RT-Extension-PriorityAsString/lib>
+
+=item *
+
+C<LINKTYPE: dynamic>
+
+=item *
+
+C<VERSION: 1.03>
+
+=item *
+
+C<EXE_FILES: >
+
+=back
+
+=head2 Tue Jun  9 21:19:52 2015: C<Module> L<RT::Extension::PriorityAsString|RT::Extension::PriorityAsString>
+
+=over 4
+
+=item *
+
+C<installed into: /RT-Extension-PriorityAsString/lib>
+
+=item *
+
+C<LINKTYPE: dynamic>
+
+=item *
+
+C<VERSION: 1.03>
+
+=item *
+
+C<EXE_FILES: >
+
+=back
+
+=head2 Thu Jun 18 16:57:54 2015: C<Module> L<RT::Extension::QuickCalls|RT::Extension::QuickCalls>
+
+=over 4
+
+=item *
+
+C<installed into: /RT-Extension-QuickCalls/lib>
+
+=item *
+
+C<LINKTYPE: dynamic>
+
+=item *
+
+C<VERSION: 1.01>
+
+=item *
+
+C<EXE_FILES: >
+
+=back
+

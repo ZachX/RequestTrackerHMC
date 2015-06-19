@@ -1,0 +1,432 @@
+package HTML::Mason::Commands;
+use strict;
+use vars qw($m $DECODED_ARGS $r %session);
+HTML::Mason::Component::FileBased->new(
+'code' => sub {
+my %ARGS;
+{ local $^W; %ARGS = @_ unless (@_ % 2); }
+$m->debug_hook( $m->current_comp->path ) if ( HTML::Mason::Compiler::IN_PERL_DB() );
+
+#line 133 "/var/www/localhost/htdocs/rt/Articles/Elements/BeforeMessageBox"
+
+my $QueueObj = $ARGS{QueueObj};
+if ( $ARGS{id} && $ARGS{id} ne 'new' && !$QueueObj ) {
+    my $ticket = RT::Ticket->new( $session{CurrentUser} );
+    $ticket->Load( $ARGS{id} );
+    $QueueObj = $ticket->QueueObj;
+}
+
+my $skip = 0;
+$m->callback(CallbackName => "Init", skip => \$skip, Queue => $QueueObj);
+return if $skip;
+
+my $name_prefix = '';
+if ( $ARGS{'MessageBoxName'} ) {
+    $name_prefix = $ARGS{'MessageBoxName'} .'-';
+}
+
+# convert Articles-Include-Article => $id to Articles-Include-Article-$id
+if ( my $tmp = $ARGS{$name_prefix ."Articles-Include-Article"} ) {
+    $ARGS{$name_prefix ."Articles-Include-Article-$tmp"}++;
+}
+
+my %uri;
+if ( $ARGS{id} && $ARGS{id} ne 'new' ) {
+    $uri{$_}++ for split ' ', ($ARGS{$ARGS{'id'}.'-RefersTo'} || '');
+
+    foreach my $arg (keys %ARGS) {
+        next if $name_prefix && substr($arg, 0, length($name_prefix)) ne $name_prefix;
+
+        my $article = RT::Article->new($session{'CurrentUser'});
+        $article->LoadByInclude(
+            Field => substr($arg, length($name_prefix)),
+            Value => $ARGS{$arg},
+        );
+        if ($article->Id) {
+            $uri{$article->URI}++;
+        }
+    }
+}
+
+use RT::Articles;
+
+my $articles_content =
+  RT::Articles->new( $session{'CurrentUser'} );
+my $articles_basics = RT::Articles->new( $session{'CurrentUser'} );
+if ( my $tmp = $ARGS{ $name_prefix ."Articles_Content" } ) {
+    $articles_content->LimitCustomField(
+        VALUE => $tmp, OPERATOR => 'LIKE'
+    );
+    $articles_content->LimitAppliedClasses( Queue => $QueueObj );
+
+    $articles_basics->Limit( SUBCLAUSE       => 'all',
+                             FIELD           => 'Name',
+                             OPERATOR        => 'LIKE',
+                             VALUE           => $tmp,
+                             ENTRYAGGREGATOR => "OR" );
+    $articles_basics->Limit( SUBCLAUSE       => 'all',
+                             FIELD           => 'Summary',
+                             OPERATOR        => 'LIKE',
+                             VALUE           => $tmp,
+                             ENTRYAGGREGATOR => "OR" );
+    $articles_basics->LimitAppliedClasses( Queue => $QueueObj );
+}
+
+my $hotlist = RT::Articles->new( $session{'CurrentUser'} );
+$hotlist->LimitHotlistClasses;
+$hotlist->LimitAppliedClasses( Queue => $QueueObj );
+
+my ( $topic_articles, $topics, $included_topic );
+$topic_articles = RT::Articles->new( $session{CurrentUser} );
+$topics = [];
+
+my $top_topic = RT::Topic->new( $session{CurrentUser} );
+$top_topic->LoadByCols( Name => 'Queues', Parent => 0 , ObjectType => 'RT::System', ObjectId => 1);
+
+if ( $top_topic->id ) {
+    my $queue_topic = RT::Topic->new( $session{CurrentUser} );
+    $queue_topic->LoadByCols( Name => $QueueObj->Name, Parent => $top_topic->id );
+    if ( $queue_topic->id ) {
+    
+        # store all topics below $queue_topic to $topics
+        topics( $queue_topic, $topics, 0 );
+        
+        if ( my $tmp = $ARGS{ $name_prefix .'Articles-Include-Topic'}  ) {
+            $included_topic = RT::Topic->new( $session{CurrentUser} );
+            $included_topic->Load( $tmp );
+            $topic_articles->LimitTopics( $tmp );
+            $topic_articles->OrderBy( FIELD => 'Name' );
+        }
+    }
+}
+
+
+# recursively get all the topics given a top topic
+sub topics {
+    my $parent = shift;
+    my $out = shift;
+    my $depth = shift;
+    while ( my $topic = $parent->Children->Next ) {
+        push @$out, { id => $topic->id, name => $topic->Name, depth => $depth };
+        topics( $topic, $out, $depth+1 );
+    }
+}
+
+#line 1 "/var/www/localhost/htdocs/rt/Articles/Elements/BeforeMessageBox"
+# BEGIN BPS TAGGED BLOCK {{{
+#
+# COPYRIGHT:
+#
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
+#                                          <sales@bestpractical.com>
+#
+# (Except where explicitly superseded by other copyright notices)
+#
+#
+# LICENSE:
+#
+# This work is made available to you under the terms of Version 2 of
+# the GNU General Public License. A copy of that license should have
+# been provided with this software, but in any event can be snarfed
+# from www.gnu.org.
+#
+# This work is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
+#
+#
+# CONTRIBUTION SUBMISSION POLICY:
+#
+# (The following paragraph is not intended to limit the rights granted
+# to you to modify and distribute this software under the terms of
+# the GNU General Public License and is only of importance to you if
+# you choose to contribute your changes and enhancements to the
+# community by submitting them to Best Practical Solutions, LLC.)
+#
+# By intentionally submitting any modifications, corrections or
+# derivatives to this work, or any other work intended for use with
+# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+# you are the copyright holder for those contributions and you grant
+# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+# royalty-free, perpetual, license to use, copy, create derivative
+# works based on those contributions, and sublicense and distribute
+# those contributions and any derivatives thereof.
+#
+# END BPS TAGGED BLOCK }}}
+ if ( $ARGS{id} && $ARGS{id} ne 'new' ) {
+$m->print( '<input type="hidden" name="' );
+#line 49 "/var/www/localhost/htdocs/rt/Articles/Elements/BeforeMessageBox"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($ARGS{'id'})) );
+#line 49 "/var/www/localhost/htdocs/rt/Articles/Elements/BeforeMessageBox"
+$m->print( '-RefersTo" value="' );
+#line 49 "/var/www/localhost/htdocs/rt/Articles/Elements/BeforeMessageBox"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( join(' ',grep {$_} sort keys %uri) )) );
+#line 49 "/var/www/localhost/htdocs/rt/Articles/Elements/BeforeMessageBox"
+$m->print( '" />
+' );
+#line 50 "/var/www/localhost/htdocs/rt/Articles/Elements/BeforeMessageBox"
+ }
+$m->print( '
+<table class="articles-select-article">
+' );
+#line 53 "/var/www/localhost/htdocs/rt/Articles/Elements/BeforeMessageBox"
+ unless (RT->Config->Get('HideArticleSearchOnReplyCreate')) {
+$m->print( '<tr>
+<td>' );
+#line 55 "/var/www/localhost/htdocs/rt/Articles/Elements/BeforeMessageBox"
+$m->comp( { content => sub {
+#line 55 "/var/www/localhost/htdocs/rt/Articles/Elements/BeforeMessageBox"
+$m->print( 'Search for Articles matching' );
+#line 55 "/var/www/localhost/htdocs/rt/Articles/Elements/BeforeMessageBox"
+} }, '/l'
+ );
+#line 55 "/var/www/localhost/htdocs/rt/Articles/Elements/BeforeMessageBox"
+$m->print( '</td>
+<td><input size=20 name="' );
+#line 56 "/var/www/localhost/htdocs/rt/Articles/Elements/BeforeMessageBox"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $name_prefix )) );
+#line 56 "/var/www/localhost/htdocs/rt/Articles/Elements/BeforeMessageBox"
+$m->print( 'Articles_Content" /></td>
+</tr>
+<tr>
+<td>' );
+#line 59 "/var/www/localhost/htdocs/rt/Articles/Elements/BeforeMessageBox"
+$m->comp( { content => sub {
+#line 59 "/var/www/localhost/htdocs/rt/Articles/Elements/BeforeMessageBox"
+$m->print( 'Include Article:' );
+#line 59 "/var/www/localhost/htdocs/rt/Articles/Elements/BeforeMessageBox"
+} }, '/l'
+ );
+#line 59 "/var/www/localhost/htdocs/rt/Articles/Elements/BeforeMessageBox"
+$m->print( '</td>
+<td><input size=20 name="' );
+#line 60 "/var/www/localhost/htdocs/rt/Articles/Elements/BeforeMessageBox"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $name_prefix )) );
+#line 60 "/var/www/localhost/htdocs/rt/Articles/Elements/BeforeMessageBox"
+$m->print( 'Articles-Include-Article-Named" /></td>
+<td><input type="submit" name="Go" value="Go" /></td>
+</tr>
+' );
+#line 63 "/var/www/localhost/htdocs/rt/Articles/Elements/BeforeMessageBox"
+ }
+ if ($hotlist->Count) {
+$m->print( '<tr>
+<td>' );
+#line 66 "/var/www/localhost/htdocs/rt/Articles/Elements/BeforeMessageBox"
+$m->comp( { content => sub {
+#line 66 "/var/www/localhost/htdocs/rt/Articles/Elements/BeforeMessageBox"
+$m->print( 'Select an Article to include' );
+#line 66 "/var/www/localhost/htdocs/rt/Articles/Elements/BeforeMessageBox"
+} }, '/l'
+ );
+#line 66 "/var/www/localhost/htdocs/rt/Articles/Elements/BeforeMessageBox"
+$m->print( '</td>
+<td><select name="' );
+#line 67 "/var/www/localhost/htdocs/rt/Articles/Elements/BeforeMessageBox"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $name_prefix )) );
+#line 67 "/var/www/localhost/htdocs/rt/Articles/Elements/BeforeMessageBox"
+$m->print( 'Articles-Include-Article-Named-Hotlist" onchange="this.form.submit()">
+<option value="" selected>' );
+#line 68 "/var/www/localhost/htdocs/rt/Articles/Elements/BeforeMessageBox"
+$m->comp( { content => sub {
+#line 68 "/var/www/localhost/htdocs/rt/Articles/Elements/BeforeMessageBox"
+$m->print( '-' );
+#line 68 "/var/www/localhost/htdocs/rt/Articles/Elements/BeforeMessageBox"
+} }, '/l'
+ );
+#line 68 "/var/www/localhost/htdocs/rt/Articles/Elements/BeforeMessageBox"
+$m->print( '</option>
+' );
+#line 69 "/var/www/localhost/htdocs/rt/Articles/Elements/BeforeMessageBox"
+ while (my $article = $hotlist->Next) {
+$m->print( '<option value="' );
+#line 70 "/var/www/localhost/htdocs/rt/Articles/Elements/BeforeMessageBox"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $article->Id )) );
+#line 70 "/var/www/localhost/htdocs/rt/Articles/Elements/BeforeMessageBox"
+$m->print( '">' );
+#line 70 "/var/www/localhost/htdocs/rt/Articles/Elements/BeforeMessageBox"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($article->Name|| loc('(no name)'))) );
+#line 70 "/var/www/localhost/htdocs/rt/Articles/Elements/BeforeMessageBox"
+$m->print( ': ' );
+#line 70 "/var/www/localhost/htdocs/rt/Articles/Elements/BeforeMessageBox"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($article->Summary || '')) );
+#line 70 "/var/www/localhost/htdocs/rt/Articles/Elements/BeforeMessageBox"
+$m->print( '</option>
+' );
+#line 71 "/var/www/localhost/htdocs/rt/Articles/Elements/BeforeMessageBox"
+ }
+$m->print( '</select>
+</td>
+<td><input type="submit" name="Go" value="Go" /></td>
+</tr>
+' );
+#line 76 "/var/www/localhost/htdocs/rt/Articles/Elements/BeforeMessageBox"
+ }
+ my %dedupe_articles;
+ while (my $article = $articles_content->Next) {
+   $dedupe_articles{$article->Id}++;
+$m->print( '<tr>
+<td>&nbsp;</td>
+<td>' );
+#line 82 "/var/www/localhost/htdocs/rt/Articles/Elements/BeforeMessageBox"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($article->Name|| loc('(no name)'))) );
+#line 82 "/var/www/localhost/htdocs/rt/Articles/Elements/BeforeMessageBox"
+$m->print( ': ' );
+#line 82 "/var/www/localhost/htdocs/rt/Articles/Elements/BeforeMessageBox"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($article->Summary)) );
+#line 82 "/var/www/localhost/htdocs/rt/Articles/Elements/BeforeMessageBox"
+$m->print( '</td>
+<td><input type="submit" name="' );
+#line 83 "/var/www/localhost/htdocs/rt/Articles/Elements/BeforeMessageBox"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $name_prefix )) );
+#line 83 "/var/www/localhost/htdocs/rt/Articles/Elements/BeforeMessageBox"
+$m->print( 'Articles-Include-Article-' );
+#line 83 "/var/www/localhost/htdocs/rt/Articles/Elements/BeforeMessageBox"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($article->Id)) );
+#line 83 "/var/www/localhost/htdocs/rt/Articles/Elements/BeforeMessageBox"
+$m->print( '" value="Go" /></td>
+</tr>
+' );
+#line 85 "/var/www/localhost/htdocs/rt/Articles/Elements/BeforeMessageBox"
+ }
+ while (my $article = $articles_basics->Next) {
+   next if $dedupe_articles{$article->Id};
+$m->print( '<tr>
+<td>&nbsp;</td>
+<td>' );
+#line 90 "/var/www/localhost/htdocs/rt/Articles/Elements/BeforeMessageBox"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($article->Name || loc('(no name)'))) );
+#line 90 "/var/www/localhost/htdocs/rt/Articles/Elements/BeforeMessageBox"
+$m->print( ': ' );
+#line 90 "/var/www/localhost/htdocs/rt/Articles/Elements/BeforeMessageBox"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($article->Summary || '')) );
+#line 90 "/var/www/localhost/htdocs/rt/Articles/Elements/BeforeMessageBox"
+$m->print( '</td>
+<td><input type="submit" name="' );
+#line 91 "/var/www/localhost/htdocs/rt/Articles/Elements/BeforeMessageBox"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $name_prefix )) );
+#line 91 "/var/www/localhost/htdocs/rt/Articles/Elements/BeforeMessageBox"
+$m->print( 'Articles-Include-Article-' );
+#line 91 "/var/www/localhost/htdocs/rt/Articles/Elements/BeforeMessageBox"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($article->Id)) );
+#line 91 "/var/www/localhost/htdocs/rt/Articles/Elements/BeforeMessageBox"
+$m->print( '" value="Go" /></td>
+</tr>
+' );
+#line 93 "/var/www/localhost/htdocs/rt/Articles/Elements/BeforeMessageBox"
+ }
+ if ( @$topics ) {
+$m->print( '<tr>
+<td>
+' );
+#line 97 "/var/www/localhost/htdocs/rt/Articles/Elements/BeforeMessageBox"
+$m->comp( { content => sub {
+#line 97 "/var/www/localhost/htdocs/rt/Articles/Elements/BeforeMessageBox"
+$m->print( 'Choose from Topics for [_1]' );
+#line 97 "/var/www/localhost/htdocs/rt/Articles/Elements/BeforeMessageBox"
+} }, '/l', $QueueObj->Name
+ );
+#line 97 "/var/www/localhost/htdocs/rt/Articles/Elements/BeforeMessageBox"
+$m->print( '
+</td>
+<td>
+<select name="' );
+#line 100 "/var/www/localhost/htdocs/rt/Articles/Elements/BeforeMessageBox"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $name_prefix )) );
+#line 100 "/var/www/localhost/htdocs/rt/Articles/Elements/BeforeMessageBox"
+$m->print( 'Articles-Include-Topic" onchange="this.form.submit()">
+<option value="" selected>-</option>
+' );
+#line 102 "/var/www/localhost/htdocs/rt/Articles/Elements/BeforeMessageBox"
+ for ( @$topics ) { 
+$m->print( '<option value="' );
+#line 103 "/var/www/localhost/htdocs/rt/Articles/Elements/BeforeMessageBox"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $_->{id} )) );
+#line 103 "/var/www/localhost/htdocs/rt/Articles/Elements/BeforeMessageBox"
+$m->print( '">' );
+#line 103 "/var/www/localhost/htdocs/rt/Articles/Elements/BeforeMessageBox"
+$m->print( '&nbsp;' x $_->{depth} . ($_->{name}|| loc('(no name)')) );
+#line 103 "/var/www/localhost/htdocs/rt/Articles/Elements/BeforeMessageBox"
+$m->print( '
+</option>
+' );
+#line 105 "/var/www/localhost/htdocs/rt/Articles/Elements/BeforeMessageBox"
+ }
+$m->print( '</select>
+</td>
+<td><input type="submit" name="Go" value="Go" /></td>
+</tr>
+
+' );
+#line 111 "/var/www/localhost/htdocs/rt/Articles/Elements/BeforeMessageBox"
+ if ( $ARGS{$name_prefix .'Articles-Include-Topic'} ) {
+$m->print( '<tr>
+<td>
+' );
+#line 114 "/var/www/localhost/htdocs/rt/Articles/Elements/BeforeMessageBox"
+$m->comp( { content => sub {
+#line 114 "/var/www/localhost/htdocs/rt/Articles/Elements/BeforeMessageBox"
+$m->print( 'Select an Article from [_1]' );
+#line 114 "/var/www/localhost/htdocs/rt/Articles/Elements/BeforeMessageBox"
+} }, '/l', $included_topic->Name
+ );
+#line 114 "/var/www/localhost/htdocs/rt/Articles/Elements/BeforeMessageBox"
+$m->print( '
+</td>
+<td>
+<select name="' );
+#line 117 "/var/www/localhost/htdocs/rt/Articles/Elements/BeforeMessageBox"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $name_prefix )) );
+#line 117 "/var/www/localhost/htdocs/rt/Articles/Elements/BeforeMessageBox"
+$m->print( 'Articles-Include-Article" onchange="this.form.submit()">
+<option value="" selected>-</option>
+' );
+#line 119 "/var/www/localhost/htdocs/rt/Articles/Elements/BeforeMessageBox"
+ while ( my $art = $topic_articles->Next ) {
+$m->print( '<option value="' );
+#line 120 "/var/www/localhost/htdocs/rt/Articles/Elements/BeforeMessageBox"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $art->id )) );
+#line 120 "/var/www/localhost/htdocs/rt/Articles/Elements/BeforeMessageBox"
+$m->print( '">' );
+#line 120 "/var/www/localhost/htdocs/rt/Articles/Elements/BeforeMessageBox"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($art->Name||loc('(no name)'))) );
+#line 120 "/var/www/localhost/htdocs/rt/Articles/Elements/BeforeMessageBox"
+$m->print( ': ' );
+#line 120 "/var/www/localhost/htdocs/rt/Articles/Elements/BeforeMessageBox"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($art->Summary)) );
+#line 120 "/var/www/localhost/htdocs/rt/Articles/Elements/BeforeMessageBox"
+$m->print( '</option>
+' );
+#line 121 "/var/www/localhost/htdocs/rt/Articles/Elements/BeforeMessageBox"
+ }
+$m->print( '</select>
+</td>
+<td><input type="submit" value="Go" name="Go" /></td>
+</tr>
+
+' );
+#line 127 "/var/www/localhost/htdocs/rt/Articles/Elements/BeforeMessageBox"
+ }
+ }
+$m->print( '
+
+</table>
+
+' );
+#line 238 "/var/www/localhost/htdocs/rt/Articles/Elements/BeforeMessageBox"
+$m->print( '
+
+' );
+;return;
+},
+'load_time' => 1434735752,
+
+)
+;

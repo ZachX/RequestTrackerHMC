@@ -1,0 +1,216 @@
+package HTML::Mason::Commands;
+use strict;
+use vars qw($m $DECODED_ARGS $r %session);
+HTML::Mason::Component::FileBased->new(
+'code' => sub {
+HTML::Mason::Exception::Params->throw
+    ( error =>
+      "Odd number of parameters passed to component expecting name/value pairs"
+    ) if @_ % 2;
+my ( $id, $Preview );
+{
+    my %pos;
+    for ( my $x = 0; $x < @_; $x += 2 )
+    {
+        $pos{ $_[$x] } = $x + 1;
+    }
+#line 141 "/var/www/localhost/htdocs/rt/Dashboards/Render.html"
+     $id = exists $pos{'id'} ? $_[ $pos{'id'} ] :  undef;
+#line 142 "/var/www/localhost/htdocs/rt/Dashboards/Render.html"
+     $Preview = exists $pos{'Preview'} ? $_[ $pos{'Preview'} ] :  1;
+}
+$m->debug_hook( $m->current_comp->path ) if ( HTML::Mason::Compiler::IN_PERL_DB() );
+
+#line 94 "/var/www/localhost/htdocs/rt/Dashboards/Render.html"
+
+
+
+use RT::Dashboard;
+my $Dashboard = RT::Dashboard->new($session{'CurrentUser'});
+my ($ok, $msg) = $Dashboard->LoadById($id);
+$ok || Abort(loc("Couldn't load dashboard [_1]: [_2]", $id, $msg));
+
+my $SubscriptionObj = RT::Attribute->new($session{'CurrentUser'});
+my $rows;
+
+# try to load the subscription to this id to get a better idea of number of rows
+for my $sub ($session{'CurrentUser'}->UserObj->Attributes->Named('Subscription')) {
+    next unless $sub->SubValue('DashboardId') == $id;
+    $SubscriptionObj = $sub;
+    $rows = $SubscriptionObj->SubValue('Rows');
+    last;
+}
+
+# otherwise honor their search preferences.. otherwise 50 rows
+# $rows == 0 means unlimited, which we don't want to ignore from above
+unless (defined($rows)) {
+    my $prefs = $session{'CurrentUser'}->UserObj->Preferences("SearchDisplay") || {};
+    $rows = defined($prefs->{'RowsPerPage'}) ? $prefs->{'RowsPerPage'} : 50;
+}
+
+my $title = loc '[_1] Dashboard', $Dashboard->Name;
+
+my $show_cb = sub {
+    my $pane = shift;
+    $m->comp('Elements/ShowPortlet/dashboard',
+        Portlet   => $Dashboard,
+        Rows      => $rows,
+        Preview   => $Preview,
+        Dashboard => $Dashboard,
+        Pane      => $pane,
+        Depth     => 0,
+    );
+};
+
+my $Refresh = $Preview
+    ? $session{'home_refresh_interval'}
+        || RT->Config->Get('HomePageRefreshInterval', $session{'CurrentUser'})
+    : 0;
+
+#line 1 "/var/www/localhost/htdocs/rt/Dashboards/Render.html"
+# BEGIN BPS TAGGED BLOCK {{{
+#
+# COPYRIGHT:
+#
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
+#                                          <sales@bestpractical.com>
+#
+# (Except where explicitly superseded by other copyright notices)
+#
+#
+# LICENSE:
+#
+# This work is made available to you under the terms of Version 2 of
+# the GNU General Public License. A copy of that license should have
+# been provided with this software, but in any event can be snarfed
+# from www.gnu.org.
+#
+# This work is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
+#
+#
+# CONTRIBUTION SUBMISSION POLICY:
+#
+# (The following paragraph is not intended to limit the rights granted
+# to you to modify and distribute this software under the terms of
+# the GNU General Public License and is only of importance to you if
+# you choose to contribute your changes and enhancements to the
+# community by submitting them to Best Practical Solutions, LLC.)
+#
+# By intentionally submitting any modifications, corrections or
+# derivatives to this work, or any other work intended for use with
+# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+# you are the copyright holder for those contributions and you grant
+# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+# royalty-free, perpetual, license to use, copy, create derivative
+# works based on those contributions, and sublicense and distribute
+# those contributions and any derivatives thereof.
+#
+# END BPS TAGGED BLOCK }}}
+$m->comp(   '/Elements/Header',
+    Title => $title,
+    ShowBar => $Preview,
+    Refresh => $Refresh,
+  
+); #line 52 "/var/www/localhost/htdocs/rt/Dashboards/Render.html"
+$m->print( '
+
+' );
+#line 54 "/var/www/localhost/htdocs/rt/Dashboards/Render.html"
+ if ($Preview) {
+$m->comp(   '/Elements/Tabs'  
+); #line 55 "/var/www/localhost/htdocs/rt/Dashboards/Render.html"
+$m->print( '
+' );
+#line 56 "/var/www/localhost/htdocs/rt/Dashboards/Render.html"
+ }
+$m->print( '
+' );
+#line 58 "/var/www/localhost/htdocs/rt/Dashboards/Render.html"
+ $m->callback(CallbackName => 'BeforeTable', Dashboard => $Dashboard, show_cb => $show_cb);
+$m->print( '
+<table class="dashboard" id="dashboard-' );
+#line 60 "/var/www/localhost/htdocs/rt/Dashboards/Render.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($id)) );
+#line 60 "/var/www/localhost/htdocs/rt/Dashboards/Render.html"
+$m->print( '">
+
+' );
+#line 62 "/var/www/localhost/htdocs/rt/Dashboards/Render.html"
+ $m->callback(CallbackName => 'BeforePanes', Dashboard => $Dashboard, show_cb => $show_cb);
+$m->print( '
+<tr valign="top">
+
+<td class="boxcontainer">
+' );
+#line 67 "/var/www/localhost/htdocs/rt/Dashboards/Render.html"
+ $show_cb->('body');
+$m->print( '</td>
+
+<td class="boxcontainer">
+' );
+#line 71 "/var/www/localhost/htdocs/rt/Dashboards/Render.html"
+ $show_cb->('sidebar');
+$m->print( '</td>
+
+</tr>
+
+' );
+#line 76 "/var/www/localhost/htdocs/rt/Dashboards/Render.html"
+ $m->callback(CallbackName => 'AfterPanes', Dashboard => $Dashboard, show_cb => $show_cb);
+$m->print( '
+</table>
+
+' );
+#line 80 "/var/www/localhost/htdocs/rt/Dashboards/Render.html"
+ $m->callback(CallbackName => 'AfterTable', Dashboard => $Dashboard, show_cb => $show_cb);
+$m->print( '
+' );
+#line 82 "/var/www/localhost/htdocs/rt/Dashboards/Render.html"
+ if (!$Preview) {
+ my $edit = RT->Config->Get('WebPath') . '/Dashboards/Modify.html?id='.$id;
+ my $subscription = RT->Config->Get('WebPath') . '/Dashboards/Subscription.html?id='.$id;
+$m->print( '<p>' );
+#line 85 "/var/www/localhost/htdocs/rt/Dashboards/Render.html"
+$m->comp( { content => sub {
+#line 85 "/var/www/localhost/htdocs/rt/Dashboards/Render.html"
+$m->print( 'You <a href="[_1]">may edit this dashboard</a> and <a href="[_2]">your subscription</a> to it in RT.' );
+#line 85 "/var/www/localhost/htdocs/rt/Dashboards/Render.html"
+} }, '/l', $edit, $subscription
+ );
+#line 85 "/var/www/localhost/htdocs/rt/Dashboards/Render.html"
+$m->print( '</p>
+
+' );
+#line 87 "/var/www/localhost/htdocs/rt/Dashboards/Render.html"
+# We disable autohandlers when mailing (!$Preview) so /Elements/Footer isn't
+# run for us.  Tidy up the end of the HTML.  We don't use /Elements/Tabs (and
+# hence PageLayout) so we don't need to close any other tags.
+$m->print( '  </body>
+</html>
+' );
+#line 92 "/var/www/localhost/htdocs/rt/Dashboards/Render.html"
+ }
+$m->print( '
+' );
+#line 144 "/var/www/localhost/htdocs/rt/Dashboards/Render.html"
+$m->print( '
+' );
+;return;
+},
+'declared_args' => {
+  '$Preview' => { default => ' 1' },
+  '$id' => { default => ' undef' }
+},
+'load_time' => 1434738755,
+
+)
+;

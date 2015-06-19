@@ -1,0 +1,164 @@
+package HTML::Mason::Commands;
+use strict;
+use vars qw($m $DECODED_ARGS $r %session);
+HTML::Mason::Component::FileBased->new(
+'code' => sub {
+HTML::Mason::Exception::Params->throw
+    ( error =>
+      "Odd number of parameters passed to component expecting name/value pairs"
+    ) if @_ % 2;
+my %ARGS = @_;
+my ( $Debug, $Menu );
+{
+    my %pos;
+    for ( my $x = 0; $x < @_; $x += 2 )
+    {
+        $pos{ $_[$x] } = $x + 1;
+    }
+#line 72 "/var/www/localhost/htdocs/rt/Elements/Footer"
+     $Debug = exists $pos{'Debug'} ? $_[ $pos{'Debug'} ] :  0;
+#line 73 "/var/www/localhost/htdocs/rt/Elements/Footer"
+     $Menu = exists $pos{'Menu'} ? $_[ $pos{'Menu'} ] :  1;
+}
+$m->debug_hook( $m->current_comp->path ) if ( HTML::Mason::Compiler::IN_PERL_DB() );
+
+#line 1 "/var/www/localhost/htdocs/rt/Elements/Footer"
+# BEGIN BPS TAGGED BLOCK {{{
+#
+# COPYRIGHT:
+#
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
+#                                          <sales@bestpractical.com>
+#
+# (Except where explicitly superseded by other copyright notices)
+#
+#
+# LICENSE:
+#
+# This work is made available to you under the terms of Version 2 of
+# the GNU General Public License. A copy of that license should have
+# been provided with this software, but in any event can be snarfed
+# from www.gnu.org.
+#
+# This work is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
+#
+#
+# CONTRIBUTION SUBMISSION POLICY:
+#
+# (The following paragraph is not intended to limit the rights granted
+# to you to modify and distribute this software under the terms of
+# the GNU General Public License and is only of importance to you if
+# you choose to contribute your changes and enhancements to the
+# community by submitting them to Best Practical Solutions, LLC.)
+#
+# By intentionally submitting any modifications, corrections or
+# derivatives to this work, or any other work intended for use with
+# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+# you are the copyright holder for those contributions and you grant
+# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+# royalty-free, perpetual, license to use, copy, create derivative
+# works based on those contributions, and sublicense and distribute
+# those contributions and any derivatives thereof.
+#
+# END BPS TAGGED BLOCK }}}
+# End of div#body from /Elements/PageLayout
+$m->print( '  <hr class="clear" />
+</div>
+' );
+#line 51 "/var/www/localhost/htdocs/rt/Elements/Footer"
+ $m->callback( %ARGS );
+$m->print( '<div id="footer">
+' );
+#line 53 "/var/www/localhost/htdocs/rt/Elements/Footer"
+ if ($m->{'rt_base_time'}) {
+$m->print( '  <p id="time"><span>' );
+#line 54 "/var/www/localhost/htdocs/rt/Elements/Footer"
+$m->comp( { content => sub {
+#line 54 "/var/www/localhost/htdocs/rt/Elements/Footer"
+$m->print( 'Time to display' );
+#line 54 "/var/www/localhost/htdocs/rt/Elements/Footer"
+} }, '/l'
+ );
+#line 54 "/var/www/localhost/htdocs/rt/Elements/Footer"
+$m->print( ': ' );
+#line 54 "/var/www/localhost/htdocs/rt/Elements/Footer"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } (Time::HiRes::tv_interval( $m->{'rt_base_time'} ))) );
+#line 54 "/var/www/localhost/htdocs/rt/Elements/Footer"
+$m->print( '</span></p>
+' );
+#line 55 "/var/www/localhost/htdocs/rt/Elements/Footer"
+}
+$m->print( '  <p id="bpscredits"><span>' );
+#line 56 "/var/www/localhost/htdocs/rt/Elements/Footer"
+$m->comp( { content => sub {
+#line 56 "/var/www/localhost/htdocs/rt/Elements/Footer"
+$m->print( '[_1] RT [_2] Copyright 1996-[_3] [_4].' );
+#line 56 "/var/www/localhost/htdocs/rt/Elements/Footer"
+} }, '/l_unsafe',     '&#187;&#124;&#171;', $RT::VERSION, '2015', '<a href="http://www.bestpractical.com?rt='.$RT::VERSION.'">Best Practical Solutions, LLC</a>',
+ );
+#line 56 "/var/www/localhost/htdocs/rt/Elements/Footer"
+$m->print( '
+</span></p>
+' );
+#line 58 "/var/www/localhost/htdocs/rt/Elements/Footer"
+ if (!$Menu) {
+$m->print( '  <p id="legal">' );
+#line 59 "/var/www/localhost/htdocs/rt/Elements/Footer"
+$m->comp( { content => sub {
+#line 59 "/var/www/localhost/htdocs/rt/Elements/Footer"
+$m->print( 'Distributed under [_1]version 2 of the GNU GPL[_2].' );
+#line 59 "/var/www/localhost/htdocs/rt/Elements/Footer"
+} }, '/l_unsafe', '<a href="http://www.gnu.org/licenses/gpl-2.0.html">', '</a>'
+ );
+#line 59 "/var/www/localhost/htdocs/rt/Elements/Footer"
+$m->print( '<br />' );
+#line 59 "/var/www/localhost/htdocs/rt/Elements/Footer"
+$m->comp( { content => sub {
+#line 59 "/var/www/localhost/htdocs/rt/Elements/Footer"
+$m->print( 'To inquire about support, training, custom development or licensing, please contact [_1].' );
+#line 59 "/var/www/localhost/htdocs/rt/Elements/Footer"
+} }, '/l_unsafe', '<a href="mailto:sales@bestpractical.com">sales@bestpractical.com</a>'
+ );
+#line 59 "/var/www/localhost/htdocs/rt/Elements/Footer"
+$m->print( '<br /></p>
+' );
+#line 60 "/var/www/localhost/htdocs/rt/Elements/Footer"
+ }
+$m->print( '</div>
+' );
+#line 62 "/var/www/localhost/htdocs/rt/Elements/Footer"
+ if ($Debug >= 2 ) {
+ require Data::Dumper;
+ my $d = Data::Dumper->new([\%ARGS], [qw(%ARGS)]);
+$m->print( '<pre>
+' );
+#line 66 "/var/www/localhost/htdocs/rt/Elements/Footer"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($d->Dump() )) );
+#line 66 "/var/www/localhost/htdocs/rt/Elements/Footer"
+$m->print( '
+</pre>
+' );
+#line 68 "/var/www/localhost/htdocs/rt/Elements/Footer"
+ }
+$m->print( '  </body>
+</html>
+' );
+;return;
+},
+'declared_args' => {
+  '$Debug' => { default => ' 0' },
+  '$Menu' => { default => ' 1' }
+},
+'load_time' => 1434735744,
+
+)
+;

@@ -1,0 +1,261 @@
+package HTML::Mason::Commands;
+use strict;
+use vars qw($m $DECODED_ARGS $r %session);
+HTML::Mason::Component::FileBased->new(
+'code' => sub {
+HTML::Mason::Exception::Params->throw
+    ( error =>
+      "Odd number of parameters passed to component expecting name/value pairs"
+    ) if @_ % 2;
+my %ARGS = @_;
+my ( $ObjectType, $CheckRight, $ShowNullOption, $ShowAll, $Name, $Verbose, $NamedValues, $DefaultLabel, $Default, $Lite, $OnChange, $Multiple, $Size, $Class, $CacheNeedsUpdate );
+{
+    my %pos;
+    for ( my $x = 0; $x < @_; $x += 2 )
+    {
+        $pos{ $_[$x] } = $x + 1;
+    }
+
+    foreach my $arg ( qw( ObjectType ) )
+    {
+        HTML::Mason::Exception::Params->throw
+            ( error => "no value sent for required parameter '$arg'" )
+                unless exists $pos{$arg};
+    }
+#line 72 "/var/www/localhost/htdocs/rt/Elements/SelectObject"
+    $ObjectType = $_[ $pos{'ObjectType'} ];
+#line 73 "/var/www/localhost/htdocs/rt/Elements/SelectObject"
+     $CheckRight = exists $pos{'CheckRight'} ? $_[ $pos{'CheckRight'} ] :  undef;
+#line 74 "/var/www/localhost/htdocs/rt/Elements/SelectObject"
+     $ShowNullOption = exists $pos{'ShowNullOption'} ? $_[ $pos{'ShowNullOption'} ] :  1;
+#line 75 "/var/www/localhost/htdocs/rt/Elements/SelectObject"
+     $ShowAll = exists $pos{'ShowAll'} ? $_[ $pos{'ShowAll'} ] :  1;
+#line 76 "/var/www/localhost/htdocs/rt/Elements/SelectObject"
+     $Name = exists $pos{'Name'} ? $_[ $pos{'Name'} ] :  undef;
+#line 77 "/var/www/localhost/htdocs/rt/Elements/SelectObject"
+     $Verbose = exists $pos{'Verbose'} ? $_[ $pos{'Verbose'} ] :  undef;
+#line 78 "/var/www/localhost/htdocs/rt/Elements/SelectObject"
+     $NamedValues = exists $pos{'NamedValues'} ? $_[ $pos{'NamedValues'} ] :  0;
+#line 79 "/var/www/localhost/htdocs/rt/Elements/SelectObject"
+     $DefaultLabel = exists $pos{'DefaultLabel'} ? $_[ $pos{'DefaultLabel'} ] :  "-";
+#line 80 "/var/www/localhost/htdocs/rt/Elements/SelectObject"
+     $Default = exists $pos{'Default'} ? $_[ $pos{'Default'} ] :  0;
+#line 81 "/var/www/localhost/htdocs/rt/Elements/SelectObject"
+     $Lite = exists $pos{'Lite'} ? $_[ $pos{'Lite'} ] :  0;
+#line 82 "/var/www/localhost/htdocs/rt/Elements/SelectObject"
+     $OnChange = exists $pos{'OnChange'} ? $_[ $pos{'OnChange'} ] :  undef;
+#line 83 "/var/www/localhost/htdocs/rt/Elements/SelectObject"
+     $Multiple = exists $pos{'Multiple'} ? $_[ $pos{'Multiple'} ] :  0;
+#line 84 "/var/www/localhost/htdocs/rt/Elements/SelectObject"
+     $Size = exists $pos{'Size'} ? $_[ $pos{'Size'} ] :  6;
+#line 85 "/var/www/localhost/htdocs/rt/Elements/SelectObject"
+     $Class = exists $pos{'Class'} ? $_[ $pos{'Class'} ] :  "";
+#line 86 "/var/www/localhost/htdocs/rt/Elements/SelectObject"
+     $CacheNeedsUpdate = exists $pos{'CacheNeedsUpdate'} ? $_[ $pos{'CacheNeedsUpdate'} ] :  undef;
+}
+$m->debug_hook( $m->current_comp->path ) if ( HTML::Mason::Compiler::IN_PERL_DB() );
+
+#line 88 "/var/www/localhost/htdocs/rt/Elements/SelectObject"
+
+$ObjectType = "RT::$ObjectType" unless $ObjectType =~ /::/;
+$Class    ||= "select-" . CSSClass("\L$1") if $ObjectType =~ /RT::(.+)$/;
+
+my $cache_key = join "---", "SelectObject", $ObjectType,
+    $session{'CurrentUser'}->Id, $CheckRight || "", $ShowAll;
+
+if ( defined $session{$cache_key} && ref $session{$cache_key} eq 'ARRAY') {
+    delete $session{$cache_key};
+}
+if ( defined $session{$cache_key} && defined $CacheNeedsUpdate &&
+     $session{$cache_key}{lastupdated} <= $CacheNeedsUpdate ) {
+    delete $session{$cache_key};
+}
+
+if ( not defined $session{$cache_key} and not $Lite ) {
+    my $collection = "${ObjectType}s"->new($session{'CurrentUser'});
+    $collection->UnLimit;
+
+    $m->callback( CallbackName => 'ModifyCollection', ARGSRef => \%ARGS,
+                  Collection => $collection, ObjectType => $ObjectType );
+
+    if ( $Default ) {
+        my $object = $ObjectType->new($session{'CurrentUser'});
+        $object->Load( $Default );
+        unless ( $ShowAll
+                 or not $CheckRight
+                 or $session{CurrentUser}->HasRight( Object => $object, Right => $CheckRight ) )
+        {
+            if ( $object->id ) {
+                push @{$session{$cache_key}{objects}}, {
+                    Id          => $object->id,
+                    Name        => '#' . $object->id,
+                    Description => '#' . $object->id,
+                };
+            }
+        }
+    }
+
+    while (my $object = $collection->Next) {
+        if ($ShowAll
+            or not $CheckRight
+            or $session{CurrentUser}->HasRight( Object => $object, Right => $CheckRight ))
+        {
+            push @{$session{$cache_key}{objects}}, {
+                Id          => $object->Id,
+                Name        => $object->Name,
+                Description => $object->_Accessible("Description" => "read") ? $object->Description : undef,
+            };
+        }
+    }
+    $session{$cache_key}{lastupdated} = time();
+}
+#line 1 "/var/www/localhost/htdocs/rt/Elements/SelectObject"
+# BEGIN BPS TAGGED BLOCK {{{
+#
+# COPYRIGHT:
+#
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
+#                                          <sales@bestpractical.com>
+#
+# (Except where explicitly superseded by other copyright notices)
+#
+#
+# LICENSE:
+#
+# This work is made available to you under the terms of Version 2 of
+# the GNU General Public License. A copy of that license should have
+# been provided with this software, but in any event can be snarfed
+# from www.gnu.org.
+#
+# This work is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
+#
+#
+# CONTRIBUTION SUBMISSION POLICY:
+#
+# (The following paragraph is not intended to limit the rights granted
+# to you to modify and distribute this software under the terms of
+# the GNU General Public License and is only of importance to you if
+# you choose to contribute your changes and enhancements to the
+# community by submitting them to Best Practical Solutions, LLC.)
+#
+# By intentionally submitting any modifications, corrections or
+# derivatives to this work, or any other work intended for use with
+# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+# you are the copyright holder for those contributions and you grant
+# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+# royalty-free, perpetual, license to use, copy, create derivative
+# works based on those contributions, and sublicense and distribute
+# those contributions and any derivatives thereof.
+#
+# END BPS TAGGED BLOCK }}}
+ if ($Lite) {
+     my $d = $ObjectType->new($session{'CurrentUser'});
+     $d->Load($Default);
+$m->print( '<input name="' );
+#line 51 "/var/www/localhost/htdocs/rt/Elements/SelectObject"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($Name)) );
+#line 51 "/var/www/localhost/htdocs/rt/Elements/SelectObject"
+$m->print( '" size="25" value="' );
+#line 51 "/var/www/localhost/htdocs/rt/Elements/SelectObject"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($d->Name)) );
+#line 51 "/var/www/localhost/htdocs/rt/Elements/SelectObject"
+$m->print( '" class="' );
+#line 51 "/var/www/localhost/htdocs/rt/Elements/SelectObject"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($Class)) );
+#line 51 "/var/www/localhost/htdocs/rt/Elements/SelectObject"
+$m->print( '" />
+' );
+#line 52 "/var/www/localhost/htdocs/rt/Elements/SelectObject"
+ }
+ else {
+$m->print( '<select name="' );
+#line 54 "/var/www/localhost/htdocs/rt/Elements/SelectObject"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($Name)) );
+#line 54 "/var/www/localhost/htdocs/rt/Elements/SelectObject"
+$m->print( '" ' );
+#line 54 "/var/www/localhost/htdocs/rt/Elements/SelectObject"
+$m->print(  ($Multiple) ? qq{multiple="multiple" size="$Size"} : '' );
+#line 54 "/var/www/localhost/htdocs/rt/Elements/SelectObject"
+$m->print( ' ' );
+#line 54 "/var/www/localhost/htdocs/rt/Elements/SelectObject"
+$m->print(  ($OnChange) ? 'onchange="'.$OnChange.'"' : '' );
+#line 54 "/var/www/localhost/htdocs/rt/Elements/SelectObject"
+$m->print( ' class="' );
+#line 54 "/var/www/localhost/htdocs/rt/Elements/SelectObject"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($Class)) );
+#line 54 "/var/www/localhost/htdocs/rt/Elements/SelectObject"
+$m->print( '">
+' );
+#line 55 "/var/www/localhost/htdocs/rt/Elements/SelectObject"
+     if ($ShowNullOption) {
+$m->print( '  <option value="">' );
+#line 56 "/var/www/localhost/htdocs/rt/Elements/SelectObject"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $DefaultLabel )) );
+#line 56 "/var/www/localhost/htdocs/rt/Elements/SelectObject"
+$m->print( '</option>
+' );
+#line 57 "/var/www/localhost/htdocs/rt/Elements/SelectObject"
+     }
+     for my $object (@{$session{$cache_key}{objects}}) {
+$m->print( '  <option value="' );
+#line 59 "/var/www/localhost/htdocs/rt/Elements/SelectObject"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( ($NamedValues ? $object->{Name} : $object->{Id}) )) );
+#line 59 "/var/www/localhost/htdocs/rt/Elements/SelectObject"
+$m->print( '"' );
+#line 60 "/var/www/localhost/htdocs/rt/Elements/SelectObject"
+ if ($object->{Id} eq ($Default||'') || $object->{Name} eq ($Default||'')) {
+$m->print( ' selected="selected"' );
+#line 62 "/var/www/localhost/htdocs/rt/Elements/SelectObject"
+ }
+$m->print( '>' );
+#line 63 "/var/www/localhost/htdocs/rt/Elements/SelectObject"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($object->{Name})) );
+#line 64 "/var/www/localhost/htdocs/rt/Elements/SelectObject"
+             if ($Verbose and $object->{Description}) {
+$m->print( ' (' );
+#line 65 "/var/www/localhost/htdocs/rt/Elements/SelectObject"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($object->{Description})) );
+#line 65 "/var/www/localhost/htdocs/rt/Elements/SelectObject"
+$m->print( ')' );
+#line 66 "/var/www/localhost/htdocs/rt/Elements/SelectObject"
+             }
+$m->print( '</option>
+' );
+#line 68 "/var/www/localhost/htdocs/rt/Elements/SelectObject"
+     }
+$m->print( '</select>
+' );
+#line 70 "/var/www/localhost/htdocs/rt/Elements/SelectObject"
+ }
+;return;
+},
+'declared_args' => {
+  '$CacheNeedsUpdate' => { default => ' undef' },
+  '$CheckRight' => { default => ' undef' },
+  '$Class' => { default => ' ""' },
+  '$Default' => { default => ' 0' },
+  '$DefaultLabel' => { default => ' "-"' },
+  '$Lite' => { default => ' 0' },
+  '$Multiple' => { default => ' 0' },
+  '$Name' => { default => ' undef' },
+  '$NamedValues' => { default => ' 0' },
+  '$ObjectType' => { default => undef },
+  '$OnChange' => { default => ' undef' },
+  '$ShowAll' => { default => ' 1' },
+  '$ShowNullOption' => { default => ' 1' },
+  '$Size' => { default => ' 6' },
+  '$Verbose' => { default => ' undef' }
+},
+'load_time' => 1434735744,
+
+)
+;

@@ -1,0 +1,305 @@
+package HTML::Mason::Commands;
+use strict;
+use vars qw($m $DECODED_ARGS $r %session);
+HTML::Mason::Component::FileBased->new(
+'code' => sub {
+HTML::Mason::Exception::Params->throw
+    ( error =>
+      "Odd number of parameters passed to component expecting name/value pairs"
+    ) if @_ % 2;
+my %ARGS = @_;
+my ( $Create, $Name, $Description, $SetEnabled, $Enabled, $id );
+{
+    my %pos;
+    for ( my $x = 0; $x < @_; $x += 2 )
+    {
+        $pos{ $_[$x] } = $x + 1;
+    }
+#line 170 "/var/www/localhost/htdocs/rt/Admin/Groups/Modify.html"
+     $Create = exists $pos{'Create'} ? $_[ $pos{'Create'} ] :  undef;
+#line 171 "/var/www/localhost/htdocs/rt/Admin/Groups/Modify.html"
+     $Name = exists $pos{'Name'} ? $_[ $pos{'Name'} ] :  undef;
+#line 172 "/var/www/localhost/htdocs/rt/Admin/Groups/Modify.html"
+     $Description = exists $pos{'Description'} ? $_[ $pos{'Description'} ] :  undef;
+#line 173 "/var/www/localhost/htdocs/rt/Admin/Groups/Modify.html"
+     $SetEnabled = exists $pos{'SetEnabled'} ? $_[ $pos{'SetEnabled'} ] :  undef;
+#line 174 "/var/www/localhost/htdocs/rt/Admin/Groups/Modify.html"
+     $Enabled = exists $pos{'Enabled'} ? $_[ $pos{'Enabled'} ] :  undef;
+#line 175 "/var/www/localhost/htdocs/rt/Admin/Groups/Modify.html"
+     $id = exists $pos{'id'} ? $_[ $pos{'id'} ] :  '' unless defined $id;
+}
+$m->debug_hook( $m->current_comp->path ) if ( HTML::Mason::Compiler::IN_PERL_DB() );
+
+#line 96 "/var/www/localhost/htdocs/rt/Admin/Groups/Modify.html"
+
+
+my  ($title, @results, @warnings, $Disabled, $EnabledChecked);
+
+my $Group = RT::Group->new($session{'CurrentUser'});
+
+if ($Create) {
+    $title = loc("Create a new group");
+} else {
+    if ($id eq 'new' ) {
+        my ($create_id, $create_msg) = $Group->CreateUserDefinedGroup(Name => $Name );
+        if ($create_id) {
+            $id = $Group->Id;
+            push @results, $create_msg;
+        } else {
+            push @results, loc("Group could not be created: [_1]", $create_msg);
+        }
+    } else {
+        $Group->Load($id) || Abort('Could not load group');
+    }
+
+    if ($Group->Id) {
+        $title = loc("Modify the group [_1]", $Group->Name);
+    }
+
+    # If the create failed
+    else {
+        $title = loc("Create a new group");
+        $Create = 1;
+    }
+}
+
+if ($Group->Id) {
+    my @fields = qw(Description Name );
+    my @fieldresults = UpdateRecordObject ( AttributesRef => \@fields,
+                                            Object => $Group,
+                                            ARGSRef => \%ARGS );
+    push (@results,@fieldresults);
+    push @results, ProcessObjectCustomFieldUpdates( ARGSRef => \%ARGS, Object => $Group );
+
+    # Warn about duplicate groups
+    my $dupcheck = RT::Groups->new(RT->SystemUser);
+    $dupcheck->LimitToUserDefinedGroups();
+    $dupcheck->Limit( FIELD => 'Name', VALUE => $Group->Name, CASESENSITIVE => 0 );
+    if ($dupcheck->Count > 1) {
+        push @warnings, loc("There is more than one group with the name '[_1]'.  This may cause inconsistency in parts of the admin interface, and therefore it's recommended you rename the conflicting groups.", $Group->Name);
+    }
+}
+
+#we're asking about enabled on the web page but really care about disabled.
+if (defined $Enabled && $Enabled == 1) {
+    $Disabled = 0;
+} else {
+    $Disabled = 1;
+}
+if  ( $Group->Id and ($SetEnabled) and ( $Disabled != $Group->Disabled) ) {
+    my  ($code, $msg) = $Group->SetDisabled($Disabled);
+    push @results, $msg;
+}
+
+# This code does automatic redirection if any updates happen.
+MaybeRedirectForResults(
+    Actions     => \@results,
+    Arguments   => { id => $Group->id },
+) if $Group->Id;
+
+push @results, @warnings;
+
+$EnabledChecked = ( $Group->Disabled() ? '' : 'checked="checked"' );
+
+#line 1 "/var/www/localhost/htdocs/rt/Admin/Groups/Modify.html"
+# BEGIN BPS TAGGED BLOCK {{{
+#
+# COPYRIGHT:
+#
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
+#                                          <sales@bestpractical.com>
+#
+# (Except where explicitly superseded by other copyright notices)
+#
+#
+# LICENSE:
+#
+# This work is made available to you under the terms of Version 2 of
+# the GNU General Public License. A copy of that license should have
+# been provided with this software, but in any event can be snarfed
+# from www.gnu.org.
+#
+# This work is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
+#
+#
+# CONTRIBUTION SUBMISSION POLICY:
+#
+# (The following paragraph is not intended to limit the rights granted
+# to you to modify and distribute this software under the terms of
+# the GNU General Public License and is only of importance to you if
+# you choose to contribute your changes and enhancements to the
+# community by submitting them to Best Practical Solutions, LLC.)
+#
+# By intentionally submitting any modifications, corrections or
+# derivatives to this work, or any other work intended for use with
+# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+# you are the copyright holder for those contributions and you grant
+# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+# royalty-free, perpetual, license to use, copy, create derivative
+# works based on those contributions, and sublicense and distribute
+# those contributions and any derivatives thereof.
+#
+# END BPS TAGGED BLOCK }}}
+$m->comp(   '/Admin/Elements/Header', Title => $title    
+); #line 48 "/var/www/localhost/htdocs/rt/Admin/Groups/Modify.html"
+$m->print( '
+
+' );
+#line 50 "/var/www/localhost/htdocs/rt/Admin/Groups/Modify.html"
+$m->comp(   '/Elements/Tabs'  
+); #line 50 "/var/www/localhost/htdocs/rt/Admin/Groups/Modify.html"
+$m->print( '
+' );
+#line 51 "/var/www/localhost/htdocs/rt/Admin/Groups/Modify.html"
+$m->comp(   '/Elements/ListActions', actions => \@results   
+); #line 51 "/var/www/localhost/htdocs/rt/Admin/Groups/Modify.html"
+$m->print( '
+
+
+
+<form action="' );
+#line 55 "/var/www/localhost/htdocs/rt/Admin/Groups/Modify.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } (RT->Config->Get('WebPath'))) );
+#line 55 "/var/www/localhost/htdocs/rt/Admin/Groups/Modify.html"
+$m->print( '/Admin/Groups/Modify.html" name="ModifyGroup" method="post" enctype="multipart/form-data">
+
+' );
+#line 57 "/var/www/localhost/htdocs/rt/Admin/Groups/Modify.html"
+unless ($Group->Id) {
+$m->print( '<input type="hidden" class="hidden" name="id" value="new" />
+' );
+#line 59 "/var/www/localhost/htdocs/rt/Admin/Groups/Modify.html"
+ } else {
+$m->print( '<input type="hidden" class="hidden" name="id" value="' );
+#line 60 "/var/www/localhost/htdocs/rt/Admin/Groups/Modify.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($Group->Id)) );
+#line 60 "/var/www/localhost/htdocs/rt/Admin/Groups/Modify.html"
+$m->print( '" />
+' );
+#line 61 "/var/www/localhost/htdocs/rt/Admin/Groups/Modify.html"
+ }
+$m->print( '<table>
+<tr><td align="right">
+' );
+#line 64 "/var/www/localhost/htdocs/rt/Admin/Groups/Modify.html"
+$m->comp( { content => sub {
+#line 64 "/var/www/localhost/htdocs/rt/Admin/Groups/Modify.html"
+$m->print( 'Name' );
+#line 64 "/var/www/localhost/htdocs/rt/Admin/Groups/Modify.html"
+} }, '/l'
+ );
+#line 64 "/var/www/localhost/htdocs/rt/Admin/Groups/Modify.html"
+$m->print( ':
+</td>
+<td><input name="Name" value="' );
+#line 66 "/var/www/localhost/htdocs/rt/Admin/Groups/Modify.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($Group->Name||$Name||'')) );
+#line 66 "/var/www/localhost/htdocs/rt/Admin/Groups/Modify.html"
+$m->print( '" /></td>
+</tr>
+<tr>
+<td align="right">
+' );
+#line 70 "/var/www/localhost/htdocs/rt/Admin/Groups/Modify.html"
+$m->comp( { content => sub {
+#line 70 "/var/www/localhost/htdocs/rt/Admin/Groups/Modify.html"
+$m->print( 'Description' );
+#line 70 "/var/www/localhost/htdocs/rt/Admin/Groups/Modify.html"
+} }, '/l'
+ );
+#line 70 "/var/www/localhost/htdocs/rt/Admin/Groups/Modify.html"
+$m->print( ':</td><td colspan="3"><input name="Description" value="' );
+#line 70 "/var/www/localhost/htdocs/rt/Admin/Groups/Modify.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($Group->Description||$Description||'')) );
+#line 70 "/var/www/localhost/htdocs/rt/Admin/Groups/Modify.html"
+$m->print( '" size="60" /></td>
+</tr>
+' );
+#line 72 "/var/www/localhost/htdocs/rt/Admin/Groups/Modify.html"
+ my $CFs = $Group->CustomFields;
+ while (my $CF = $CFs->Next) {
+$m->print( '<tr valign="top"><td align="right">
+' );
+#line 75 "/var/www/localhost/htdocs/rt/Admin/Groups/Modify.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $CF->Name )) );
+#line 75 "/var/www/localhost/htdocs/rt/Admin/Groups/Modify.html"
+$m->print( ':
+</td><td>
+' );
+#line 77 "/var/www/localhost/htdocs/rt/Admin/Groups/Modify.html"
+$m->comp(   '/Elements/EditCustomField', CustomField => $CF, 
+                              Object => $Group,   
+); #line 78 "/var/www/localhost/htdocs/rt/Admin/Groups/Modify.html"
+$m->print( '
+</td></tr>
+' );
+#line 80 "/var/www/localhost/htdocs/rt/Admin/Groups/Modify.html"
+ }
+$m->print( '<tr>
+<td colspan="2">
+<input type="hidden" class="hidden" name="SetEnabled" value="1" />
+<input type="checkbox" class="checkbox" id="Enabled" name="Enabled" value="1" ' );
+#line 84 "/var/www/localhost/htdocs/rt/Admin/Groups/Modify.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($EnabledChecked)) );
+#line 84 "/var/www/localhost/htdocs/rt/Admin/Groups/Modify.html"
+$m->print( ' />
+<label for="Enabled">' );
+#line 85 "/var/www/localhost/htdocs/rt/Admin/Groups/Modify.html"
+$m->comp( { content => sub {
+#line 85 "/var/www/localhost/htdocs/rt/Admin/Groups/Modify.html"
+$m->print( 'Enabled (Unchecking this box disables this group)' );
+#line 85 "/var/www/localhost/htdocs/rt/Admin/Groups/Modify.html"
+} }, '/l'
+ );
+#line 85 "/var/www/localhost/htdocs/rt/Admin/Groups/Modify.html"
+$m->print( '</label><br />
+</td>
+</tr>
+' );
+#line 88 "/var/www/localhost/htdocs/rt/Admin/Groups/Modify.html"
+ $m->callback( %ARGS, GroupObj => $Group, results => \@results );
+$m->print( '</table>
+' );
+#line 90 "/var/www/localhost/htdocs/rt/Admin/Groups/Modify.html"
+ if ( $Create ) {
+$m->comp(   '/Elements/Submit', Label => loc('Create'), Reset => 1   
+); #line 91 "/var/www/localhost/htdocs/rt/Admin/Groups/Modify.html"
+$m->print( '
+' );
+#line 92 "/var/www/localhost/htdocs/rt/Admin/Groups/Modify.html"
+ } else {
+$m->comp(   '/Elements/Submit', Label => loc('Save Changes'), Reset => 1   
+); #line 93 "/var/www/localhost/htdocs/rt/Admin/Groups/Modify.html"
+$m->print( '
+' );
+#line 94 "/var/www/localhost/htdocs/rt/Admin/Groups/Modify.html"
+ }
+$m->print( '</form>
+' );
+#line 167 "/var/www/localhost/htdocs/rt/Admin/Groups/Modify.html"
+$m->print( '
+
+' );
+;return;
+},
+'declared_args' => {
+  '$Create' => { default => ' undef' },
+  '$Description' => { default => ' undef' },
+  '$Enabled' => { default => ' undef' },
+  '$Name' => { default => ' undef' },
+  '$SetEnabled' => { default => ' undef' },
+  '$id' => { default => ' \'\' unless defined $id' }
+},
+'load_time' => 1434739315,
+
+)
+;

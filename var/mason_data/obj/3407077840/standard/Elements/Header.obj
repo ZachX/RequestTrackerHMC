@@ -1,0 +1,306 @@
+package HTML::Mason::Commands;
+use strict;
+use vars qw($m $DECODED_ARGS $r %session);
+HTML::Mason::Component::FileBased->new(
+'code' => sub {
+HTML::Mason::Exception::Params->throw
+    ( error =>
+      "Odd number of parameters passed to component expecting name/value pairs"
+    ) if @_ % 2;
+my %ARGS = @_;
+my ( $Focus, $Title, $Refresh, $ShowBar, $URL, $RSSAutoDiscovery, $onload, $LinkRel, $SkipDoctype, $RichText, $BodyClass );
+{
+    my %pos;
+    for ( my $x = 0; $x < @_; $x += 2 )
+    {
+        $pos{ $_[$x] } = $x + 1;
+    }
+#line 148 "/var/www/localhost/htdocs/rt/Elements/Header"
+     $Focus = exists $pos{'Focus'} ? $_[ $pos{'Focus'} ] :  '';
+#line 149 "/var/www/localhost/htdocs/rt/Elements/Header"
+     $Title = exists $pos{'Title'} ? $_[ $pos{'Title'} ] :   'RT';
+#line 150 "/var/www/localhost/htdocs/rt/Elements/Header"
+     $Refresh = exists $pos{'Refresh'} ? $_[ $pos{'Refresh'} ] :  0;
+#line 151 "/var/www/localhost/htdocs/rt/Elements/Header"
+     $ShowBar = exists $pos{'ShowBar'} ? $_[ $pos{'ShowBar'} ] :  1;
+#line 152 "/var/www/localhost/htdocs/rt/Elements/Header"
+     $URL = exists $pos{'URL'} ? $_[ $pos{'URL'} ] :  undef;
+#line 153 "/var/www/localhost/htdocs/rt/Elements/Header"
+     $RSSAutoDiscovery = exists $pos{'RSSAutoDiscovery'} ? $_[ $pos{'RSSAutoDiscovery'} ] :  undef;
+#line 154 "/var/www/localhost/htdocs/rt/Elements/Header"
+     $onload = exists $pos{'onload'} ? $_[ $pos{'onload'} ] :  undef;
+#line 155 "/var/www/localhost/htdocs/rt/Elements/Header"
+     $LinkRel = exists $pos{'LinkRel'} ? $_[ $pos{'LinkRel'} ] :  undef;
+#line 156 "/var/www/localhost/htdocs/rt/Elements/Header"
+     $SkipDoctype = exists $pos{'SkipDoctype'} ? $_[ $pos{'SkipDoctype'} ] :  0;
+#line 157 "/var/www/localhost/htdocs/rt/Elements/Header"
+     $RichText = exists $pos{'RichText'} ? $_[ $pos{'RichText'} ] :  1;
+#line 158 "/var/www/localhost/htdocs/rt/Elements/Header"
+     $BodyClass = exists $pos{'BodyClass'} ? $_[ $pos{'BodyClass'} ] :  undef;
+}
+$m->debug_hook( $m->current_comp->path ) if ( HTML::Mason::Compiler::IN_PERL_DB() );
+
+#line 110 "/var/www/localhost/htdocs/rt/Elements/Header"
+
+$r->headers_out->{'Pragma'} = 'no-cache';
+$r->headers_out->{'Cache-control'} = 'no-cache';
+
+my $id = $m->request_comp->path;
+$id =~ s|^/||g;
+$id =~ s|/|-|g;
+$id =~ s|\.html$||g;
+$id =~ s|index$||g
+    if $id ne 'index';
+$id =~ s|-$||g;
+
+my $style = $session{'CurrentUser'}
+          ? $session{'CurrentUser'}->Stylesheet
+          : RT->Config->Get('WebDefaultStylesheet');
+
+my @css_files;
+if ( RT->Config->Get('DevelMode') ) {
+    @css_files = map { "/static/css/$_" } "$style/main.css", RT->Config->Get('CSSFiles');
+}
+else {
+    my $key =
+      RT::Interface::Web::SquishedCSS( $style )->Key;
+    @css_files = "/NoAuth/css/$style/squished-$key.css";
+}
+
+# We use BodyClass in its $ARGS form so that callbacks have a chance to
+# massage it
+push @{$ARGS{'BodyClass'}}, lc $style;
+
+if (RT->Config->Get("UseSideBySideLayout", $session{'CurrentUser'})) {
+    push @{$ARGS{'BodyClass'}}, 'sidebyside';
+}
+
+#line 1 "/var/www/localhost/htdocs/rt/Elements/Header"
+# BEGIN BPS TAGGED BLOCK {{{
+#
+# COPYRIGHT:
+#
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
+#                                          <sales@bestpractical.com>
+#
+# (Except where explicitly superseded by other copyright notices)
+#
+#
+# LICENSE:
+#
+# This work is made available to you under the terms of Version 2 of
+# the GNU General Public License. A copy of that license should have
+# been provided with this software, but in any event can be snarfed
+# from www.gnu.org.
+#
+# This work is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
+#
+#
+# CONTRIBUTION SUBMISSION POLICY:
+#
+# (The following paragraph is not intended to limit the rights granted
+# to you to modify and distribute this software under the terms of
+# the GNU General Public License and is only of importance to you if
+# you choose to contribute your changes and enhancements to the
+# community by submitting them to Best Practical Solutions, LLC.)
+#
+# By intentionally submitting any modifications, corrections or
+# derivatives to this work, or any other work intended for use with
+# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+# you are the copyright holder for those contributions and you grant
+# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+# royalty-free, perpetual, license to use, copy, create derivative
+# works based on those contributions, and sublicense and distribute
+# those contributions and any derivatives thereof.
+#
+# END BPS TAGGED BLOCK }}}
+# index.html gets two doctypes unless we can skip it here
+ unless ($SkipDoctype) {
+$m->print( '<!DOCTYPE html>
+' );
+#line 51 "/var/www/localhost/htdocs/rt/Elements/Header"
+ }
+$m->print( '
+<html lang="en">
+  <head>
+    <title>' );
+#line 55 "/var/www/localhost/htdocs/rt/Elements/Header"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($Title)) );
+#line 55 "/var/www/localhost/htdocs/rt/Elements/Header"
+$m->print( '</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <!-- The X-UA-Compatible <meta> tag above must be very early in <head> -->
+
+' );
+#line 59 "/var/www/localhost/htdocs/rt/Elements/Header"
+ if ($Refresh && $Refresh =~ /^(\d+)/ && $1 > 0) {
+   my $URL = $m->notes->{RefreshURL}; $URL = $URL ? ";URL=$URL" : "";
+$m->print( '    <meta http-equiv="refresh" content="' );
+#line 61 "/var/www/localhost/htdocs/rt/Elements/Header"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( "$1$URL" )) );
+#line 61 "/var/www/localhost/htdocs/rt/Elements/Header"
+$m->print( '" />
+' );
+#line 62 "/var/www/localhost/htdocs/rt/Elements/Header"
+ }
+$m->print( '
+' );
+#line 64 "/var/www/localhost/htdocs/rt/Elements/Header"
+$m->comp(   'JavascriptConfig'  
+); #line 64 "/var/www/localhost/htdocs/rt/Elements/Header"
+$m->print( '
+
+' );
+#line 66 "/var/www/localhost/htdocs/rt/Elements/Header"
+ for my $cssfile ( @css_files ) {
+$m->print( '<link rel="stylesheet" href="' );
+#line 67 "/var/www/localhost/htdocs/rt/Elements/Header"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } (RT->Config->Get('WebPath'))) );
+#line 67 "/var/www/localhost/htdocs/rt/Elements/Header"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $cssfile )) );
+#line 67 "/var/www/localhost/htdocs/rt/Elements/Header"
+$m->print( '" type="text/css" media="all" />
+' );
+#line 68 "/var/www/localhost/htdocs/rt/Elements/Header"
+ }
+$m->print( '
+' );
+#line 70 "/var/www/localhost/htdocs/rt/Elements/Header"
+ for (keys %{$LinkRel || {}}) {
+$m->print( '    <link rel="' );
+#line 71 "/var/www/localhost/htdocs/rt/Elements/Header"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $_ )) );
+#line 71 "/var/www/localhost/htdocs/rt/Elements/Header"
+$m->print( '" href="' );
+#line 71 "/var/www/localhost/htdocs/rt/Elements/Header"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( RT->Config->Get('WebPath') . $LinkRel->{$_} )) );
+#line 71 "/var/www/localhost/htdocs/rt/Elements/Header"
+$m->print( '" />
+' );
+#line 72 "/var/www/localhost/htdocs/rt/Elements/Header"
+ }
+$m->print( '<link rel="shortcut icon" href="' );
+#line 73 "/var/www/localhost/htdocs/rt/Elements/Header"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } (RT->Config->Get('WebImagesURL'))) );
+#line 73 "/var/www/localhost/htdocs/rt/Elements/Header"
+$m->print( 'favicon.png" type="image/png" />
+
+' );
+#line 75 "/var/www/localhost/htdocs/rt/Elements/Header"
+ if ( $RSSAutoDiscovery ) {
+$m->print( '    <link rel="alternate" href="' );
+#line 76 "/var/www/localhost/htdocs/rt/Elements/Header"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($RSSAutoDiscovery)) );
+#line 76 "/var/www/localhost/htdocs/rt/Elements/Header"
+$m->print( '" type="application/rss+xml" title="RSS RT Search" />
+' );
+#line 77 "/var/www/localhost/htdocs/rt/Elements/Header"
+ }
+$m->print( '
+' );
+#line 79 "/var/www/localhost/htdocs/rt/Elements/Header"
+ my $stylesheet_plugin = "/NoAuth/css/".$style."/InHeader";
+ if ($m->comp_exists($stylesheet_plugin) ) {
+$m->comp(   $stylesheet_plugin   
+); #line 81 "/var/www/localhost/htdocs/rt/Elements/Header"
+$m->print( '
+' );
+#line 82 "/var/www/localhost/htdocs/rt/Elements/Header"
+ }
+$m->print( '
+<!-- Site CSS from theme editor -->
+<style type="text/css" media="all" id="sitecss">
+' );
+#line 86 "/var/www/localhost/htdocs/rt/Elements/Header"
+# Header is used when there isn't a database (such as in the Installer) which means there is no
+# RT::System object, nor are there attributes.
+ if (blessed(RT->System) and my $attr = RT->System->FirstAttribute('UserCSS')) {
+$m->print(  $attr->Content );
+#line 89 "/var/www/localhost/htdocs/rt/Elements/Header"
+$m->print( '
+' );
+#line 90 "/var/www/localhost/htdocs/rt/Elements/Header"
+ }
+$m->print( '</style>
+' );
+#line 92 "/var/www/localhost/htdocs/rt/Elements/Header"
+ # Leave %ARGS for backward compatibility
+ $m->callback( %ARGS, CallbackName => 'Head', ARGSRef => \%ARGS );
+$m->print( '
+' );
+#line 95 "/var/www/localhost/htdocs/rt/Elements/Header"
+$m->comp(   'HeaderJavascript', focus => $Focus, onload => $onload, RichText => $RichText   
+); #line 95 "/var/www/localhost/htdocs/rt/Elements/Header"
+$m->print( '
+
+' );
+#line 97 "/var/www/localhost/htdocs/rt/Elements/Header"
+$m->comp(   '/Elements/Framekiller'  
+); #line 97 "/var/www/localhost/htdocs/rt/Elements/Header"
+$m->print( '
+
+</head>
+  <body class="' );
+#line 100 "/var/www/localhost/htdocs/rt/Elements/Header"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( join( ' ',@{$ARGS{'BodyClass'}}) )) );
+#line 100 "/var/www/localhost/htdocs/rt/Elements/Header"
+$m->print( '" ' );
+#line 100 "/var/www/localhost/htdocs/rt/Elements/Header"
+$m->print(  $id && qq[id="comp-$id"] );
+#line 100 "/var/www/localhost/htdocs/rt/Elements/Header"
+$m->print( '>
+
+' );
+#line 102 "/var/www/localhost/htdocs/rt/Elements/Header"
+ if ($ShowBar) {
+$m->comp(   '/Elements/Logo', %ARGS   
+); #line 103 "/var/www/localhost/htdocs/rt/Elements/Header"
+$m->print( '
+
+<div id="quickbar">
+  ' );
+#line 106 "/var/www/localhost/htdocs/rt/Elements/Header"
+$m->comp(   '/Elements/PersonalQuickbar', %ARGS   
+); #line 106 "/var/www/localhost/htdocs/rt/Elements/Header"
+$m->print( '
+</div>
+' );
+#line 108 "/var/www/localhost/htdocs/rt/Elements/Header"
+ }
+$m->print( '<div id="header"><h1>' );
+#line 109 "/var/www/localhost/htdocs/rt/Elements/Header"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $Title )) );
+#line 109 "/var/www/localhost/htdocs/rt/Elements/Header"
+$m->print( '</h1></div>
+' );
+#line 145 "/var/www/localhost/htdocs/rt/Elements/Header"
+$m->print( '
+' );
+;return;
+},
+'declared_args' => {
+  '$BodyClass' => { default => ' undef' },
+  '$Focus' => { default => ' \'\'' },
+  '$LinkRel' => { default => ' undef' },
+  '$RSSAutoDiscovery' => { default => ' undef' },
+  '$Refresh' => { default => ' 0' },
+  '$RichText' => { default => ' 1' },
+  '$ShowBar' => { default => ' 1' },
+  '$SkipDoctype' => { default => ' 0' },
+  '$Title' => { default => '  \'RT\'' },
+  '$URL' => { default => ' undef' },
+  '$onload' => { default => ' undef' }
+},
+'load_time' => 1434735744,
+
+)
+;

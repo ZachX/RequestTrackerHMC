@@ -1,0 +1,76 @@
+package HTML::Mason::Commands;
+use strict;
+use vars qw($m $DECODED_ARGS $r %session);
+HTML::Mason::Component::FileBased->new(
+'code' => sub {
+HTML::Mason::Exception::Params->throw
+    ( error =>
+      "Odd number of parameters passed to component expecting name/value pairs"
+    ) if @_ % 2;
+my ( $Ticket );
+{
+    my %pos;
+    for ( my $x = 0; $x < @_; $x += 2 )
+    {
+        $pos{ $_[$x] } = $x + 1;
+    }
+#line 10 "/RT-Extension-PriorityAsString/html/Ticket/Elements/ShowPriority"
+     $Ticket = exists $pos{'Ticket'} ? $_[ $pos{'Ticket'} ] :  undef;
+}
+$m->debug_hook( $m->current_comp->path ) if ( HTML::Mason::Compiler::IN_PERL_DB() );
+
+#line 12 "/RT-Extension-PriorityAsString/html/Ticket/Elements/ShowPriority"
+
+my %queues = RT->Config->Get('PriorityAsStringQueues');
+
+my $CSSClass = sub {
+    my $value = shift;
+    return '' unless defined $value;
+    $value =~ s/[^A-Za-z0-9_-]/_/g;
+    return $value;
+};
+#line 1 "/RT-Extension-PriorityAsString/html/Ticket/Elements/ShowPriority"
+ if (keys %queues and not $queues{$Ticket->QueueObj->Name}) {
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $Ticket->Priority )) );
+#line 2 "/RT-Extension-PriorityAsString/html/Ticket/Elements/ShowPriority"
+#$m->print( '/' );
+#line 2 "/RT-Extension-PriorityAsString/html/Ticket/Elements/ShowPriority"
+#$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $Ticket->FinalPriority || '')) );
+#line 2 "/RT-Extension-PriorityAsString/html/Ticket/Elements/ShowPriority"
+$m->print( '
+' );
+#line 3 "/RT-Extension-PriorityAsString/html/Ticket/Elements/ShowPriority"
+ } else {
+ my $current = $Ticket->PriorityAsString || '';
+ #my $final = $Ticket->FinalPriorityAsString || '';
+$m->print( '<span class="ticket-info-priority-' );
+#line 6 "/RT-Extension-PriorityAsString/html/Ticket/Elements/ShowPriority"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $CSSClass->(lc($current)) )) );
+#line 6 "/RT-Extension-PriorityAsString/html/Ticket/Elements/ShowPriority"
+#$m->print( '">' );
+#line 6 "/RT-Extension-PriorityAsString/html/Ticket/Elements/ShowPriority"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( loc($current) )) );
+#line 6 "/RT-Extension-PriorityAsString/html/Ticket/Elements/ShowPriority"
+$m->print( '</span>/' );
+#line 7 "/RT-Extension-PriorityAsString/html/Ticket/Elements/ShowPriority"
+#$m->print( '<span class="ticket-info-final-priority-' );
+#line 7 "/RT-Extension-PriorityAsString/html/Ticket/Elements/ShowPriority"
+#$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $CSSClass->(lc($final)) )) );
+#line 7 "/RT-Extension-PriorityAsString/html/Ticket/Elements/ShowPriority"
+#$m->print( '">' );
+#line 7 "/RT-Extension-PriorityAsString/html/Ticket/Elements/ShowPriority"
+#$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( loc($final) )) );
+#line 7 "/RT-Extension-PriorityAsString/html/Ticket/Elements/ShowPriority"
+#$m->print( '</span>
+#' );
+#line 8 "/RT-Extension-PriorityAsString/html/Ticket/Elements/ShowPriority"
+ }
+;return;
+},
+'declared_args' => {
+  '$Ticket' => { default => ' undef' }
+},
+'load_time' => 1434735744,
+
+)
+;

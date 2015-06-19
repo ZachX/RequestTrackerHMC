@@ -1,0 +1,135 @@
+package HTML::Mason::Commands;
+use strict;
+use vars qw($m $DECODED_ARGS $r %session);
+HTML::Mason::Component::FileBased->new(
+'code' => sub {
+HTML::Mason::Exception::Params->throw
+    ( error =>
+      "Odd number of parameters passed to component expecting name/value pairs"
+    ) if @_ % 2;
+my ( $Default, $Name );
+{
+    my %pos;
+    for ( my $x = 0; $x < @_; $x += 2 )
+    {
+        $pos{ $_[$x] } = $x + 1;
+    }
+#line 79 "/var/www/localhost/htdocs/rt/Admin/Elements/SelectScripAction"
+     $Default = exists $pos{'Default'} ? $_[ $pos{'Default'} ] :  undef;
+#line 80 "/var/www/localhost/htdocs/rt/Admin/Elements/SelectScripAction"
+     $Name = exists $pos{'Name'} ? $_[ $pos{'Name'} ] :  'ScripAction';
+}
+$m->debug_hook( $m->current_comp->path ) if ( HTML::Mason::Compiler::IN_PERL_DB() );
+
+#line 60 "/var/www/localhost/htdocs/rt/Admin/Elements/SelectScripAction"
+
+my $ScripActions = RT::ScripActions->new($session{'CurrentUser'});
+
+# hide user-defined if the user can't execute code
+if ($session{CurrentUser}->HasRight(Object => $RT::System, Right => 'ExecuteCode')) {
+    $ScripActions->UnLimit;
+} else {
+    $ScripActions->Limit(
+        FIELD    => 'ExecModule',
+        OPERATOR => '!=',
+        VALUE    => 'UserDefined',
+    );
+}
+
+$ScripActions->OrderBy(FIELD => 'Name');
+
+#line 1 "/var/www/localhost/htdocs/rt/Admin/Elements/SelectScripAction"
+# BEGIN BPS TAGGED BLOCK {{{
+#
+# COPYRIGHT:
+#
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
+#                                          <sales@bestpractical.com>
+#
+# (Except where explicitly superseded by other copyright notices)
+#
+#
+# LICENSE:
+#
+# This work is made available to you under the terms of Version 2 of
+# the GNU General Public License. A copy of that license should have
+# been provided with this software, but in any event can be snarfed
+# from www.gnu.org.
+#
+# This work is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
+#
+#
+# CONTRIBUTION SUBMISSION POLICY:
+#
+# (The following paragraph is not intended to limit the rights granted
+# to you to modify and distribute this software under the terms of
+# the GNU General Public License and is only of importance to you if
+# you choose to contribute your changes and enhancements to the
+# community by submitting them to Best Practical Solutions, LLC.)
+#
+# By intentionally submitting any modifications, corrections or
+# derivatives to this work, or any other work intended for use with
+# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+# you are the copyright holder for those contributions and you grant
+# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+# royalty-free, perpetual, license to use, copy, create derivative
+# works based on those contributions, and sublicense and distribute
+# those contributions and any derivatives thereof.
+#
+# END BPS TAGGED BLOCK }}}
+$m->print( '<select name="' );
+#line 48 "/var/www/localhost/htdocs/rt/Admin/Elements/SelectScripAction"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($Name)) );
+#line 48 "/var/www/localhost/htdocs/rt/Admin/Elements/SelectScripAction"
+$m->print( '">
+<option value="" 
+' );
+#line 50 "/var/www/localhost/htdocs/rt/Admin/Elements/SelectScripAction"
+$m->print(  ! defined $Default && qq[ selected="selected"] );
+#line 50 "/var/www/localhost/htdocs/rt/Admin/Elements/SelectScripAction"
+$m->print( '
+>-</option>
+' );
+#line 52 "/var/www/localhost/htdocs/rt/Admin/Elements/SelectScripAction"
+while  (my $ScripAction = $ScripActions->Next) {
+$m->print( '<option value="' );
+#line 53 "/var/www/localhost/htdocs/rt/Admin/Elements/SelectScripAction"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($ScripAction->Id)) );
+#line 53 "/var/www/localhost/htdocs/rt/Admin/Elements/SelectScripAction"
+$m->print( '"
+' );
+#line 54 "/var/www/localhost/htdocs/rt/Admin/Elements/SelectScripAction"
+$m->print(  defined $Default && $ScripAction->Id == $Default && qq[ selected="selected"] );
+#line 54 "/var/www/localhost/htdocs/rt/Admin/Elements/SelectScripAction"
+$m->print( '
+>' );
+#line 55 "/var/www/localhost/htdocs/rt/Admin/Elements/SelectScripAction"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( loc($ScripAction->Name) )) );
+#line 55 "/var/www/localhost/htdocs/rt/Admin/Elements/SelectScripAction"
+$m->print( '
+</option>
+' );
+#line 57 "/var/www/localhost/htdocs/rt/Admin/Elements/SelectScripAction"
+}
+$m->print( '</select>
+
+' );
+;return;
+},
+'declared_args' => {
+  '$Default' => { default => ' undef' },
+  '$Name' => { default => ' \'ScripAction\'' }
+},
+'load_time' => 1434746412,
+
+)
+;

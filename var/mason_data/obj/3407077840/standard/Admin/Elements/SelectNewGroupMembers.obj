@@ -1,0 +1,205 @@
+package HTML::Mason::Commands;
+use strict;
+use vars qw($m $DECODED_ARGS $r %session);
+HTML::Mason::Component::FileBased->new(
+'code' => sub {
+HTML::Mason::Exception::Params->throw
+    ( error =>
+      "Odd number of parameters passed to component expecting name/value pairs"
+    ) if @_ % 2;
+my ( $Name, $Show, $Group, $SkipUsers, $SkipGroups );
+{
+    my %pos;
+    for ( my $x = 0; $x < @_; $x += 2 )
+    {
+        $pos{ $_[$x] } = $x + 1;
+    }
+
+    foreach my $arg ( qw( Group ) )
+    {
+        HTML::Mason::Exception::Params->throw
+            ( error => "no value sent for required parameter '$arg'" )
+                unless exists $pos{$arg};
+    }
+#line 90 "/var/www/localhost/htdocs/rt/Admin/Elements/SelectNewGroupMembers"
+     $Name = exists $pos{'Name'} ? $_[ $pos{'Name'} ] :  'Users';
+#line 91 "/var/www/localhost/htdocs/rt/Admin/Elements/SelectNewGroupMembers"
+     $Show = exists $pos{'Show'} ? $_[ $pos{'Show'} ] :  'All';
+#line 92 "/var/www/localhost/htdocs/rt/Admin/Elements/SelectNewGroupMembers"
+    $Group = $_[ $pos{'Group'} ];
+#line 93 "/var/www/localhost/htdocs/rt/Admin/Elements/SelectNewGroupMembers"
+     $SkipUsers = exists $pos{'SkipUsers'} ? $_[ $pos{'SkipUsers'} ] :  {};
+#line 94 "/var/www/localhost/htdocs/rt/Admin/Elements/SelectNewGroupMembers"
+     $SkipGroups = exists $pos{'SkipGroups'} ? $_[ $pos{'SkipGroups'} ] :  {};
+}
+$m->debug_hook( $m->current_comp->path ) if ( HTML::Mason::Compiler::IN_PERL_DB() );
+
+#line 85 "/var/www/localhost/htdocs/rt/Admin/Elements/SelectNewGroupMembers"
+
+my $user_ids  = join(',', grep { $SkipUsers->{$_} } keys %$SkipUsers);
+my $group_ids = join(',', grep { $SkipGroups->{$_} } keys %$SkipGroups);
+#line 1 "/var/www/localhost/htdocs/rt/Admin/Elements/SelectNewGroupMembers"
+# BEGIN BPS TAGGED BLOCK {{{
+#
+# COPYRIGHT:
+#
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
+#                                          <sales@bestpractical.com>
+#
+# (Except where explicitly superseded by other copyright notices)
+#
+#
+# LICENSE:
+#
+# This work is made available to you under the terms of Version 2 of
+# the GNU General Public License. A copy of that license should have
+# been provided with this software, but in any event can be snarfed
+# from www.gnu.org.
+#
+# This work is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
+#
+#
+# CONTRIBUTION SUBMISSION POLICY:
+#
+# (The following paragraph is not intended to limit the rights granted
+# to you to modify and distribute this software under the terms of
+# the GNU General Public License and is only of importance to you if
+# you choose to contribute your changes and enhancements to the
+# community by submitting them to Best Practical Solutions, LLC.)
+#
+# By intentionally submitting any modifications, corrections or
+# derivatives to this work, or any other work intended for use with
+# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+# you are the copyright holder for those contributions and you grant
+# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+# royalty-free, perpetual, license to use, copy, create derivative
+# works based on those contributions, and sublicense and distribute
+# those contributions and any derivatives thereof.
+#
+# END BPS TAGGED BLOCK }}}
+$m->print( '<table>
+' );
+#line 49 "/var/www/localhost/htdocs/rt/Admin/Elements/SelectNewGroupMembers"
+ if ( $Show ne 'Groups' ) {
+$m->print( '<tr>
+<td class="label"><label for="' );
+#line 51 "/var/www/localhost/htdocs/rt/Admin/Elements/SelectNewGroupMembers"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $Name )) );
+#line 51 "/var/www/localhost/htdocs/rt/Admin/Elements/SelectNewGroupMembers"
+$m->print( 'Users">' );
+#line 51 "/var/www/localhost/htdocs/rt/Admin/Elements/SelectNewGroupMembers"
+$m->comp( { content => sub {
+#line 51 "/var/www/localhost/htdocs/rt/Admin/Elements/SelectNewGroupMembers"
+$m->print( 'Add user' );
+#line 51 "/var/www/localhost/htdocs/rt/Admin/Elements/SelectNewGroupMembers"
+} }, '/l'
+ );
+#line 51 "/var/www/localhost/htdocs/rt/Admin/Elements/SelectNewGroupMembers"
+$m->print( ':</label></td>
+<td>
+<input type="text" value="" name="' );
+#line 53 "/var/www/localhost/htdocs/rt/Admin/Elements/SelectNewGroupMembers"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $Name )) );
+#line 53 "/var/www/localhost/htdocs/rt/Admin/Elements/SelectNewGroupMembers"
+$m->print( 'Users" id="' );
+#line 53 "/var/www/localhost/htdocs/rt/Admin/Elements/SelectNewGroupMembers"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $Name )) );
+#line 53 "/var/www/localhost/htdocs/rt/Admin/Elements/SelectNewGroupMembers"
+$m->print( 'Users" data-autocomplete="Users" data-autocomplete-return="Name" data-autocomplete-privileged="1" data-autocomplete-exclude="' );
+#line 53 "/var/www/localhost/htdocs/rt/Admin/Elements/SelectNewGroupMembers"
+$m->print(  $user_ids );
+#line 53 "/var/www/localhost/htdocs/rt/Admin/Elements/SelectNewGroupMembers"
+$m->print( '" />
+<script type="text/javascript">
+jQuery(function(){
+    // Auto-submit once a user is chosen
+    jQuery("#"+' );
+#line 57 "/var/www/localhost/htdocs/rt/Admin/Elements/SelectNewGroupMembers"
+$m->print( (map {; $m->interp->apply_escapes($_, 'j') } ( $Name)) );
+#line 57 "/var/www/localhost/htdocs/rt/Admin/Elements/SelectNewGroupMembers"
+$m->print( '+"Users").on("autocompleteselect", function( event, ui ) {
+        jQuery(event.target).val(ui.item.value);
+        jQuery(event.target).closest("form").submit();
+    });
+});
+</script>
+</td>
+</tr>
+' );
+#line 65 "/var/www/localhost/htdocs/rt/Admin/Elements/SelectNewGroupMembers"
+ }
+$m->print( '
+' );
+#line 67 "/var/www/localhost/htdocs/rt/Admin/Elements/SelectNewGroupMembers"
+ if ( $Show ne 'Users' ) {
+$m->print( '<tr>
+<td class="label"><label for="' );
+#line 69 "/var/www/localhost/htdocs/rt/Admin/Elements/SelectNewGroupMembers"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $Name )) );
+#line 69 "/var/www/localhost/htdocs/rt/Admin/Elements/SelectNewGroupMembers"
+$m->print( 'Groups">' );
+#line 69 "/var/www/localhost/htdocs/rt/Admin/Elements/SelectNewGroupMembers"
+$m->comp( { content => sub {
+#line 69 "/var/www/localhost/htdocs/rt/Admin/Elements/SelectNewGroupMembers"
+$m->print( 'Add group' );
+#line 69 "/var/www/localhost/htdocs/rt/Admin/Elements/SelectNewGroupMembers"
+} }, '/l'
+ );
+#line 69 "/var/www/localhost/htdocs/rt/Admin/Elements/SelectNewGroupMembers"
+$m->print( ':</label></td>
+<td>
+<input type="text" value="" name="' );
+#line 71 "/var/www/localhost/htdocs/rt/Admin/Elements/SelectNewGroupMembers"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $Name )) );
+#line 71 "/var/www/localhost/htdocs/rt/Admin/Elements/SelectNewGroupMembers"
+$m->print( 'Groups" id="' );
+#line 71 "/var/www/localhost/htdocs/rt/Admin/Elements/SelectNewGroupMembers"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $Name )) );
+#line 71 "/var/www/localhost/htdocs/rt/Admin/Elements/SelectNewGroupMembers"
+$m->print( 'Groups" data-autocomplete="Groups" data-autocomplete-exclude="' );
+#line 71 "/var/www/localhost/htdocs/rt/Admin/Elements/SelectNewGroupMembers"
+$m->print(  $group_ids );
+#line 71 "/var/www/localhost/htdocs/rt/Admin/Elements/SelectNewGroupMembers"
+$m->print( '" />
+<script type="text/javascript">
+jQuery(function(){
+    // Auto-submit once a group is chosen
+    jQuery("#"+' );
+#line 75 "/var/www/localhost/htdocs/rt/Admin/Elements/SelectNewGroupMembers"
+$m->print( (map {; $m->interp->apply_escapes($_, 'j') } ( $Name)) );
+#line 75 "/var/www/localhost/htdocs/rt/Admin/Elements/SelectNewGroupMembers"
+$m->print( '+"Groups").on("autocompleteselect", function( event, ui ) {
+        jQuery(event.target).val(ui.item.value);
+        jQuery(event.target).closest("form").submit();
+    });
+});
+</script>
+</td>
+</tr>
+' );
+#line 83 "/var/www/localhost/htdocs/rt/Admin/Elements/SelectNewGroupMembers"
+ }
+$m->print( '</table>
+' );
+;return;
+},
+'declared_args' => {
+  '$Group' => { default => undef },
+  '$Name' => { default => ' \'Users\'' },
+  '$Show' => { default => ' \'All\'' },
+  '$SkipGroups' => { default => ' {}' },
+  '$SkipUsers' => { default => ' {}' }
+},
+'load_time' => 1434739320,
+
+)
+;

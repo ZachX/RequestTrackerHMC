@@ -1,0 +1,217 @@
+package HTML::Mason::Commands;
+use strict;
+use vars qw($m $DECODED_ARGS $r %session);
+HTML::Mason::Component::FileBased->new(
+'code' => sub {
+HTML::Mason::Exception::Params->throw
+    ( error =>
+      "Odd number of parameters passed to component expecting name/value pairs"
+    ) if @_ % 2;
+my %ARGS = @_;
+my ( $Ticket, $Attachments );
+{
+    my %pos;
+    for ( my $x = 0; $x < @_; $x += 2 )
+    {
+        $pos{ $_[$x] } = $x + 1;
+    }
+#line 102 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowSummary"
+     $Ticket = exists $pos{'Ticket'} ? $_[ $pos{'Ticket'} ] :  undef;
+#line 103 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowSummary"
+     $Attachments = exists $pos{'Attachments'} ? $_[ $pos{'Attachments'} ] :  undef;
+}
+$m->debug_hook( $m->current_comp->path ) if ( HTML::Mason::Compiler::IN_PERL_DB() );
+
+#line 105 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowSummary"
+
+my $can_modify = $Ticket->CurrentUserHasRight('ModifyTicket');
+my $can_modify_cf = $Ticket->CurrentUserHasRight('ModifyCustomField');
+my $can_modify_owner = $Ticket->CurrentUserCanSetOwner();
+my $can_modify_people = $Ticket->CurrentUserHasRight('Watch')
+                     || $Ticket->CurrentUserHasRight('WatchAsAdminCc');
+#line 1 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowSummary"
+# BEGIN BPS TAGGED BLOCK {{{
+#
+# COPYRIGHT:
+#
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
+#                                          <sales@bestpractical.com>
+#
+# (Except where explicitly superseded by other copyright notices)
+#
+#
+# LICENSE:
+#
+# This work is made available to you under the terms of Version 2 of
+# the GNU General Public License. A copy of that license should have
+# been provided with this software, but in any event can be snarfed
+# from www.gnu.org.
+#
+# This work is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
+#
+#
+# CONTRIBUTION SUBMISSION POLICY:
+#
+# (The following paragraph is not intended to limit the rights granted
+# to you to modify and distribute this software under the terms of
+# the GNU General Public License and is only of importance to you if
+# you choose to contribute your changes and enhancements to the
+# community by submitting them to Best Practical Solutions, LLC.)
+#
+# By intentionally submitting any modifications, corrections or
+# derivatives to this work, or any other work intended for use with
+# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+# you are the copyright holder for those contributions and you grant
+# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+# royalty-free, perpetual, license to use, copy, create derivative
+# works based on those contributions, and sublicense and distribute
+# those contributions and any derivatives thereof.
+#
+# END BPS TAGGED BLOCK }}}
+$m->print( '<table width="100%" class="ticket-summary">
+<tr>
+  <td valign="top" class="boxcontainer">
+' );
+#line 51 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowSummary"
+ $m->callback( %ARGS, CallbackName => 'LeftColumnTop' );
+$m->print( '    ' );
+#line 52 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowSummary"
+$m->comp( { content => sub {
+#line 55 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowSummary"
+$m->comp(   '/Ticket/Elements/ShowBasics', Ticket => $Ticket   
+); #line 55 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowSummary"
+} }, '/Widgets/TitleBox', title => loc('The Basics'),
+        (($can_modify || $can_modify_cf) ? (title_href => RT->Config->Get('WebPath')."/Ticket/Modify.html?id=".$Ticket->Id) : ()),
+        class => 'ticket-info-basics',
+ );
+#line 55 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowSummary"
+$m->print( '
+
+    ' );
+#line 57 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowSummary"
+$m->comp(   '/Elements/ShowCustomFieldCustomGroupings',
+        Object       => $Ticket,
+        title_href   => ($can_modify || $can_modify_cf) ? RT->Config->Get('WebPath')."/Ticket/Modify.html" : "",
+          
+); #line 60 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowSummary"
+$m->print( '
+
+    ' );
+#line 62 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowSummary"
+$m->comp( { content => sub {
+#line 65 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowSummary"
+$m->comp(   '/Ticket/Elements/ShowPeople', Ticket => $Ticket   
+); #line 65 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowSummary"
+} }, '/Widgets/TitleBox', title => loc('People'),
+        (($can_modify || $can_modify_owner || $can_modify_people) ? (title_href => RT->Config->Get('WebPath')."/Ticket/ModifyPeople.html?id=".$Ticket->Id) : ()),
+        class => 'ticket-info-people',
+ );
+#line 65 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowSummary"
+$m->print( '
+    ' );
+#line 66 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowSummary"
+$m->comp(   '/Ticket/Elements/ShowAttachments', Ticket => $Ticket, Attachments => $Attachments   
+); #line 66 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowSummary"
+$m->print( '
+' );
+#line 67 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowSummary"
+ $m->callback( %ARGS, CallbackName => 'AfterAttachments' );
+$m->print( '    ' );
+#line 68 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowSummary"
+$m->comp(   '/Ticket/Elements/ShowRequestor', Ticket => $Ticket   
+); #line 68 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowSummary"
+$m->print( '
+' );
+#line 69 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowSummary"
+ $m->callback( %ARGS, CallbackName => 'LeftColumn' );
+$m->print( '  </td>
+  <td valign="top" class="boxcontainer">
+' );
+#line 72 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowSummary"
+ $m->callback( %ARGS, CallbackName => 'RightColumnTop' );
+ if ( RT->Config->Get('EnableReminders') ) {
+$m->print( '    ' );
+#line 74 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowSummary"
+$m->comp( { content => sub {
+#line 77 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowSummary"
+$m->print( '
+        <table><tr><td>
+            <form action="' );
+#line 79 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowSummary"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } (RT->Config->Get('WebPath'))) );
+#line 79 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowSummary"
+$m->print( '/Ticket/Display.html" name="UpdateReminders" id="UpdateReminders" method="post">
+                ' );
+#line 80 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowSummary"
+$m->comp(   '/Ticket/Elements/Reminders', Ticket => $Ticket, ShowCompleted => 0   
+); #line 80 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowSummary"
+$m->print( '
+            </form>
+        </td></tr></table>
+    ' );
+#line 83 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowSummary"
+} }, '/Widgets/TitleBox', title => loc("Reminders"),
+        title_href => RT->Config->Get('WebPath')."/Ticket/Reminders.html?id=".$Ticket->Id,
+        class => 'ticket-info-reminders',
+ );
+#line 83 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowSummary"
+$m->print( '
+' );
+#line 84 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowSummary"
+ }
+$m->print( '    ' );
+#line 85 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowSummary"
+$m->comp( { content => sub {
+#line 88 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowSummary"
+$m->comp(   '/Ticket/Elements/ShowDates', Ticket => $Ticket   
+); #line 88 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowSummary"
+} }, '/Widgets/TitleBox', title => loc("Dates"),
+        ($can_modify ? (title_href => RT->Config->Get('WebPath')."/Ticket/ModifyDates.html?id=".$Ticket->Id) : ()),
+        class => 'ticket-info-dates',
+ );
+#line 88 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowSummary"
+$m->print( '
+' );
+#line 89 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowSummary"
+ my (@extra);
+ push @extra, titleright_raw => '<a href="'. RT->Config->Get('WebPath'). '/Ticket/Graphs/index.html?id='.$Ticket->id.'">'.loc('Graph').'</a>' unless RT->Config->Get('DisableGraphViz');
+ $m->callback( %ARGS, CallbackName => 'LinksExtra', extra => \@extra );
+$m->print( '    ' );
+#line 92 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowSummary"
+$m->comp( { content => sub {
+#line 96 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowSummary"
+$m->comp(   '/Elements/ShowLinks', Object => $Ticket   
+); #line 96 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowSummary"
+} }, '/Widgets/TitleBox', title => loc('Links'),
+        ($can_modify ? (title_href => RT->Config->Get('WebPath')."/Ticket/ModifyLinks.html?id=".$Ticket->Id) : ()),
+        class => 'ticket-info-links',
+        @extra,
+ );
+#line 96 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowSummary"
+$m->print( '
+' );
+#line 97 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowSummary"
+ $m->callback( %ARGS, CallbackName => 'RightColumn' );
+$m->print( '  </td>
+</tr>
+</table>
+' );
+;return;
+},
+'declared_args' => {
+  '$Attachments' => { default => ' undef' },
+  '$Ticket' => { default => ' undef' }
+},
+'load_time' => 1432969539,
+
+)
+;

@@ -1,0 +1,606 @@
+package HTML::Mason::Commands;
+use strict;
+use vars qw($m $DECODED_ARGS $r %session);
+#line 119 "/var/www/localhost/htdocs/rt/Admin/Tools/Theme.html"
+
+my @sections = (
+    ['Page'         => ['body', 'div#body']],
+    ['Menu bar'     => ['div#quickbar', '#main-navigation #app-nav.sf-shadow > li, #main-navigation #app-nav.sf-shadow > li > a, #prefs-menu > li, #prefs-menu > li > a, #logo .rtname']],
+    ['Title bar'    => ['div#header']],
+    ['Page title'   => ['div#header h1']],
+    ['Page content' => ['div#body']],
+    ['Buttons'      => ['input[type="reset"], input[type="submit"], input[class="button"]']],
+    ['Button hover' => ['input[type="reset"]:hover, input[type="submit"]:hover, input[class="button"]:hover']],
+);
+HTML::Mason::Component::FileBased->new(
+'code' => sub {
+HTML::Mason::Exception::Params->throw
+    ( error =>
+      "Odd number of parameters passed to component expecting name/value pairs"
+    ) if @_ % 2;
+my %ARGS = @_;
+my ( $user_css );
+{
+    my %pos;
+    for ( my $x = 0; $x < @_; $x += 2 )
+    {
+        $pos{ $_[$x] } = $x + 1;
+    }
+#line 377 "/var/www/localhost/htdocs/rt/Admin/Tools/Theme.html"
+     $user_css = exists $pos{'user_css'} ? $_[ $pos{'user_css'} ] :  '';
+}
+$m->debug_hook( $m->current_comp->path ) if ( HTML::Mason::Compiler::IN_PERL_DB() );
+
+#line 234 "/var/www/localhost/htdocs/rt/Admin/Tools/Theme.html"
+
+unless ($session{'CurrentUser'}->HasRight( Object=> RT->System, Right => 'SuperUser')) {
+    Abort(loc('This feature is only available to system administrators.'));
+}
+
+use Digest::MD5 'md5_hex';
+
+my $text_threshold = 0.6;
+my @results;
+my $imgdata;
+
+my $colors;
+my $valid_image_types;
+if (not RT->Config->Get('DisableGD') and Convert::Color->require) {
+    require GD;
+
+    # Always find out what GD can read...
+    my %gd_can;
+    for my $type (qw(Png Jpeg Gif)) {
+        $gd_can{$type}++ if GD::Image->can("newFrom${type}Data");
+    }
+    $valid_image_types = join(", ", map { uc } sort { lc $a cmp lc $b } keys %gd_can);
+}
+
+my $analyze_img = sub {
+    return undef unless $valid_image_types;
+
+    my $imgdata = shift;
+    return undef unless $imgdata;
+
+    # ...but only analyze the image if we have data
+    my $img = GD::Image->new($imgdata);
+    unless ($img) {
+        # This has to be one damn long line because the loc() needs to be
+        # source parsed correctly.
+        push @results, loc("Automatically suggested theme colors aren't available for your image. This might be because you uploaded an image type that your installed version of GD doesn't support. Supported types are: [_1]. You can recompile libgd and GD.pm to include support for other image types.", $valid_image_types);
+        return undef;
+    }
+
+    my %colors;
+
+    my @wsamples;
+    my @hsamples;
+    if ($img->width > 200) {
+        @wsamples = map { int($img->width*($_/200)) } (0..199);
+    } else {
+        @wsamples = ( 0 .. $img->width - 1 );
+    }
+    if ($img->height > 200) {
+        @hsamples = map { int($img->height*($_/200)) } (0..199);
+    } else {
+        @hsamples = ( 0 .. $img->height - 1 );
+    }
+    for my $i (@wsamples) {
+        for my $j (@hsamples) {
+            my @color = $img->rgb( $img->getPixel($i,$j) );
+            my $hsl = Convert::Color->new('rgb:'.join(',',map { $_ / 255 } @color))->convert_to('hsl');
+            my $c = join(',',@color);
+            next if $hsl->lightness < 0.1;
+            $colors{$c} ||= { h => $hsl->hue, s => $hsl->saturation, l => $hsl->lightness, cnt => 0, c => $c};
+            $colors{$c}->{cnt}++;
+        }
+    }
+
+    for (values %colors) {
+        $_->{rank} = $_->{s} * $_->{cnt};
+    }
+    my @top5 = grep { defined and $_->{'l'} and $_->{'c'} }
+                    (sort { $b->{rank} <=> $a->{rank} } values %colors)[0..5];
+    return \@top5;
+};
+
+if (my $file_hash = _UploadedFile( 'logo-upload' )) {
+    $colors = $analyze_img->($file_hash->{LargeContent});
+
+    my $my_system = RT::System->new( $session{CurrentUser} );
+    my ( $id, $msg ) = $my_system->SetAttribute(
+        Name        => "UserLogo",
+        Description => "User-provided logo",
+        Content     => {
+            type => $file_hash->{ContentType},
+            data => $file_hash->{LargeContent},
+            hash => md5_hex($file_hash->{LargeContent}),
+            colors => $colors,
+        },
+    );
+
+    push @results, loc("Unable to set UserLogo: [_1]", $msg) unless $id;
+
+    $imgdata = $file_hash->{LargeContent};
+}
+elsif ($ARGS{'reset_logo'}) {
+    RT->System->DeleteAttribute('UserLogo');
+}
+else {
+    if (my $attr = RT->System->FirstAttribute('UserLogo')) {
+        my $content = $attr->Content;
+        if (ref($content) eq 'HASH') {
+            $imgdata = $content->{data};
+            $colors = $content->{colors};
+            unless ($colors) {
+                # No colors cached; attempt to generate them
+                $colors = $content->{colors} = $analyze_img->($content->{data});
+                if ($content->{colors}) {
+                    # Found colors; update the attribute
+                    RT->System->SetAttribute(
+                        Name => "UserLogo",
+                        Description => "User-provided logo",
+                        Content => $content,
+                    );
+                }
+            }
+        }
+        else {
+            RT->System->DeleteAttribute('UserLogo');
+        }
+    }
+}
+
+if ($user_css) {
+    if ($ARGS{'reset_css'}) {
+        RT->System->DeleteAttribute('UserCSS');
+        undef $user_css;
+    }
+    else {
+        my ($id, $msg) = RT->System->SetAttribute( Name => "UserCSS",
+                                                    Description => "User-provided css",
+                                                    Content => $user_css );
+        push @results, loc("Unable to set UserCSS: [_1]", $msg) unless $id;
+    }
+}
+
+if (!$user_css) {
+    my $attr = RT->System->FirstAttribute('UserCSS');
+    $user_css = $attr ? $attr->Content : join(
+        "\n\n" => map {
+            join "\n" => "/* ". $_->[0] ." */",
+                         map { "$_ {}" } @{$_->[1]}
+        } @sections
+    );
+}
+#line 1 "/var/www/localhost/htdocs/rt/Admin/Tools/Theme.html"
+# BEGIN BPS TAGGED BLOCK {{{
+#
+# COPYRIGHT:
+#
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
+#                                          <sales@bestpractical.com>
+#
+# (Except where explicitly superseded by other copyright notices)
+#
+#
+# LICENSE:
+#
+# This work is made available to you under the terms of Version 2 of
+# the GNU General Public License. A copy of that license should have
+# been provided with this software, but in any event can be snarfed
+# from www.gnu.org.
+#
+# This work is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
+#
+#
+# CONTRIBUTION SUBMISSION POLICY:
+#
+# (The following paragraph is not intended to limit the rights granted
+# to you to modify and distribute this software under the terms of
+# the GNU General Public License and is only of importance to you if
+# you choose to contribute your changes and enhancements to the
+# community by submitting them to Best Practical Solutions, LLC.)
+#
+# By intentionally submitting any modifications, corrections or
+# derivatives to this work, or any other work intended for use with
+# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+# you are the copyright holder for those contributions and you grant
+# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+# royalty-free, perpetual, license to use, copy, create derivative
+# works based on those contributions, and sublicense and distribute
+# those contributions and any derivatives thereof.
+#
+# END BPS TAGGED BLOCK }}}
+$m->comp(   '/Admin/Elements/Header',
+    Title => loc("Theme"),
+  
+); #line 50 "/var/www/localhost/htdocs/rt/Admin/Tools/Theme.html"
+$m->print( '
+' );
+#line 51 "/var/www/localhost/htdocs/rt/Admin/Tools/Theme.html"
+$m->comp(   '/Elements/Tabs'  
+); #line 51 "/var/www/localhost/htdocs/rt/Admin/Tools/Theme.html"
+$m->print( '
+' );
+#line 52 "/var/www/localhost/htdocs/rt/Admin/Tools/Theme.html"
+$m->comp(   '/Elements/ListActions', actions => \@results   
+); #line 52 "/var/www/localhost/htdocs/rt/Admin/Tools/Theme.html"
+$m->print( '
+
+<script type="text/javascript" src="' );
+#line 54 "/var/www/localhost/htdocs/rt/Admin/Tools/Theme.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } (RT->Config->Get('WebPath'))) );
+#line 54 "/var/www/localhost/htdocs/rt/Admin/Tools/Theme.html"
+$m->print( '/static/js/farbtastic.js"></script>
+
+<div id="simple-customize">
+<div id="upload-logo">
+  <h2>Logo</h2>
+  ' );
+#line 59 "/var/www/localhost/htdocs/rt/Admin/Tools/Theme.html"
+$m->comp(   '/Elements/Logo', id => 'logo-theme-editor', ShowName => 0   
+); #line 59 "/var/www/localhost/htdocs/rt/Admin/Tools/Theme.html"
+$m->print( '
+  <form method="POST" enctype="multipart/form-data">
+    <label for="logo-upload">' );
+#line 61 "/var/www/localhost/htdocs/rt/Admin/Tools/Theme.html"
+$m->comp( { content => sub {
+#line 61 "/var/www/localhost/htdocs/rt/Admin/Tools/Theme.html"
+$m->print( 'Upload a new logo' );
+#line 61 "/var/www/localhost/htdocs/rt/Admin/Tools/Theme.html"
+} }, '/l'
+ );
+#line 61 "/var/www/localhost/htdocs/rt/Admin/Tools/Theme.html"
+$m->print( ':</label>
+    <input type="file" name="logo-upload" id="logo-upload" /><br />
+    <div class="gd-support">
+' );
+#line 64 "/var/www/localhost/htdocs/rt/Admin/Tools/Theme.html"
+ if ($valid_image_types) {
+$m->print( '    ' );
+#line 65 "/var/www/localhost/htdocs/rt/Admin/Tools/Theme.html"
+$m->comp( { content => sub {
+#line 65 "/var/www/localhost/htdocs/rt/Admin/Tools/Theme.html"
+$m->print( 'Your system supports automatic color suggestions for: [_1]' );
+#line 65 "/var/www/localhost/htdocs/rt/Admin/Tools/Theme.html"
+} }, '/l', $valid_image_types
+ );
+#line 65 "/var/www/localhost/htdocs/rt/Admin/Tools/Theme.html"
+$m->print( '
+' );
+#line 66 "/var/www/localhost/htdocs/rt/Admin/Tools/Theme.html"
+ } else {
+$m->print( '    ' );
+#line 67 "/var/www/localhost/htdocs/rt/Admin/Tools/Theme.html"
+$m->comp( { content => sub {
+#line 67 "/var/www/localhost/htdocs/rt/Admin/Tools/Theme.html"
+$m->print( 'GD is disabled or not installed. You can upload an image, but you won\'t get automatic color suggestions.' );
+#line 67 "/var/www/localhost/htdocs/rt/Admin/Tools/Theme.html"
+} }, '/l'
+ );
+#line 67 "/var/www/localhost/htdocs/rt/Admin/Tools/Theme.html"
+$m->print( '
+' );
+#line 68 "/var/www/localhost/htdocs/rt/Admin/Tools/Theme.html"
+ }
+$m->print( '    </div>
+    <input name="reset_logo" value="' );
+#line 70 "/var/www/localhost/htdocs/rt/Admin/Tools/Theme.html"
+$m->comp( { content => sub {
+#line 70 "/var/www/localhost/htdocs/rt/Admin/Tools/Theme.html"
+$m->print( 'Reset to default RT Logo' );
+#line 70 "/var/www/localhost/htdocs/rt/Admin/Tools/Theme.html"
+} }, '/l'
+ );
+#line 70 "/var/www/localhost/htdocs/rt/Admin/Tools/Theme.html"
+$m->print( '" type="submit" />
+    <input type="submit" value="' );
+#line 71 "/var/www/localhost/htdocs/rt/Admin/Tools/Theme.html"
+$m->comp( { content => sub {
+#line 71 "/var/www/localhost/htdocs/rt/Admin/Tools/Theme.html"
+$m->print( 'Upload' );
+#line 71 "/var/www/localhost/htdocs/rt/Admin/Tools/Theme.html"
+} }, '/l'
+ );
+#line 71 "/var/www/localhost/htdocs/rt/Admin/Tools/Theme.html"
+$m->print( '" />
+  </form>
+</div>
+
+<div id="customize-theme">
+  <h2>' );
+#line 76 "/var/www/localhost/htdocs/rt/Admin/Tools/Theme.html"
+$m->comp( { content => sub {
+#line 76 "/var/www/localhost/htdocs/rt/Admin/Tools/Theme.html"
+$m->print( 'Customize the RT theme' );
+#line 76 "/var/www/localhost/htdocs/rt/Admin/Tools/Theme.html"
+} }, '/l'
+ );
+#line 76 "/var/www/localhost/htdocs/rt/Admin/Tools/Theme.html"
+$m->print( '</h2>
+  <ol>
+    <li>
+      <label for="section">' );
+#line 79 "/var/www/localhost/htdocs/rt/Admin/Tools/Theme.html"
+$m->comp( { content => sub {
+#line 79 "/var/www/localhost/htdocs/rt/Admin/Tools/Theme.html"
+$m->print( 'Select a section' );
+#line 79 "/var/www/localhost/htdocs/rt/Admin/Tools/Theme.html"
+} }, '/l'
+ );
+#line 79 "/var/www/localhost/htdocs/rt/Admin/Tools/Theme.html"
+$m->print( ':</label>
+      <select id="section"></select>
+    </li>
+    <li>
+      <div class="description">
+        ' );
+#line 84 "/var/www/localhost/htdocs/rt/Admin/Tools/Theme.html"
+$m->comp( { content => sub {
+#line 84 "/var/www/localhost/htdocs/rt/Admin/Tools/Theme.html"
+$m->print( 'Select a color for the section' );
+#line 84 "/var/www/localhost/htdocs/rt/Admin/Tools/Theme.html"
+} }, '/l'
+ );
+#line 84 "/var/www/localhost/htdocs/rt/Admin/Tools/Theme.html"
+$m->print( ':
+        <div id="logo-picker-hint" style="display: none;">
+          ' );
+#line 86 "/var/www/localhost/htdocs/rt/Admin/Tools/Theme.html"
+$m->comp( { content => sub {
+#line 86 "/var/www/localhost/htdocs/rt/Admin/Tools/Theme.html"
+$m->print( 'You can also click on the logo above to get colors!' );
+#line 86 "/var/www/localhost/htdocs/rt/Admin/Tools/Theme.html"
+} }, '/l'
+ );
+#line 86 "/var/www/localhost/htdocs/rt/Admin/Tools/Theme.html"
+$m->print( '
+        </div>
+      </div>
+' );
+#line 89 "/var/www/localhost/htdocs/rt/Admin/Tools/Theme.html"
+ if ($colors) {
+$m->print( '<div class="primary-colors">
+' );
+#line 91 "/var/www/localhost/htdocs/rt/Admin/Tools/Theme.html"
+   for (@$colors) {
+     my $fg = $_->{l} >= $text_threshold ? 'black' : 'white';
+$m->print( '<button type="button" class="color-template"
+        style="background-color: rgb(' );
+#line 94 "/var/www/localhost/htdocs/rt/Admin/Tools/Theme.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $_->{c} )) );
+#line 94 "/var/www/localhost/htdocs/rt/Admin/Tools/Theme.html"
+$m->print( '); color: ' );
+#line 94 "/var/www/localhost/htdocs/rt/Admin/Tools/Theme.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $fg )) );
+#line 94 "/var/www/localhost/htdocs/rt/Admin/Tools/Theme.html"
+$m->print( ';">
+  ' );
+#line 95 "/var/www/localhost/htdocs/rt/Admin/Tools/Theme.html"
+$m->comp( { content => sub {
+#line 95 "/var/www/localhost/htdocs/rt/Admin/Tools/Theme.html"
+$m->print( 'Text' );
+#line 95 "/var/www/localhost/htdocs/rt/Admin/Tools/Theme.html"
+} }, '/l'
+ );
+#line 95 "/var/www/localhost/htdocs/rt/Admin/Tools/Theme.html"
+$m->print( '
+</button>
+' );
+#line 97 "/var/www/localhost/htdocs/rt/Admin/Tools/Theme.html"
+   }
+$m->print( '</div>
+' );
+#line 99 "/var/www/localhost/htdocs/rt/Admin/Tools/Theme.html"
+ }
+$m->print( '      <div id="color-picker"></div>
+      <canvas id="logo-color-picker" title="' );
+#line 101 "/var/www/localhost/htdocs/rt/Admin/Tools/Theme.html"
+$m->comp( { content => sub {
+#line 101 "/var/www/localhost/htdocs/rt/Admin/Tools/Theme.html"
+$m->print( 'Click to choose a color' );
+#line 101 "/var/www/localhost/htdocs/rt/Admin/Tools/Theme.html"
+} }, '/l'
+ );
+#line 101 "/var/www/localhost/htdocs/rt/Admin/Tools/Theme.html"
+$m->print( '"></canvas>
+    </li>
+  </ol>
+</div>
+</div>
+
+<div id="custom-css">
+  <h2>' );
+#line 108 "/var/www/localhost/htdocs/rt/Admin/Tools/Theme.html"
+$m->comp( { content => sub {
+#line 108 "/var/www/localhost/htdocs/rt/Admin/Tools/Theme.html"
+$m->print( 'Custom CSS (Advanced)' );
+#line 108 "/var/www/localhost/htdocs/rt/Admin/Tools/Theme.html"
+} }, '/l'
+ );
+#line 108 "/var/www/localhost/htdocs/rt/Admin/Tools/Theme.html"
+$m->print( '</h2>
+
+  <form method="POST">
+    <textarea rows=20 id="user_css" name="user_css" wrap="off">' );
+#line 111 "/var/www/localhost/htdocs/rt/Admin/Tools/Theme.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $user_css )) );
+#line 111 "/var/www/localhost/htdocs/rt/Admin/Tools/Theme.html"
+$m->print( '</textarea><br />
+    <input id="try" type="button" class="button" value="' );
+#line 112 "/var/www/localhost/htdocs/rt/Admin/Tools/Theme.html"
+$m->comp( { content => sub {
+#line 112 "/var/www/localhost/htdocs/rt/Admin/Tools/Theme.html"
+$m->print( 'Try' );
+#line 112 "/var/www/localhost/htdocs/rt/Admin/Tools/Theme.html"
+} }, '/l'
+ );
+#line 112 "/var/www/localhost/htdocs/rt/Admin/Tools/Theme.html"
+$m->print( '" />
+    <input id="reset" type="reset" value="' );
+#line 113 "/var/www/localhost/htdocs/rt/Admin/Tools/Theme.html"
+$m->comp( { content => sub {
+#line 113 "/var/www/localhost/htdocs/rt/Admin/Tools/Theme.html"
+$m->print( 'Reset' );
+#line 113 "/var/www/localhost/htdocs/rt/Admin/Tools/Theme.html"
+} }, '/l'
+ );
+#line 113 "/var/www/localhost/htdocs/rt/Admin/Tools/Theme.html"
+$m->print( '" type="submit" />
+    <input name="reset_css" value="' );
+#line 114 "/var/www/localhost/htdocs/rt/Admin/Tools/Theme.html"
+$m->comp( { content => sub {
+#line 114 "/var/www/localhost/htdocs/rt/Admin/Tools/Theme.html"
+$m->print( 'Reset to default RT Theme' );
+#line 114 "/var/www/localhost/htdocs/rt/Admin/Tools/Theme.html"
+} }, '/l'
+ );
+#line 114 "/var/www/localhost/htdocs/rt/Admin/Tools/Theme.html"
+$m->print( '" type="submit" />
+    <input value="' );
+#line 115 "/var/www/localhost/htdocs/rt/Admin/Tools/Theme.html"
+$m->comp( { content => sub {
+#line 115 "/var/www/localhost/htdocs/rt/Admin/Tools/Theme.html"
+$m->print( 'Save' );
+#line 115 "/var/www/localhost/htdocs/rt/Admin/Tools/Theme.html"
+} }, '/l'
+ );
+#line 115 "/var/www/localhost/htdocs/rt/Admin/Tools/Theme.html"
+$m->print( '" type="submit" />
+  </form>
+</div>
+
+' );
+#line 130 "/var/www/localhost/htdocs/rt/Admin/Tools/Theme.html"
+$m->print( '<script type="text/javascript">
+var section_css_mapping = ' );
+#line 131 "/var/www/localhost/htdocs/rt/Admin/Tools/Theme.html"
+$m->print(  JSON(\@sections) );
+#line 131 "/var/www/localhost/htdocs/rt/Admin/Tools/Theme.html"
+$m->print( ';
+
+jQuery(function($) {
+
+    jQuery.each(section_css_mapping, function(i,v){
+        $(\'select#section\').append($("<option/>")
+                           .attr(\'value\', v[0])
+                           .text(v[0]));
+    });
+
+    function update_sitecss(text) {
+        if (!text)
+            text = $(\'#user_css\').val();
+
+        // IE 8 doesn\'t let us update the innerHTML of <style> tags (with jQuery.text())
+        // see: http://stackoverflow.com/questions/2692770/style-style-textcss-appendtohead-does-not-work-in-ie/2692861#2692861
+        $("style#sitecss").remove();
+        $("<style id=\'sitecss\' type=\'text/css\' media=\'all\'>" + text + "</style>").appendTo(\'head\');
+    }
+
+    update_sitecss();
+    $(\'#try\').click(function() {
+        update_sitecss();
+    });
+
+    $(\'#reset\').click(function() {
+        setTimeout(function() {
+            update_sitecss();
+        }, 1000);
+    });
+
+    function change_color(bg, fg) {
+      var section = $(\'select#section\').val();
+
+      var applying = jQuery.grep(section_css_mapping, function(a){ return a[0] == section })[0][1];
+      var css = $(\'#user_css\').val();
+      if (applying) {
+          var specials = new RegExp("([.*+?|()\\\\[\\\\]{}\\\\\\\\])", "g");
+          for (var name in applying) {
+              var selector = (applying[name]).replace(specials, "\\\\$1");
+              var rule = new RegExp(\'^\'+selector+\'\\\\s*\\{.*?\\}\', "m");
+              var newcss = "background: " + bg;
+
+              /* Don\'t set the text color on <body> as it affects too much */
+              if (applying[name] != "body")
+                  newcss += "; color: " + fg;
+
+              /* Kill the border on the quickbar if we\'re styling it */
+              if (applying[name].match(/quickbar/))
+                  newcss += "; border: none;"
+
+              /* Page title\'s text color is the selected color */
+              if (applying[name].match(/h1/))
+                  newcss = "color: " + bg;
+
+              /* Nav doesn\'t need a background, but it wants text color */
+              if (applying[name].match(/#main-navigation/))
+                  newcss = "color: " + fg;
+
+              css = css.replace(rule, applying[name]+" { "+newcss+" }");
+          }
+      }
+      $(\'#user_css\').val(css);
+      update_sitecss(css);
+    }
+
+    $(\'#color-picker\').farbtastic(function(color){ change_color(color, this.hsl[2] > ' );
+#line 197 "/var/www/localhost/htdocs/rt/Admin/Tools/Theme.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $text_threshold )) );
+#line 197 "/var/www/localhost/htdocs/rt/Admin/Tools/Theme.html"
+$m->print( ' ? \'#000\' : \'#fff\') });
+
+    $(\'button.color-template\').click(function() {
+      change_color($(this).css(\'background-color\'), $(this).css(\'color\'));
+  });
+
+    // Setup the canvas color picker
+    $("#logo-theme-editor img").load(function() {
+        var logo      = $(this);
+        var canvas    = $("#logo-color-picker");
+        var el_canvas = canvas.get(0);
+
+        if (!el_canvas.getContext) return;
+
+        var context      = el_canvas.getContext("2d");
+        el_canvas.width  = logo.width();
+        el_canvas.height = logo.height();
+        context.drawImage(logo.get(0), 0, 0);
+
+        logo.hide().after(canvas);
+        canvas.show().click(function(ev) {
+            ev.preventDefault();
+            var R = 0,
+                G = 1,
+                B = 2,
+                A = 3;
+            var pixel = this.getContext("2d").getImageData(ev.offsetX, ev.offsetY, 1, 1).data;
+            // Farbtastic expects values in the range of 0..1
+            var rgba  = $.makeArray(pixel).map(function(v,i) { return v / 255 });
+            var wheel = $.farbtastic("#color-picker");
+            wheel.setHSL( wheel.RGBToHSL( rgba.slice(R,A) ) );
+            // XXX TODO factor in the alpha channel too
+        });
+        $(\'#logo-picker-hint\').show();
+    });
+});
+</script>
+' );
+;return;
+},
+'declared_args' => {
+  '$user_css' => { default => ' \'\'' }
+},
+'load_time' => 1434754831,
+
+)
+;

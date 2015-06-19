@@ -1,0 +1,173 @@
+package HTML::Mason::Commands;
+use strict;
+use vars qw($m $DECODED_ARGS $r %session);
+HTML::Mason::Component::FileBased->new(
+'code' => sub {
+HTML::Mason::Exception::Params->throw
+    ( error =>
+      "Odd number of parameters passed to component expecting name/value pairs"
+    ) if @_ % 2;
+my %ARGS = @_;
+my ( $Object );
+{
+    my %pos;
+    for ( my $x = 0; $x < @_; $x += 2 )
+    {
+        $pos{ $_[$x] } = $x + 1;
+    }
+
+    foreach my $arg ( qw( Object ) )
+    {
+        HTML::Mason::Exception::Params->throw
+            ( error => "no value sent for required parameter '$arg'" )
+                unless exists $pos{$arg};
+    }
+#line 107 "/var/www/localhost/htdocs/rt/Elements/ShowLinks"
+    $Object = $_[ $pos{'Object'} ];
+}
+$m->debug_hook( $m->current_comp->path ) if ( HTML::Mason::Compiler::IN_PERL_DB() );
+
+#line 66 "/var/www/localhost/htdocs/rt/Elements/ShowLinks"
+
+my @display = qw(DependsOn DependedOnBy MemberOf Members RefersTo ReferredToBy);
+$m->callback( %ARGS, CallbackName => 'ChangeDisplay', display => \@display );
+my %labels  = (
+    DependsOn       => loc('Depends on'),
+    DependedOnBy    => loc('Depended on by'),
+    MemberOf        => loc('Parents'),
+    Members         => loc('Children'),
+    RefersTo        => loc('Refers to'),
+    ReferredToBy    => loc('Referred to by'),
+);
+my %clone;
+
+if (    $Object->isa("RT::Ticket")
+    and $Object->QueueObj->CurrentUserHasRight('CreateTicket'))
+{
+    my $id = $Object->id;
+    my $path
+        = RT->Config->Get('WebPath')
+        . '/Ticket/Create.html?Queue='
+        . $Object->Queue
+        . '&CloneTicket='
+        . $id;
+
+    for my $relation (@display) {
+        my $mode  = $RT::Link::TYPEMAP{$relation}->{Mode};
+        my $type  = $RT::Link::TYPEMAP{$relation}->{Type};
+        my $field = $mode eq 'Base' ? 'new-' . $type : $type . '-new';
+        my @copy  = ($id);
+
+        # Canonicalized type captures both directions
+        if ($type eq "RefersTo") {
+            my $other = "Local" . $mode;
+            push @copy, map { $_->$other() } @{ $Object->$relation->ItemsArrayRef };
+        }
+
+        $clone{$relation} = "$path&$field=" . join('%20', grep { $_ } @copy);
+    }
+}
+#line 1 "/var/www/localhost/htdocs/rt/Elements/ShowLinks"
+# BEGIN BPS TAGGED BLOCK {{{
+#
+# COPYRIGHT:
+#
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
+#                                          <sales@bestpractical.com>
+#
+# (Except where explicitly superseded by other copyright notices)
+#
+#
+# LICENSE:
+#
+# This work is made available to you under the terms of Version 2 of
+# the GNU General Public License. A copy of that license should have
+# been provided with this software, but in any event can be snarfed
+# from www.gnu.org.
+#
+# This work is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
+#
+#
+# CONTRIBUTION SUBMISSION POLICY:
+#
+# (The following paragraph is not intended to limit the rights granted
+# to you to modify and distribute this software under the terms of
+# the GNU General Public License and is only of importance to you if
+# you choose to contribute your changes and enhancements to the
+# community by submitting them to Best Practical Solutions, LLC.)
+#
+# By intentionally submitting any modifications, corrections or
+# derivatives to this work, or any other work intended for use with
+# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+# you are the copyright holder for those contributions and you grant
+# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+# royalty-free, perpetual, license to use, copy, create derivative
+# works based on those contributions, and sublicense and distribute
+# those contributions and any derivatives thereof.
+#
+# END BPS TAGGED BLOCK }}}
+$m->print( '<table>
+' );
+#line 49 "/var/www/localhost/htdocs/rt/Elements/ShowLinks"
+ for my $type (@display) {
+$m->print( '  <tr>
+    <td class="labeltop">
+      ' );
+#line 52 "/var/www/localhost/htdocs/rt/Elements/ShowLinks"
+$m->comp(   'ShowRelationLabel', Object => $Object, Label => $labels{$type}.':', Relation => $type   
+); #line 52 "/var/www/localhost/htdocs/rt/Elements/ShowLinks"
+$m->print( '
+' );
+#line 53 "/var/www/localhost/htdocs/rt/Elements/ShowLinks"
+     if ($clone{$type}) {
+$m->print( '        <span class="create">(<a href="' );
+#line 54 "/var/www/localhost/htdocs/rt/Elements/ShowLinks"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $clone{$type} )) );
+#line 54 "/var/www/localhost/htdocs/rt/Elements/ShowLinks"
+$m->print( '">' );
+#line 54 "/var/www/localhost/htdocs/rt/Elements/ShowLinks"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( loc('Create') )) );
+#line 54 "/var/www/localhost/htdocs/rt/Elements/ShowLinks"
+$m->print( '</a>)</span>
+' );
+#line 55 "/var/www/localhost/htdocs/rt/Elements/ShowLinks"
+     }
+$m->print( '    </td>
+    <td class="value">
+      ' );
+#line 58 "/var/www/localhost/htdocs/rt/Elements/ShowLinks"
+$m->comp(   'ShowLinksOfType', Object => $Object, Type => $type, Recurse => ($type eq 'Members')   
+); #line 58 "/var/www/localhost/htdocs/rt/Elements/ShowLinks"
+$m->print( '
+    </td>
+  </tr>
+' );
+#line 61 "/var/www/localhost/htdocs/rt/Elements/ShowLinks"
+ }
+ # Allow people to add more rows to the table
+ $m->callback( %ARGS );
+$m->print( '  ' );
+#line 64 "/var/www/localhost/htdocs/rt/Elements/ShowLinks"
+$m->comp(   '/Elements/ShowCustomFields', Object => $Object, Grouping => 'Links', Table => 0   
+); #line 64 "/var/www/localhost/htdocs/rt/Elements/ShowLinks"
+$m->print( '
+</table>
+' );
+;return;
+},
+'declared_args' => {
+  '$Object' => { default => undef }
+},
+'load_time' => 1434735744,
+
+)
+;

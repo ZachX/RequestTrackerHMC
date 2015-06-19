@@ -1,0 +1,244 @@
+package HTML::Mason::Commands;
+use strict;
+use vars qw($m $DECODED_ARGS $r %session);
+HTML::Mason::Component::FileBased->new(
+'code' => sub {
+HTML::Mason::Exception::Params->throw
+    ( error =>
+      "Odd number of parameters passed to component expecting name/value pairs"
+    ) if @_ % 2;
+my %ARGS = @_;
+my ( $Ticket, $UngroupedCFs );
+{
+    my %pos;
+    for ( my $x = 0; $x < @_; $x += 2 )
+    {
+        $pos{ $_[$x] } = $x + 1;
+    }
+#line 95 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowBasics"
+     $Ticket = exists $pos{'Ticket'} ? $_[ $pos{'Ticket'} ] :  undef;
+#line 96 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowBasics"
+     $UngroupedCFs = exists $pos{'UngroupedCFs'} ? $_[ $pos{'UngroupedCFs'} ] :  0;
+}
+$m->debug_hook( $m->current_comp->path ) if ( HTML::Mason::Compiler::IN_PERL_DB() );
+
+#line 1 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowBasics"
+# BEGIN BPS TAGGED BLOCK {{{
+#
+# COPYRIGHT:
+#
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
+#                                          <sales@bestpractical.com>
+#
+# (Except where explicitly superseded by other copyright notices)
+#
+#
+# LICENSE:
+#
+# This work is made available to you under the terms of Version 2 of
+# the GNU General Public License. A copy of that license should have
+# been provided with this software, but in any event can be snarfed
+# from www.gnu.org.
+#
+# This work is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
+#
+#
+# CONTRIBUTION SUBMISSION POLICY:
+#
+# (The following paragraph is not intended to limit the rights granted
+# to you to modify and distribute this software under the terms of
+# the GNU General Public License and is only of importance to you if
+# you choose to contribute your changes and enhancements to the
+# community by submitting them to Best Practical Solutions, LLC.)
+#
+# By intentionally submitting any modifications, corrections or
+# derivatives to this work, or any other work intended for use with
+# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+# you are the copyright holder for those contributions and you grant
+# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+# royalty-free, perpetual, license to use, copy, create derivative
+# works based on those contributions, and sublicense and distribute
+# those contributions and any derivatives thereof.
+#
+# END BPS TAGGED BLOCK }}}
+$m->print( '<table>
+  <tr class="id">
+    <td class="label">' );
+#line 50 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowBasics"
+$m->comp( { content => sub {
+#line 50 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowBasics"
+$m->print( 'Id' );
+#line 50 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowBasics"
+} }, '/l'
+ );
+#line 50 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowBasics"
+$m->print( ':</td>
+    <td class="value">' );
+#line 51 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowBasics"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($Ticket->Id )) );
+#line 51 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowBasics"
+$m->print( '</td>
+  </tr>
+  <tr class="status">
+    <td class="label">' );
+#line 54 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowBasics"
+$m->comp( { content => sub {
+#line 54 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowBasics"
+$m->print( 'Status' );
+#line 54 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowBasics"
+} }, '/l'
+ );
+#line 54 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowBasics"
+$m->print( ':</td>
+    <td class="value">' );
+#line 55 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowBasics"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( loc($Ticket->Status) )) );
+#line 55 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowBasics"
+$m->print( '</td>
+  </tr>
+' );
+#line 57 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowBasics"
+ if ($Ticket->TimeEstimated) {
+$m->print( '  <tr class="time estimated">
+    <td class="label">' );
+#line 59 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowBasics"
+$m->comp( { content => sub {
+#line 59 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowBasics"
+$m->print( 'Estimated' );
+#line 59 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowBasics"
+} }, '/l'
+ );
+#line 59 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowBasics"
+$m->print( ':</td>
+    <td class="value">' );
+#line 60 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowBasics"
+$m->comp(   'ShowTime', minutes => $Ticket->TimeEstimated   
+); #line 60 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowBasics"
+$m->print( '</td>
+  </tr>
+' );
+#line 62 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowBasics"
+ }
+ $m->callback( %ARGS, CallbackName => 'AfterTimeEstimated', TicketObj => $Ticket );
+ if ($Ticket->TimeWorked) {
+$m->print( '  <tr class="time worked">
+    <td class="label">' );
+#line 66 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowBasics"
+$m->comp( { content => sub {
+#line 66 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowBasics"
+$m->print( 'Worked' );
+#line 66 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowBasics"
+} }, '/l'
+ );
+#line 66 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowBasics"
+$m->print( ':</td>
+    <td class="value">' );
+#line 67 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowBasics"
+$m->comp(   'ShowTime', minutes => $Ticket->TimeWorked   
+); #line 67 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowBasics"
+$m->print( '</td>
+  </tr>
+' );
+#line 69 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowBasics"
+ }
+ $m->callback( %ARGS, CallbackName => 'AfterTimeWorked', TicketObj => $Ticket );
+ if ($Ticket->TimeLeft) {
+$m->print( '  <tr class="time left">
+    <td class="label">' );
+#line 73 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowBasics"
+$m->comp( { content => sub {
+#line 73 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowBasics"
+$m->print( 'Left' );
+#line 73 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowBasics"
+} }, '/l'
+ );
+#line 73 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowBasics"
+$m->print( ':</td>
+    <td class="value">' );
+#line 74 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowBasics"
+$m->comp(   'ShowTime', minutes => $Ticket->TimeLeft   
+); #line 74 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowBasics"
+$m->print( '</td>
+  </tr>
+' );
+#line 76 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowBasics"
+ }
+$m->print( '  <tr class="priority">
+    <td class="label">' );
+#line 78 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowBasics"
+$m->comp( { content => sub {
+#line 78 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowBasics"
+$m->print( 'Priority' );
+#line 78 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowBasics"
+} }, '/l'
+ );
+#line 78 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowBasics"
+$m->print( ':</td>
+    <td class="value">' );
+#line 79 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowBasics"
+$m->comp(   'ShowPriority', Ticket => $Ticket   
+); #line 79 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowBasics"
+$m->print( '</td>
+  </tr>
+' );
+#line 81 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowBasics"
+# This will check SeeQueue at the ticket role level, queue level, and global level
+ if ($Ticket->CurrentUserHasRight('SeeQueue')) {
+$m->print( '  <tr class="queue">
+    <td class="label">' );
+#line 84 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowBasics"
+$m->comp( { content => sub {
+#line 84 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowBasics"
+$m->print( 'Queue' );
+#line 84 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowBasics"
+} }, '/l'
+ );
+#line 84 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowBasics"
+$m->print( ':</td>
+    <td class="value">' );
+#line 85 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowBasics"
+$m->comp(   'ShowQueue', Ticket => $Ticket, QueueObj => $Ticket->QueueObj   
+); #line 85 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowBasics"
+$m->print( '</td>
+  </tr>
+' );
+#line 87 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowBasics"
+ }
+$m->print( '  ' );
+#line 88 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowBasics"
+$m->comp(   '/Ticket/Elements/ShowCustomFields', Ticket => $Ticket, Grouping => 'Basics', Table => 0   
+); #line 88 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowBasics"
+$m->print( '
+' );
+#line 89 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowBasics"
+ if ($UngroupedCFs) {
+$m->print( '  ' );
+#line 90 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowBasics"
+$m->comp(   '/Ticket/Elements/ShowCustomFields', Ticket => $Ticket, Grouping => '', Table => 0   
+); #line 90 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowBasics"
+$m->print( '
+' );
+#line 91 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowBasics"
+ }
+ $m->callback( %ARGS, CallbackName => 'EndOfList', TicketObj => $Ticket );
+$m->print( '</table>
+' );
+;return;
+},
+'declared_args' => {
+  '$Ticket' => { default => ' undef' },
+  '$UngroupedCFs' => { default => ' 0' }
+},
+'load_time' => 1432969539,
+
+)
+;

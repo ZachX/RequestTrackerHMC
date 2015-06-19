@@ -1,0 +1,129 @@
+package HTML::Mason::Commands;
+use strict;
+use vars qw($m $DECODED_ARGS $r %session);
+HTML::Mason::Component::FileBased->new(
+'code' => sub {
+HTML::Mason::Exception::Params->throw
+    ( error =>
+      "Odd number of parameters passed to component expecting name/value pairs"
+    ) if @_ % 2;
+my ( $Ticket, $DisplayPath );
+{
+    my %pos;
+    for ( my $x = 0; $x < @_; $x += 2 )
+    {
+        $pos{ $_[$x] } = $x + 1;
+    }
+
+    foreach my $arg ( qw( Ticket ) )
+    {
+        HTML::Mason::Exception::Params->throw
+            ( error => "no value sent for required parameter '$arg'" )
+                unless exists $pos{$arg};
+    }
+#line 58 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowUpdateStatus"
+    $Ticket = $_[ $pos{'Ticket'} ];
+#line 59 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowUpdateStatus"
+     $DisplayPath = exists $pos{'DisplayPath'} ? $_[ $pos{'DisplayPath'} ] :  $session{'CurrentUser'}->Privileged ? 'Ticket' : 'SelfService';
+}
+$m->debug_hook( $m->current_comp->path ) if ( HTML::Mason::Compiler::IN_PERL_DB() );
+
+#line 61 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowUpdateStatus"
+
+return unless (RT->Config->Get( 'ShowUnreadMessageNotifications', $session{'CurrentUser'}));
+my $txn = $Ticket->SeenUpTo or return;
+
+#line 1 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowUpdateStatus"
+# BEGIN BPS TAGGED BLOCK {{{
+#
+# COPYRIGHT:
+#
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
+#                                          <sales@bestpractical.com>
+#
+# (Except where explicitly superseded by other copyright notices)
+#
+#
+# LICENSE:
+#
+# This work is made available to you under the terms of Version 2 of
+# the GNU General Public License. A copy of that license should have
+# been provided with this software, but in any event can be snarfed
+# from www.gnu.org.
+#
+# This work is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
+#
+#
+# CONTRIBUTION SUBMISSION POLICY:
+#
+# (The following paragraph is not intended to limit the rights granted
+# to you to modify and distribute this software under the terms of
+# the GNU General Public License and is only of importance to you if
+# you choose to contribute your changes and enhancements to the
+# community by submitting them to Best Practical Solutions, LLC.)
+#
+# By intentionally submitting any modifications, corrections or
+# derivatives to this work, or any other work intended for use with
+# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+# you are the copyright holder for those contributions and you grant
+# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+# royalty-free, perpetual, license to use, copy, create derivative
+# works based on those contributions, and sublicense and distribute
+# those contributions and any derivatives thereof.
+#
+# END BPS TAGGED BLOCK }}}
+$m->print( '<div class="unread-messages">
+' );
+#line 49 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowUpdateStatus"
+$m->comp( { content => sub {
+#line 49 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowUpdateStatus"
+$m->print( '
+' );
+#line 50 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowUpdateStatus"
+$m->comp( { content => sub {
+#line 50 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowUpdateStatus"
+$m->print( 'There are unread messages on this ticket.' );
+#line 50 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowUpdateStatus"
+} }, '/l'
+ );
+#line 50 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowUpdateStatus"
+$m->print( '
+' );
+#line 51 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowUpdateStatus"
+$m->comp( { content => sub {
+#line 54 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowUpdateStatus"
+$m->print( 'You can <a href="[_1]">jump to the first unread message</a> or <a href="[_2]">jump to the first unread message and mark all messages as seen</a>.' );
+#line 54 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowUpdateStatus"
+} }, '/l', 
+ RT->Config->Get('WebPath') ."/$DisplayPath/Display.html?id=". $Ticket->id. "#txn-".$txn->id,
+ RT->Config->Get('WebPath') ."/$DisplayPath/Display.html?id=". $Ticket->id ."&MarkAsSeen=1&Anchor=txn-" . $txn->id
+ );
+#line 54 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowUpdateStatus"
+$m->print( '
+' );
+#line 55 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowUpdateStatus"
+} }, '/Widgets/TitleBox', title => loc('New messages'), title_href => "#txn-". $txn->id
+ );
+#line 55 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowUpdateStatus"
+$m->print( '
+</div>
+' );
+;return;
+},
+'declared_args' => {
+  '$DisplayPath' => { default => ' $session{\'CurrentUser\'}->Privileged ? \'Ticket\' : \'SelfService\'' },
+  '$Ticket' => { default => undef }
+},
+'load_time' => 1432969539,
+
+)
+;

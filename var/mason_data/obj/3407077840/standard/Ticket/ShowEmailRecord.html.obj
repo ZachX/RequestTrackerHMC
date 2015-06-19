@@ -1,0 +1,173 @@
+package HTML::Mason::Commands;
+use strict;
+use vars qw($m $DECODED_ARGS $r %session);
+HTML::Mason::Component::FileBased->new(
+'code' => sub {
+HTML::Mason::Exception::Params->throw
+    ( error =>
+      "Odd number of parameters passed to component expecting name/value pairs"
+    ) if @_ % 2;
+my ( $Attachment, $Transaction );
+{
+    my %pos;
+    for ( my $x = 0; $x < @_; $x += 2 )
+    {
+        $pos{ $_[$x] } = $x + 1;
+    }
+#line 49 "/var/www/localhost/htdocs/rt/Ticket/ShowEmailRecord.html"
+     $Attachment = exists $pos{'Attachment'} ? $_[ $pos{'Attachment'} ] :  undef;
+#line 50 "/var/www/localhost/htdocs/rt/Ticket/ShowEmailRecord.html"
+     $Transaction = exists $pos{'Transaction'} ? $_[ $pos{'Transaction'} ] :  undef;
+}
+$m->debug_hook( $m->current_comp->path ) if ( HTML::Mason::Compiler::IN_PERL_DB() );
+
+#line 52 "/var/www/localhost/htdocs/rt/Ticket/ShowEmailRecord.html"
+
+my $plain_text_mono
+    = RT->Config->Get( 'PlainTextMono', $session{'CurrentUser'} );
+my $use_brs = !$plain_text_mono;
+
+my $show_content = sub {
+    my $attach = shift;
+    if ( $attach->ContentType =~ m{^(?:text|message)/}i ) {
+        my $content = $m->interp->apply_escapes( $attach->Content, 'h' );
+        $content =~ s{(\r?\n)}{<br />}g if $use_brs;
+        $m->out( $content );
+        return;
+    }
+    my $href = RT->Config->Get('WebPath') .'/Ticket/Attachment/'
+        . $attach->TransactionId .'/'. $attach->id .'/'
+        . $m->interp->apply_escapes( $attach->Filename, 'u' );
+    $m->out( '<a href="'. $href  .'">'. loc('download') .'</a>' );
+};
+
+my $show;
+$show = sub {
+    my $attach = shift;
+    $m->out('<div id="body">');
+    $m->out('<div class="plain-text-white-space">') if $plain_text_mono;
+
+    my $headers = $m->interp->apply_escapes( $attach->Headers, 'h' );
+    $headers =~ s{(\r?\n)}{<br />}g if $use_brs;
+    $m->out( $headers );
+
+    $m->out( $use_brs ? "<br /><br />" : "\n\n" );
+
+    if ( $attach->ContentType =~ m{^multipart/}i ) {
+        my $children = $attach->Children;
+        while ( my $child = $children->Next ) {
+            $show->( $child );
+        }
+    } else {
+        $show_content->( $attach );
+    }
+    $m->out('</div>') if $plain_text_mono;
+    $m->out('</div>');
+};
+
+# Set error for error message below. Abort doesn't display well
+# because ShowEmailRecord doesn't use the standard RT menus
+# and headers.
+
+my ($title, $error);
+
+my $AttachmentObj = RT::Attachment->new($session{'CurrentUser'});
+$AttachmentObj->Load($Attachment);
+
+if ( not $AttachmentObj->id
+    or not $AttachmentObj->TransactionId() == $Transaction ) {
+    $title = loc("Error loading attachment");
+    $error = loc("Attachment '[_1]' could not be loaded", $Attachment);
+}
+elsif ( not $AttachmentObj->TransactionObj->CurrentUserCanSee("Transaction")){
+    $title = loc("Permission Denied");
+    $error = loc("Permission Denied");
+}
+else{
+    $title = loc("Email Source for Ticket [_1], Attachment [_2]",
+        $AttachmentObj->TransactionObj->ObjectId,
+        $AttachmentObj->Id);
+}
+
+#line 1 "/var/www/localhost/htdocs/rt/Ticket/ShowEmailRecord.html"
+# BEGIN BPS TAGGED BLOCK {{{
+#
+# COPYRIGHT:
+#
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
+#                                          <sales@bestpractical.com>
+#
+# (Except where explicitly superseded by other copyright notices)
+#
+#
+# LICENSE:
+#
+# This work is made available to you under the terms of Version 2 of
+# the GNU General Public License. A copy of that license should have
+# been provided with this software, but in any event can be snarfed
+# from www.gnu.org.
+#
+# This work is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
+#
+#
+# CONTRIBUTION SUBMISSION POLICY:
+#
+# (The following paragraph is not intended to limit the rights granted
+# to you to modify and distribute this software under the terms of
+# the GNU General Public License and is only of importance to you if
+# you choose to contribute your changes and enhancements to the
+# community by submitting them to Best Practical Solutions, LLC.)
+#
+# By intentionally submitting any modifications, corrections or
+# derivatives to this work, or any other work intended for use with
+# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+# you are the copyright holder for those contributions and you grant
+# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+# royalty-free, perpetual, license to use, copy, create derivative
+# works based on those contributions, and sublicense and distribute
+# those contributions and any derivatives thereof.
+#
+# END BPS TAGGED BLOCK }}}
+$m->comp(   '/Elements/Header', ShowBar => 0, Title => $title   
+); #line 120 "/var/www/localhost/htdocs/rt/Ticket/ShowEmailRecord.html"
+$m->print( '
+' );
+#line 121 "/var/www/localhost/htdocs/rt/Ticket/ShowEmailRecord.html"
+ if ( $error ){
+$m->print( '<div id="body"><div class="error">
+' );
+#line 123 "/var/www/localhost/htdocs/rt/Ticket/ShowEmailRecord.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $error )) );
+#line 123 "/var/www/localhost/htdocs/rt/Ticket/ShowEmailRecord.html"
+$m->print( '
+</div></div>
+' );
+#line 125 "/var/www/localhost/htdocs/rt/Ticket/ShowEmailRecord.html"
+ }
+ else{
+    $show->( $AttachmentObj );
+ }
+$m->print( '</body>
+</html>
+' );
+#line 131 "/var/www/localhost/htdocs/rt/Ticket/ShowEmailRecord.html"
+ $m->abort;
+;return;
+},
+'declared_args' => {
+  '$Attachment' => { default => ' undef' },
+  '$Transaction' => { default => ' undef' }
+},
+'load_time' => 1434563846,
+
+)
+;

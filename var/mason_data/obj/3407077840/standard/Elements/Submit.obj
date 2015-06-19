@@ -1,0 +1,308 @@
+package HTML::Mason::Commands;
+use strict;
+use vars qw($m $DECODED_ARGS $r %session);
+HTML::Mason::Component::FileBased->new(
+'code' => sub {
+HTML::Mason::Exception::Params->throw
+    ( error =>
+      "Odd number of parameters passed to component expecting name/value pairs"
+    ) if @_ % 2;
+my ( $color, $Caption, $AlternateCaption, $AlternateLabel, $Label, $Name, $CheckAll, $CheckAllLabel, $ClearAll, $ClearAllLabel, $CheckboxName, $CheckboxNameRegex, $Back, $BackName, $BackLabel, $BackCaption, $BackOnClick, $OnClick, $Reset, $ResetLabel, $SubmitId, $id );
+{
+    my %pos;
+    for ( my $x = 0; $x < @_; $x += 2 )
+    {
+        $pos{ $_[$x] } = $x + 1;
+    }
+#line 95 "/var/www/localhost/htdocs/rt/Elements/Submit"
+     $color = exists $pos{'color'} ? $_[ $pos{'color'} ] :  undef;
+#line 96 "/var/www/localhost/htdocs/rt/Elements/Submit"
+     $Caption = exists $pos{'Caption'} ? $_[ $pos{'Caption'} ] :  '';
+#line 97 "/var/www/localhost/htdocs/rt/Elements/Submit"
+     $AlternateCaption = exists $pos{'AlternateCaption'} ? $_[ $pos{'AlternateCaption'} ] :  undef;
+#line 98 "/var/www/localhost/htdocs/rt/Elements/Submit"
+     $AlternateLabel = exists $pos{'AlternateLabel'} ? $_[ $pos{'AlternateLabel'} ] :  undef;
+#line 99 "/var/www/localhost/htdocs/rt/Elements/Submit"
+     $Label = exists $pos{'Label'} ? $_[ $pos{'Label'} ] :  loc('Submit');
+#line 100 "/var/www/localhost/htdocs/rt/Elements/Submit"
+     $Name = exists $pos{'Name'} ? $_[ $pos{'Name'} ] :  undef;
+#line 101 "/var/www/localhost/htdocs/rt/Elements/Submit"
+     $CheckAll = exists $pos{'CheckAll'} ? $_[ $pos{'CheckAll'} ] :  undef;
+#line 102 "/var/www/localhost/htdocs/rt/Elements/Submit"
+     $CheckAllLabel = exists $pos{'CheckAllLabel'} ? $_[ $pos{'CheckAllLabel'} ] :  loc('Check All');
+#line 103 "/var/www/localhost/htdocs/rt/Elements/Submit"
+     $ClearAll = exists $pos{'ClearAll'} ? $_[ $pos{'ClearAll'} ] :  undef;
+#line 104 "/var/www/localhost/htdocs/rt/Elements/Submit"
+     $ClearAllLabel = exists $pos{'ClearAllLabel'} ? $_[ $pos{'ClearAllLabel'} ] :  loc('Clear All');
+#line 105 "/var/www/localhost/htdocs/rt/Elements/Submit"
+     $CheckboxName = exists $pos{'CheckboxName'} ? $_[ $pos{'CheckboxName'} ] :  '';
+#line 106 "/var/www/localhost/htdocs/rt/Elements/Submit"
+     $CheckboxNameRegex = exists $pos{'CheckboxNameRegex'} ? $_[ $pos{'CheckboxNameRegex'} ] :  '';
+#line 107 "/var/www/localhost/htdocs/rt/Elements/Submit"
+     $Back = exists $pos{'Back'} ? $_[ $pos{'Back'} ] :  undef;
+#line 108 "/var/www/localhost/htdocs/rt/Elements/Submit"
+     $BackName = exists $pos{'BackName'} ? $_[ $pos{'BackName'} ] :  'Back';
+#line 109 "/var/www/localhost/htdocs/rt/Elements/Submit"
+     $BackLabel = exists $pos{'BackLabel'} ? $_[ $pos{'BackLabel'} ] :  loc('Back');
+#line 110 "/var/www/localhost/htdocs/rt/Elements/Submit"
+     $BackCaption = exists $pos{'BackCaption'} ? $_[ $pos{'BackCaption'} ] :  '';
+#line 111 "/var/www/localhost/htdocs/rt/Elements/Submit"
+     $BackOnClick = exists $pos{'BackOnClick'} ? $_[ $pos{'BackOnClick'} ] :  undef;
+#line 112 "/var/www/localhost/htdocs/rt/Elements/Submit"
+     $OnClick = exists $pos{'OnClick'} ? $_[ $pos{'OnClick'} ] :  undef;
+#line 113 "/var/www/localhost/htdocs/rt/Elements/Submit"
+     $Reset = exists $pos{'Reset'} ? $_[ $pos{'Reset'} ] :  undef;
+#line 114 "/var/www/localhost/htdocs/rt/Elements/Submit"
+     $ResetLabel = exists $pos{'ResetLabel'} ? $_[ $pos{'ResetLabel'} ] :  loc('Reset');
+#line 115 "/var/www/localhost/htdocs/rt/Elements/Submit"
+     $SubmitId = exists $pos{'SubmitId'} ? $_[ $pos{'SubmitId'} ] :  undef;
+#line 116 "/var/www/localhost/htdocs/rt/Elements/Submit"
+     $id = exists $pos{'id'} ? $_[ $pos{'id'} ] :  undef;
+}
+$m->debug_hook( $m->current_comp->path ) if ( HTML::Mason::Compiler::IN_PERL_DB() );
+
+#line 118 "/var/www/localhost/htdocs/rt/Elements/Submit"
+
+my $match;
+if (length $CheckboxName) {
+    $match = $m->interp->apply_escapes($CheckboxName,'j');
+} elsif (length $CheckboxNameRegex) {
+    $match = $CheckboxNameRegex;
+} else {
+    $match = q{''};
+}
+#line 1 "/var/www/localhost/htdocs/rt/Elements/Submit"
+# BEGIN BPS TAGGED BLOCK {{{
+#
+# COPYRIGHT:
+#
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
+#                                          <sales@bestpractical.com>
+#
+# (Except where explicitly superseded by other copyright notices)
+#
+#
+# LICENSE:
+#
+# This work is made available to you under the terms of Version 2 of
+# the GNU General Public License. A copy of that license should have
+# been provided with this software, but in any event can be snarfed
+# from www.gnu.org.
+#
+# This work is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
+#
+#
+# CONTRIBUTION SUBMISSION POLICY:
+#
+# (The following paragraph is not intended to limit the rights granted
+# to you to modify and distribute this software under the terms of
+# the GNU General Public License and is only of importance to you if
+# you choose to contribute your changes and enhancements to the
+# community by submitting them to Best Practical Solutions, LLC.)
+#
+# By intentionally submitting any modifications, corrections or
+# derivatives to this work, or any other work intended for use with
+# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+# you are the copyright holder for those contributions and you grant
+# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+# royalty-free, perpetual, license to use, copy, create derivative
+# works based on those contributions, and sublicense and distribute
+# those contributions and any derivatives thereof.
+#
+# END BPS TAGGED BLOCK }}}
+$m->print( '<div class="submit"
+' );
+#line 49 "/var/www/localhost/htdocs/rt/Elements/Submit"
+ if($id) {
+$m->print( 'id="' );
+#line 50 "/var/www/localhost/htdocs/rt/Elements/Submit"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($id)) );
+#line 50 "/var/www/localhost/htdocs/rt/Elements/Submit"
+$m->print( '"
+' );
+#line 51 "/var/www/localhost/htdocs/rt/Elements/Submit"
+ }
+$m->print( '>
+  <div class="extra-buttons">
+' );
+#line 54 "/var/www/localhost/htdocs/rt/Elements/Submit"
+ if ($CheckAll) {
+$m->print( '  <input type="button" value="' );
+#line 55 "/var/www/localhost/htdocs/rt/Elements/Submit"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($CheckAllLabel)) );
+#line 55 "/var/www/localhost/htdocs/rt/Elements/Submit"
+$m->print( '" onclick="setCheckbox(this, ' );
+#line 55 "/var/www/localhost/htdocs/rt/Elements/Submit"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $match )) );
+#line 55 "/var/www/localhost/htdocs/rt/Elements/Submit"
+$m->print( ', true);return false;" class="button" />
+' );
+#line 56 "/var/www/localhost/htdocs/rt/Elements/Submit"
+ }
+ if ($ClearAll) {
+$m->print( '  <input type="button" value="' );
+#line 58 "/var/www/localhost/htdocs/rt/Elements/Submit"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($ClearAllLabel)) );
+#line 58 "/var/www/localhost/htdocs/rt/Elements/Submit"
+$m->print( '" onclick="setCheckbox(this, ' );
+#line 58 "/var/www/localhost/htdocs/rt/Elements/Submit"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $match )) );
+#line 58 "/var/www/localhost/htdocs/rt/Elements/Submit"
+$m->print( ', false);return false;" class="button" />
+' );
+#line 59 "/var/www/localhost/htdocs/rt/Elements/Submit"
+ }
+ if ($Reset) {
+$m->print( '  <input type="reset" value="' );
+#line 61 "/var/www/localhost/htdocs/rt/Elements/Submit"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($ResetLabel)) );
+#line 61 "/var/www/localhost/htdocs/rt/Elements/Submit"
+$m->print( '" class="button" />
+' );
+#line 62 "/var/www/localhost/htdocs/rt/Elements/Submit"
+ }
+$m->print( '  </div>
+  <div class="buttons">
+' );
+#line 65 "/var/www/localhost/htdocs/rt/Elements/Submit"
+ if ( $Back ) {
+$m->print( '  <div class="next">
+' );
+#line 67 "/var/www/localhost/htdocs/rt/Elements/Submit"
+ }
+$m->print( '
+' );
+#line 69 "/var/www/localhost/htdocs/rt/Elements/Submit"
+ if ($AlternateLabel) {
+$m->print( '  <span class="caption">' );
+#line 70 "/var/www/localhost/htdocs/rt/Elements/Submit"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($AlternateCaption)) );
+#line 70 "/var/www/localhost/htdocs/rt/Elements/Submit"
+$m->print( '</span>
+  <input type="submit" ' );
+#line 71 "/var/www/localhost/htdocs/rt/Elements/Submit"
+$m->print(  $OnClick ? qq[ onclick="$OnClick"] : '' );
+#line 71 "/var/www/localhost/htdocs/rt/Elements/Submit"
+$m->print( ' ' );
+#line 71 "/var/www/localhost/htdocs/rt/Elements/Submit"
+$m->print(  $Name ? qq[ name="$Name"] : '' );
+#line 71 "/var/www/localhost/htdocs/rt/Elements/Submit"
+$m->print( ' ' );
+#line 71 "/var/www/localhost/htdocs/rt/Elements/Submit"
+$m->print(  $SubmitId ? qq[ id="$SubmitId"] : '' );
+#line 71 "/var/www/localhost/htdocs/rt/Elements/Submit"
+$m->print( ' value="' );
+#line 71 "/var/www/localhost/htdocs/rt/Elements/Submit"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($AlternateLabel)) );
+#line 71 "/var/www/localhost/htdocs/rt/Elements/Submit"
+$m->print( '" class="button" />
+' );
+#line 72 "/var/www/localhost/htdocs/rt/Elements/Submit"
+ } else {
+$m->print( '  <span class="caption">' );
+#line 73 "/var/www/localhost/htdocs/rt/Elements/Submit"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($Caption)) );
+#line 73 "/var/www/localhost/htdocs/rt/Elements/Submit"
+$m->print( '</span>
+  <input type="submit" ' );
+#line 74 "/var/www/localhost/htdocs/rt/Elements/Submit"
+$m->print(  $OnClick ? qq[ onclick="$OnClick"] : '' );
+#line 74 "/var/www/localhost/htdocs/rt/Elements/Submit"
+$m->print( ' ' );
+#line 74 "/var/www/localhost/htdocs/rt/Elements/Submit"
+$m->print(  $Name ? qq[ name="$Name"] : '' );
+#line 74 "/var/www/localhost/htdocs/rt/Elements/Submit"
+$m->print( ' ' );
+#line 74 "/var/www/localhost/htdocs/rt/Elements/Submit"
+$m->print(  $SubmitId ? qq[ id="$SubmitId"] : '' );
+#line 74 "/var/www/localhost/htdocs/rt/Elements/Submit"
+$m->print( ' value="' );
+#line 74 "/var/www/localhost/htdocs/rt/Elements/Submit"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($Label)) );
+#line 74 "/var/www/localhost/htdocs/rt/Elements/Submit"
+$m->print( '" class="button" />
+' );
+#line 75 "/var/www/localhost/htdocs/rt/Elements/Submit"
+ }
+$m->print( '
+' );
+#line 77 "/var/www/localhost/htdocs/rt/Elements/Submit"
+ if ( $Back ) {
+$m->print( '  </div>
+' );
+#line 79 "/var/www/localhost/htdocs/rt/Elements/Submit"
+ }
+$m->print( '
+
+' );
+#line 82 "/var/www/localhost/htdocs/rt/Elements/Submit"
+ if ( $Back ) {
+$m->print( '  <div class="back">
+  <span class="caption">' );
+#line 84 "/var/www/localhost/htdocs/rt/Elements/Submit"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($BackCaption)) );
+#line 84 "/var/www/localhost/htdocs/rt/Elements/Submit"
+$m->print( '</span>
+  <input type="submit" ' );
+#line 85 "/var/www/localhost/htdocs/rt/Elements/Submit"
+$m->print(  $BackOnClick ? qq[ onclick="$BackOnClick"] : '' );
+#line 85 "/var/www/localhost/htdocs/rt/Elements/Submit"
+$m->print( ' ' );
+#line 86 "/var/www/localhost/htdocs/rt/Elements/Submit"
+$m->print( 
+      $BackName ? qq[ name="$BackName"] : '' );
+#line 86 "/var/www/localhost/htdocs/rt/Elements/Submit"
+$m->print( ' value="' );
+#line 86 "/var/www/localhost/htdocs/rt/Elements/Submit"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($BackLabel)) );
+#line 86 "/var/www/localhost/htdocs/rt/Elements/Submit"
+$m->print( '" class="button" />
+  </div>
+' );
+#line 88 "/var/www/localhost/htdocs/rt/Elements/Submit"
+ }
+$m->print( '
+  </div>
+  <div class="submit-clear"></div>
+</div>
+
+' );
+;return;
+},
+'declared_args' => {
+  '$AlternateCaption' => { default => ' undef' },
+  '$AlternateLabel' => { default => ' undef' },
+  '$Back' => { default => ' undef' },
+  '$BackCaption' => { default => ' \'\'' },
+  '$BackLabel' => { default => ' loc(\'Back\')' },
+  '$BackName' => { default => ' \'Back\'' },
+  '$BackOnClick' => { default => ' undef' },
+  '$Caption' => { default => ' \'\'' },
+  '$CheckAll' => { default => ' undef' },
+  '$CheckAllLabel' => { default => ' loc(\'Check All\')' },
+  '$CheckboxName' => { default => ' \'\'' },
+  '$CheckboxNameRegex' => { default => ' \'\'' },
+  '$ClearAll' => { default => ' undef' },
+  '$ClearAllLabel' => { default => ' loc(\'Clear All\')' },
+  '$Label' => { default => ' loc(\'Submit\')' },
+  '$Name' => { default => ' undef' },
+  '$OnClick' => { default => ' undef' },
+  '$Reset' => { default => ' undef' },
+  '$ResetLabel' => { default => ' loc(\'Reset\')' },
+  '$SubmitId' => { default => ' undef' },
+  '$color' => { default => ' undef' },
+  '$id' => { default => ' undef' }
+},
+'load_time' => 1434735752,
+
+)
+;

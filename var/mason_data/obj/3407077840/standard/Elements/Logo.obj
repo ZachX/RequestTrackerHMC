@@ -1,0 +1,170 @@
+package HTML::Mason::Commands;
+use strict;
+use vars qw($m $DECODED_ARGS $r %session);
+HTML::Mason::Component::FileBased->new(
+'code' => sub {
+HTML::Mason::Exception::Params->throw
+    ( error =>
+      "Odd number of parameters passed to component expecting name/value pairs"
+    ) if @_ % 2;
+my %ARGS = @_;
+my ( $ShowName, $OnlyCustom, $Name, $id );
+{
+    my %pos;
+    for ( my $x = 0; $x < @_; $x += 2 )
+    {
+        $pos{ $_[$x] } = $x + 1;
+    }
+#line 86 "/var/www/localhost/htdocs/rt/Elements/Logo"
+     $ShowName = exists $pos{'ShowName'} ? $_[ $pos{'ShowName'} ] :  1;
+#line 87 "/var/www/localhost/htdocs/rt/Elements/Logo"
+     $OnlyCustom = exists $pos{'OnlyCustom'} ? $_[ $pos{'OnlyCustom'} ] :  0;
+#line 88 "/var/www/localhost/htdocs/rt/Elements/Logo"
+     $Name = exists $pos{'Name'} ? $_[ $pos{'Name'} ] :  undef;
+#line 89 "/var/www/localhost/htdocs/rt/Elements/Logo"
+     $id = exists $pos{'id'} ? $_[ $pos{'id'} ] :  'logo';
+}
+$m->debug_hook( $m->current_comp->path ) if ( HTML::Mason::Compiler::IN_PERL_DB() );
+
+#line 62 "/var/www/localhost/htdocs/rt/Elements/Logo"
+
+if ( exists $ARGS{'show_name'} ) {
+    $RT::Logger->warning('show_name argument was renamed, use ShowName');
+    $ShowName = delete $ARGS{'show_name'};
+}
+
+my $user_logo = blessed $RT::System ? $RT::System->FirstAttribute('UserLogo') : undef;
+
+# If we have the attribute, but no content, we don't really have a user logo
+if ($user_logo) {
+    my $content = $user_logo->Content;
+    undef $user_logo
+        unless ref $content eq 'HASH'
+           and defined $content->{'data'};
+}
+
+if ($OnlyCustom
+    and not $user_logo
+    and ($ARGS{LogoURL}||RT->Config->Get('LogoURL')) =~ /bpslogo\.png$/)
+{
+    return;
+}
+#line 1 "/var/www/localhost/htdocs/rt/Elements/Logo"
+# BEGIN BPS TAGGED BLOCK {{{
+#
+# COPYRIGHT:
+#
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
+#                                          <sales@bestpractical.com>
+#
+# (Except where explicitly superseded by other copyright notices)
+#
+#
+# LICENSE:
+#
+# This work is made available to you under the terms of Version 2 of
+# the GNU General Public License. A copy of that license should have
+# been provided with this software, but in any event can be snarfed
+# from www.gnu.org.
+#
+# This work is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
+#
+#
+# CONTRIBUTION SUBMISSION POLICY:
+#
+# (The following paragraph is not intended to limit the rights granted
+# to you to modify and distribute this software under the terms of
+# the GNU General Public License and is only of importance to you if
+# you choose to contribute your changes and enhancements to the
+# community by submitting them to Best Practical Solutions, LLC.)
+#
+# By intentionally submitting any modifications, corrections or
+# derivatives to this work, or any other work intended for use with
+# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+# you are the copyright holder for those contributions and you grant
+# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+# royalty-free, perpetual, license to use, copy, create derivative
+# works based on those contributions, and sublicense and distribute
+# those contributions and any derivatives thereof.
+#
+# END BPS TAGGED BLOCK }}}
+$m->print( '<div id="' );
+#line 48 "/var/www/localhost/htdocs/rt/Elements/Logo"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $id )) );
+#line 48 "/var/www/localhost/htdocs/rt/Elements/Logo"
+$m->print( '">
+' );
+#line 49 "/var/www/localhost/htdocs/rt/Elements/Logo"
+ if ($user_logo) {
+$m->print( '<a href="' );
+#line 50 "/var/www/localhost/htdocs/rt/Elements/Logo"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($ARGS{'LogoLinkURL'}||RT->Config->Get('LogoLinkURL'))) );
+#line 50 "/var/www/localhost/htdocs/rt/Elements/Logo"
+$m->print( '"><img
+    src="' );
+#line 51 "/var/www/localhost/htdocs/rt/Elements/Logo"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( RT->Config->Get('WebPath') )) );
+#line 51 "/var/www/localhost/htdocs/rt/Elements/Logo"
+$m->print( '/NoAuth/Helpers/CustomLogo/' );
+#line 51 "/var/www/localhost/htdocs/rt/Elements/Logo"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $user_logo->Content->{'hash'} )) );
+#line 51 "/var/www/localhost/htdocs/rt/Elements/Logo"
+$m->print( '"
+    alt="' );
+#line 52 "/var/www/localhost/htdocs/rt/Elements/Logo"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } (loc($ARGS{'LogoAltText'}||RT->Config->Get('LogoAltText')))) );
+#line 52 "/var/www/localhost/htdocs/rt/Elements/Logo"
+$m->print( '" /></a>
+' );
+#line 53 "/var/www/localhost/htdocs/rt/Elements/Logo"
+ } else {
+$m->print( '<a href="' );
+#line 54 "/var/www/localhost/htdocs/rt/Elements/Logo"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($ARGS{'LogoLinkURL'}||RT->Config->Get('LogoLinkURL'))) );
+#line 54 "/var/www/localhost/htdocs/rt/Elements/Logo"
+$m->print( '"><img
+    src="' );
+#line 55 "/var/www/localhost/htdocs/rt/Elements/Logo"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($ARGS{'LogoURL'}||RT->Config->Get('LogoURL'))) );
+#line 55 "/var/www/localhost/htdocs/rt/Elements/Logo"
+$m->print( '"
+    alt="' );
+#line 56 "/var/www/localhost/htdocs/rt/Elements/Logo"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } (loc($ARGS{'LogoAltText'}||RT->Config->Get('LogoAltText')))) );
+#line 56 "/var/www/localhost/htdocs/rt/Elements/Logo"
+$m->print( '" /></a>
+' );
+#line 57 "/var/www/localhost/htdocs/rt/Elements/Logo"
+ }
+ if ( $ShowName ) {
+$m->print( '    <span class="rtname">' );
+#line 59 "/var/www/localhost/htdocs/rt/Elements/Logo"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $Name || loc("RT for [_1]", RT->Config->Get('rtname')) )) );
+#line 59 "/var/www/localhost/htdocs/rt/Elements/Logo"
+$m->print( '</span>
+' );
+#line 60 "/var/www/localhost/htdocs/rt/Elements/Logo"
+ }
+$m->print( '</div>
+' );
+;return;
+},
+'declared_args' => {
+  '$Name' => { default => ' undef' },
+  '$OnlyCustom' => { default => ' 0' },
+  '$ShowName' => { default => ' 1' },
+  '$id' => { default => ' \'logo\'' }
+},
+'load_time' => 1434735744,
+
+)
+;

@@ -1,0 +1,121 @@
+package HTML::Mason::Commands;
+use strict;
+use vars qw($m $DECODED_ARGS $r %session);
+HTML::Mason::Component::FileBased->new(
+'code' => sub {
+HTML::Mason::Exception::Params->throw
+    ( error =>
+      "Odd number of parameters passed to component expecting name/value pairs"
+    ) if @_ % 2;
+my %ARGS = @_;
+my ( $TicketObj, $QueueObj, %Queues );
+{
+    my %pos;
+    for ( my $x = 0; $x < @_; $x += 2 )
+    {
+        $pos{ $_[$x] } = $x + 1;
+    }
+#line 82 "/var/www/localhost/htdocs/rt/Elements/SelectOwner"
+     $TicketObj = exists $pos{'TicketObj'} ? $_[ $pos{'TicketObj'} ] :  undef;
+#line 83 "/var/www/localhost/htdocs/rt/Elements/SelectOwner"
+     $QueueObj = exists $pos{'QueueObj'} ? $_[ $pos{'QueueObj'} ] :  undef;
+#line 84 "/var/www/localhost/htdocs/rt/Elements/SelectOwner"
+     %Queues = exists $pos{'Queues'} ? HTML::Mason::Tools::coerce_to_hash( $_[ $pos{'Queues'} ], '%Queues') :  ();
+}
+$m->debug_hook( $m->current_comp->path ) if ( HTML::Mason::Compiler::IN_PERL_DB() );
+
+#line 49 "/var/www/localhost/htdocs/rt/Elements/SelectOwner"
+
+my $Widget;
+if ( !$QueueObj && !$TicketObj && RT->Config->Get('AutocompleteOwnersForSearch') ) {
+    $Widget = 'Autocomplete';
+}
+$Widget ||= RT->Config->Get('AutocompleteOwners', $session{'CurrentUser'})
+                ? 'Autocomplete' : 'Dropdown';
+
+my @objects;
+if ($TicketObj) {
+    @objects = ($TicketObj);
+} elsif ($QueueObj) {
+    @objects = ($QueueObj);
+} elsif (%Queues) {
+    for my $name (keys %Queues) {
+        my $q = RT::Queue->new($session{'CurrentUser'});
+        $q->Load($name);
+        push @objects, $q;
+    }
+} else {
+    # Let's check rights on an empty queue object. that will do a search
+    # for any queue.
+    my $queue = RT::Queue->new( $session{'CurrentUser'} );
+    push( @objects, $queue );
+}
+
+$m->callback(
+    %ARGS,
+    objects      => \@objects,
+    CallbackName => 'UpdateObjectList'
+);
+#line 1 "/var/www/localhost/htdocs/rt/Elements/SelectOwner"
+# BEGIN BPS TAGGED BLOCK {{{
+#
+# COPYRIGHT:
+#
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
+#                                          <sales@bestpractical.com>
+#
+# (Except where explicitly superseded by other copyright notices)
+#
+#
+# LICENSE:
+#
+# This work is made available to you under the terms of Version 2 of
+# the GNU General Public License. A copy of that license should have
+# been provided with this software, but in any event can be snarfed
+# from www.gnu.org.
+#
+# This work is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
+#
+#
+# CONTRIBUTION SUBMISSION POLICY:
+#
+# (The following paragraph is not intended to limit the rights granted
+# to you to modify and distribute this software under the terms of
+# the GNU General Public License and is only of importance to you if
+# you choose to contribute your changes and enhancements to the
+# community by submitting them to Best Practical Solutions, LLC.)
+#
+# By intentionally submitting any modifications, corrections or
+# derivatives to this work, or any other work intended for use with
+# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+# you are the copyright holder for those contributions and you grant
+# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+# royalty-free, perpetual, license to use, copy, create derivative
+# works based on those contributions, and sublicense and distribute
+# those contributions and any derivatives thereof.
+#
+# END BPS TAGGED BLOCK }}}
+$m->comp(   "SelectOwner$Widget", %ARGS, Objects => \@objects   
+); #line 48 "/var/www/localhost/htdocs/rt/Elements/SelectOwner"
+$m->print( '
+' );
+;return;
+},
+'declared_args' => {
+  '$QueueObj' => { default => ' undef' },
+  '$TicketObj' => { default => ' undef' },
+  '%Queues' => { default => ' ()' }
+},
+'load_time' => 1434735752,
+
+)
+;

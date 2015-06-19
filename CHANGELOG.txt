@@ -1,0 +1,20 @@
+# A log of all the change made to RT.
+#
+# Format:
+# Name + Comments + Changes made (include Filename + line number/section).
+
+1. ( Obsolete ->) June17; Zach; getting priority to work on quick create by making a SelectNewTicketPriority object; Adding a new DefaultInitialPriority section in RT__SiteConfig.pm.   
+
+2. ( Obsolete -> )June17; Zach; getting priority to work on quick create by making a SelectNewTicketPriority object; Adding a new SelectNewTicketPriority.obj file
+in var/mason_data/obj/34*/standard/Elements/.
+
+3. June17; Zach; getting priority to work on quick create by making a
+SelectNewTicketPriority object; Add a Priority Block in
+var/mason_data/obj/34*/standard/Elements/QuickCreate.
+
+4. June18; Loring; got email to work by changing the sendmailtype from
+sendmailpipe to qmail in /etc/RT_SiteConfig.pm. Not sure why this works
+exactly.
+
+5. June18; Zach; got the priority to work on quick create (finally..);
+Added a line in index.html.obj, and also modified QuickCreate.obj, mimicing cide of the priority block in Ticket/Create.html.obj 

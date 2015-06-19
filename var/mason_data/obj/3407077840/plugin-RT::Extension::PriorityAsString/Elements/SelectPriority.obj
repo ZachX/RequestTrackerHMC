@@ -1,0 +1,71 @@
+package HTML::Mason::Commands;
+use strict;
+use vars qw($m $DECODED_ARGS $r %session);
+HTML::Mason::Component::FileBased->new(
+'code' => sub {
+HTML::Mason::Exception::Params->throw
+    ( error =>
+      "Odd number of parameters passed to component expecting name/value pairs"
+    ) if @_ % 2;
+my %ARGS = @_;
+my ( $Name, $Default );
+{
+    my %pos;
+    for ( my $x = 0; $x < @_; $x += 2 )
+    {
+        $pos{ $_[$x] } = $x + 1;
+    }
+#line 3 "/RT-Extension-PriorityAsString/html/Elements/SelectPriority"
+     $Name = exists $pos{'Name'} ? $_[ $pos{'Name'} ] :  'Priority';
+#line 4 "/RT-Extension-PriorityAsString/html/Elements/SelectPriority"
+     $Default = exists $pos{'Default'} ? $_[ $pos{'Default'} ] :  undef;
+}
+$m->debug_hook( $m->current_comp->path ) if ( HTML::Mason::Compiler::IN_PERL_DB() );
+
+#line 6 "/RT-Extension-PriorityAsString/html/Elements/SelectPriority"
+
+
+my %queues = RT->Config->Get('PriorityAsStringQueues');
+
+# If enabled for all queues, always show the drop-down
+return $m->comp("/Elements/SelectPriorityAsString",%ARGS)
+    unless keys %queues;
+
+# Some callsites we can easily override with callbacks with logic to
+# know when to call SelectPriorityAsString; for ticket create and queue
+# modify, we need to inspect the callstack.
+my $caller      = $m->callers(1)->path;
+my $caller_args = $m->caller_args(1);
+my $QueueObj = RT::Queue->new( $session{'CurrentUser'} );
+if ( $caller eq "/Admin/Queues/Modify.html") {
+    $QueueObj->Load( $caller_args->{id} ) || $QueueObj->Load( $caller_args->{Name} );
+} elsif ( $caller eq "/Ticket/Create.html" or $caller eq "/m/ticket/create" ) {
+    $QueueObj->Load( $caller_args->{Queue} );
+}
+return $m->comp("/Elements/SelectPriorityAsString",%ARGS, Mapping => $queues{$QueueObj->Name})
+    if $QueueObj->Id and $queues{$QueueObj->Name};
+
+
+
+$Default = '' unless defined $Default;
+#line 1 "/RT-Extension-PriorityAsString/html/Elements/SelectPriority"
+$m->print( '<input name="' );
+#line 1 "/RT-Extension-PriorityAsString/html/Elements/SelectPriority"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $Name )) );
+#line 1 "/RT-Extension-PriorityAsString/html/Elements/SelectPriority"
+$m->print( '" value="' );
+#line 1 "/RT-Extension-PriorityAsString/html/Elements/SelectPriority"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $Default )) );
+#line 1 "/RT-Extension-PriorityAsString/html/Elements/SelectPriority"
+$m->print( '" size="5" />
+' );
+;return;
+},
+'declared_args' => {
+  '$Default' => { default => ' undef' },
+  '$Name' => { default => ' \'Priority\'' }
+},
+'load_time' => 1434736257,
+
+)
+;

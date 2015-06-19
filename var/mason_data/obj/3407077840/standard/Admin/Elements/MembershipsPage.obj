@@ -1,0 +1,232 @@
+package HTML::Mason::Commands;
+use strict;
+use vars qw($m $DECODED_ARGS $r %session);
+HTML::Mason::Component::FileBased->new(
+'code' => sub {
+HTML::Mason::Exception::Params->throw
+    ( error =>
+      "Odd number of parameters passed to component expecting name/value pairs"
+    ) if @_ % 2;
+my %ARGS = @_;
+my ( $id, $Update, @Add, @Delete, $Format );
+{
+    my %pos;
+    for ( my $x = 0; $x < @_; $x += 2 )
+    {
+        $pos{ $_[$x] } = $x + 1;
+    }
+#line 145 "/var/www/localhost/htdocs/rt/Admin/Elements/MembershipsPage"
+     $id = exists $pos{'id'} ? $_[ $pos{'id'} ] :  undef;
+#line 147 "/var/www/localhost/htdocs/rt/Admin/Elements/MembershipsPage"
+     $Update = exists $pos{'Update'} ? $_[ $pos{'Update'} ] :  0,;
+#line 148 "/var/www/localhost/htdocs/rt/Admin/Elements/MembershipsPage"
+     @Add = exists $pos{'Add'} ? HTML::Mason::Tools::coerce_to_array( $_[ $pos{'Add'} ], '@Add') :  (),;
+#line 149 "/var/www/localhost/htdocs/rt/Admin/Elements/MembershipsPage"
+     @Delete = exists $pos{'Delete'} ? HTML::Mason::Tools::coerce_to_array( $_[ $pos{'Delete'} ], '@Delete') :  (),;
+#line 151 "/var/www/localhost/htdocs/rt/Admin/Elements/MembershipsPage"
+     $Format = exists $pos{'Format'} ? $_[ $pos{'Format'} ] :  undef;
+}
+$m->debug_hook( $m->current_comp->path ) if ( HTML::Mason::Compiler::IN_PERL_DB() );
+
+#line 87 "/var/www/localhost/htdocs/rt/Admin/Elements/MembershipsPage"
+
+my $principal = RT::Principal->new( $session{'CurrentUser'} );
+$principal->Load( $id ) || Abort(loc("Couldn't load principal #[_1]", $id));
+
+my $object = $principal->Object;
+$id = $object->id;
+
+if ( $Update ) {
+    my @results;
+    foreach my $gid( @Add ) {
+        my $group = RT::Group->new( $session{'CurrentUser'} );
+        $group->LoadUserDefinedGroup( $gid );
+        unless ( $group->id ) {
+            push @results, loc( "Couldn't load group #[_1]", $gid );
+            next;
+        }
+        my ($status, $msg) = $group->AddMember( $id );
+        push @results, $msg;
+    }
+    foreach my $gid( @Delete ) {
+        my $group = RT::Group->new( $session{'CurrentUser'} );
+        $group->LoadUserDefinedGroup( $gid );
+        unless ( $group->id ) {
+            push @results, loc( "Couldn't load group #[_1]", $gid );
+            next;
+        }
+        my ($status, $msg) = $group->DeleteMember( $id );
+        push @results, $msg;
+    }
+    MaybeRedirectForResults(
+        Arguments => { id => $id },
+        Actions   => \@results,
+    );
+}
+
+my $is_member = RT::Groups->new( $session{'CurrentUser'} );
+$is_member->LimitToUserDefinedGroups;
+$is_member->WithMember( PrincipalId => $id );
+
+my $is_not_member = RT::Groups->new( $session{'CurrentUser'} );
+$is_not_member->LimitToUserDefinedGroups;
+$is_not_member->WithoutMember( PrincipalId => $id );
+$is_not_member->Limit( FIELD => 'id', OPERATOR => '!=', VALUE => $id );
+
+$Format ||= RT->Config->Get('AdminSearchResultFormat')->{'Groups'};
+my $Rows = RT->Config->Get('AdminSearchResultRows')->{'Groups'} || 50;
+
+my $title;
+if ( $principal->IsUser ) {
+    $title = loc("Memberships of the user [_1]", $object->Name);
+} elsif ( $principal->IsGroup ) {
+    $title = loc("Memberships of the group [_1]", $object->Name);
+} else {
+    $title = loc("Memberships of the principal #[_1]", $id);
+}
+
+#line 1 "/var/www/localhost/htdocs/rt/Admin/Elements/MembershipsPage"
+# BEGIN BPS TAGGED BLOCK {{{
+#
+# COPYRIGHT:
+#
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
+#                                          <sales@bestpractical.com>
+#
+# (Except where explicitly superseded by other copyright notices)
+#
+#
+# LICENSE:
+#
+# This work is made available to you under the terms of Version 2 of
+# the GNU General Public License. A copy of that license should have
+# been provided with this software, but in any event can be snarfed
+# from www.gnu.org.
+#
+# This work is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
+#
+#
+# CONTRIBUTION SUBMISSION POLICY:
+#
+# (The following paragraph is not intended to limit the rights granted
+# to you to modify and distribute this software under the terms of
+# the GNU General Public License and is only of importance to you if
+# you choose to contribute your changes and enhancements to the
+# community by submitting them to Best Practical Solutions, LLC.)
+#
+# By intentionally submitting any modifications, corrections or
+# derivatives to this work, or any other work intended for use with
+# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+# you are the copyright holder for those contributions and you grant
+# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+# royalty-free, perpetual, license to use, copy, create derivative
+# works based on those contributions, and sublicense and distribute
+# those contributions and any derivatives thereof.
+#
+# END BPS TAGGED BLOCK }}}
+$m->comp(   '/Admin/Elements/Header', Title => $title    
+); #line 48 "/var/www/localhost/htdocs/rt/Admin/Elements/MembershipsPage"
+$m->print( '
+' );
+#line 49 "/var/www/localhost/htdocs/rt/Admin/Elements/MembershipsPage"
+$m->comp(   '/Elements/Tabs'  
+); #line 49 "/var/www/localhost/htdocs/rt/Admin/Elements/MembershipsPage"
+$m->print( '
+' );
+#line 50 "/var/www/localhost/htdocs/rt/Admin/Elements/MembershipsPage"
+$m->comp(   '/Elements/ListActions'  
+); #line 50 "/var/www/localhost/htdocs/rt/Admin/Elements/MembershipsPage"
+$m->print( '
+
+<form method="post" action="">
+<input type="hidden" id="' );
+#line 53 "/var/www/localhost/htdocs/rt/Admin/Elements/MembershipsPage"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $id )) );
+#line 53 "/var/www/localhost/htdocs/rt/Admin/Elements/MembershipsPage"
+$m->print( '" />
+
+<h2>' );
+#line 55 "/var/www/localhost/htdocs/rt/Admin/Elements/MembershipsPage"
+$m->comp( { content => sub {
+#line 55 "/var/www/localhost/htdocs/rt/Admin/Elements/MembershipsPage"
+$m->print( 'Groups the principal is member of (check box to delete)' );
+#line 55 "/var/www/localhost/htdocs/rt/Admin/Elements/MembershipsPage"
+} }, '/l'
+ );
+#line 55 "/var/www/localhost/htdocs/rt/Admin/Elements/MembershipsPage"
+$m->print( '</h2>
+
+' );
+#line 57 "/var/www/localhost/htdocs/rt/Admin/Elements/MembershipsPage"
+$m->comp(   '/Elements/CollectionList',
+    OrderBy => 'Name',
+    Order   => 'ASC',
+    %ARGS,
+    Rows          => $Rows,
+    DisplayFormat => "__CheckBox.{Delete}__,$Format",
+    Format => $Format,
+    Collection => $is_member,
+    AllowSorting => 1,
+    PassArguments => [qw(Format Rows Page Order OrderBy id)],
+  
+); #line 67 "/var/www/localhost/htdocs/rt/Admin/Elements/MembershipsPage"
+$m->print( '
+
+<h2>' );
+#line 69 "/var/www/localhost/htdocs/rt/Admin/Elements/MembershipsPage"
+$m->comp( { content => sub {
+#line 69 "/var/www/localhost/htdocs/rt/Admin/Elements/MembershipsPage"
+$m->print( 'Groups the principal is not member of (check box to add)' );
+#line 69 "/var/www/localhost/htdocs/rt/Admin/Elements/MembershipsPage"
+} }, '/l'
+ );
+#line 69 "/var/www/localhost/htdocs/rt/Admin/Elements/MembershipsPage"
+$m->print( '</h2>
+
+' );
+#line 71 "/var/www/localhost/htdocs/rt/Admin/Elements/MembershipsPage"
+$m->comp(   '/Elements/CollectionList',
+    OrderBy => 'Name',
+    Order   => 'ASC',
+    Rows    => $Rows,
+    %ARGS,
+    DisplayFormat => "__CheckBox.{Add}__,'__HasMemberRecursively.{$id}__/TITLE:Recursive member',$Format",
+    Format => $Format,
+    Collection => $is_not_member,
+    AllowSorting => 1,
+    PassArguments => [qw(Format Rows Page Order OrderBy id)],
+  
+); #line 81 "/var/www/localhost/htdocs/rt/Admin/Elements/MembershipsPage"
+$m->print( '
+
+' );
+#line 83 "/var/www/localhost/htdocs/rt/Admin/Elements/MembershipsPage"
+$m->comp(   '/Elements/Submit', Label => loc('Update'), Name => 'Update'   
+); #line 83 "/var/www/localhost/htdocs/rt/Admin/Elements/MembershipsPage"
+$m->print( '
+
+</form>
+
+' );
+;return;
+},
+'declared_args' => {
+  '$Format' => { default => ' undef' },
+  '$Update' => { default => ' 0,' },
+  '$id' => { default => ' undef' },
+  '@Add' => { default => ' (),' },
+  '@Delete' => { default => ' (),' }
+},
+'load_time' => 1434739340,
+
+)
+;

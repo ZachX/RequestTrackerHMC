@@ -1,0 +1,190 @@
+package HTML::Mason::Commands;
+use strict;
+use vars qw($m $DECODED_ARGS $r %session);
+HTML::Mason::Component::FileBased->new(
+'code' => sub {
+HTML::Mason::Exception::Params->throw
+    ( error =>
+      "Odd number of parameters passed to component expecting name/value pairs"
+    ) if @_ % 2;
+my %ARGS = @_;
+my ( $TicketObj );
+{
+    my %pos;
+    for ( my $x = 0; $x < @_; $x += 2 )
+    {
+        $pos{ $_[$x] } = $x + 1;
+    }
+
+    foreach my $arg ( qw( TicketObj ) )
+    {
+        HTML::Mason::Exception::Params->throw
+            ( error => "no value sent for required parameter '$arg'" )
+                unless exists $pos{$arg};
+    }
+#line 49 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowSimplifiedRecipients"
+    $TicketObj = $_[ $pos{'TicketObj'} ];
+}
+$m->debug_hook( $m->current_comp->path ) if ( HTML::Mason::Compiler::IN_PERL_DB() );
+
+#line 51 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowSimplifiedRecipients"
+
+return unless RT->Config->Get('SimplifiedRecipients', $session{'CurrentUser'});
+
+my $Object = $m->notes("DryRun-".$TicketObj->Id) || $TicketObj->DryRun(%ARGS);
+$m->notes("DryRun-".$TicketObj->Id, $Object);
+return unless $Object;
+
+my %headers = (To => {}, Cc => {}, Bcc => {});
+if ($Object->Scrips) {
+    for my $scrip (grep $_->ActionObj->Action->isa('RT::Action::SendEmail'), @{$Object->Scrips->Prepared}) {
+        for my $type (qw(To Cc Bcc)) {
+            $headers{$type}{$_->address} = $_
+                for $scrip->ActionObj->Action->$type();
+        }
+    }
+}
+my %recips;
+my %squelched = ProcessTransactionSquelching( \%ARGS );
+#line 1 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowSimplifiedRecipients"
+# BEGIN BPS TAGGED BLOCK {{{
+#
+# COPYRIGHT:
+#
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
+#                                          <sales@bestpractical.com>
+#
+# (Except where explicitly superseded by other copyright notices)
+#
+#
+# LICENSE:
+#
+# This work is made available to you under the terms of Version 2 of
+# the GNU General Public License. A copy of that license should have
+# been provided with this software, but in any event can be snarfed
+# from www.gnu.org.
+#
+# This work is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
+#
+#
+# CONTRIBUTION SUBMISSION POLICY:
+#
+# (The following paragraph is not intended to limit the rights granted
+# to you to modify and distribute this software under the terms of
+# the GNU General Public License and is only of importance to you if
+# you choose to contribute your changes and enhancements to the
+# community by submitting them to Best Practical Solutions, LLC.)
+#
+# By intentionally submitting any modifications, corrections or
+# derivatives to this work, or any other work intended for use with
+# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+# you are the copyright holder for those contributions and you grant
+# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+# royalty-free, perpetual, license to use, copy, create derivative
+# works based on those contributions, and sublicense and distribute
+# those contributions and any derivatives thereof.
+#
+# END BPS TAGGED BLOCK }}}
+$m->comp( { content => sub {
+#line 70 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowSimplifiedRecipients"
+$m->print( '
+<table>
+' );
+#line 72 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowSimplifiedRecipients"
+ for my $type (qw(To Cc Bcc)) {
+     next unless keys %{$headers{$type}};
+$m->print( '<tr>
+<td valign="top">' );
+#line 75 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowSimplifiedRecipients"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $type )) );
+#line 75 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowSimplifiedRecipients"
+$m->print( ':</td>
+<td valign="top">
+' );
+#line 77 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowSimplifiedRecipients"
+     for my $addr (sort {$a->address cmp $b->address} values %{$headers{$type}}) {
+         my $checked = not $squelched{$addr->address};
+         $m->callback(CallbackName => 'BeforeAddress', Ticket => $TicketObj, Address => $addr, Type => $type, Checked => \$checked);
+         $recips{$addr->address}++;
+$m->print( '<input type="checkbox" class="checkbox" name="TxnSendMailTo" ' );
+#line 81 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowSimplifiedRecipients"
+$m->print(  $checked ? 'checked="checked"' : '' );
+#line 81 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowSimplifiedRecipients"
+$m->print( ' value="' );
+#line 81 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowSimplifiedRecipients"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($addr->address)) );
+#line 81 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowSimplifiedRecipients"
+$m->print( '" id="TxnSendMailTo-' );
+#line 81 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowSimplifiedRecipients"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $addr->address )) );
+#line 81 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowSimplifiedRecipients"
+$m->print( '-' );
+#line 81 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowSimplifiedRecipients"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $recips{$addr->address} )) );
+#line 81 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowSimplifiedRecipients"
+$m->print( '" />
+<label for="TxnSendMailTo-' );
+#line 82 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowSimplifiedRecipients"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $addr->address )) );
+#line 82 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowSimplifiedRecipients"
+$m->print( '-' );
+#line 82 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowSimplifiedRecipients"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $recips{$addr->address} )) );
+#line 82 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowSimplifiedRecipients"
+$m->print( '">' );
+#line 82 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowSimplifiedRecipients"
+$m->comp(   '/Elements/ShowUser', Address => $addr   
+); #line 82 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowSimplifiedRecipients"
+$m->print( '</label>
+' );
+#line 83 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowSimplifiedRecipients"
+         $m->callback(CallbackName => 'AfterAddress', Ticket => $TicketObj, Address => $addr, Type => $type);
+$m->print( '<br />
+' );
+#line 85 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowSimplifiedRecipients"
+     }
+$m->print( '</td></tr>
+' );
+#line 87 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowSimplifiedRecipients"
+ }
+ $m->callback( CallbackName => 'AfterRecipients', TicketObj => $TicketObj );
+$m->print( '</table>
+<p>
+' );
+#line 91 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowSimplifiedRecipients"
+$m->comp( { content => sub {
+#line 92 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowSimplifiedRecipients"
+$m->print( 'Uncheck boxes to disable notifications to the listed recipients <b>for this transaction only</b>; persistent squelching is managed on the <a href="[_1]">People page</a>.' );
+#line 92 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowSimplifiedRecipients"
+} }, '/l', RT->Config->Get('WebPath')."/Ticket/ModifyPeople.html?id=".$TicketObj->Id,
+ );
+#line 92 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowSimplifiedRecipients"
+$m->print( '
+</p>
+' );
+#line 94 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowSimplifiedRecipients"
+} }, '/Widgets/TitleBox', title => loc('Recipients'), id => 'recipients'
+ );
+#line 94 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowSimplifiedRecipients"
+$m->print( '
+' );
+#line 95 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowSimplifiedRecipients"
+ $m->notes("DryRun-Recipients-".$TicketObj->Id, \%recips);
+;return;
+},
+'declared_args' => {
+  '$TicketObj' => { default => undef }
+},
+'load_time' => 1432969611,
+
+)
+;

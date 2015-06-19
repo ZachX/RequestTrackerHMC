@@ -1,0 +1,211 @@
+package HTML::Mason::Commands;
+use strict;
+use vars qw($m $DECODED_ARGS $r %session);
+HTML::Mason::Component::FileBased->new(
+'code' => sub {
+HTML::Mason::Exception::Params->throw
+    ( error =>
+      "Odd number of parameters passed to component expecting name/value pairs"
+    ) if @_ % 2;
+my %ARGS = @_;
+my ( $Type, $ShowDisabled, $Format );
+{
+    my %pos;
+    for ( my $x = 0; $x < @_; $x += 2 )
+    {
+        $pos{ $_[$x] } = $x + 1;
+    }
+#line 88 "/var/www/localhost/htdocs/rt/Admin/CustomFields/index.html"
+     $Type = exists $pos{'Type'} ? $_[ $pos{'Type'} ] :  '';
+#line 89 "/var/www/localhost/htdocs/rt/Admin/CustomFields/index.html"
+     $ShowDisabled = exists $pos{'ShowDisabled'} ? $_[ $pos{'ShowDisabled'} ] :  0;
+#line 91 "/var/www/localhost/htdocs/rt/Admin/CustomFields/index.html"
+     $Format = exists $pos{'Format'} ? $_[ $pos{'Format'} ] :  undef;
+}
+$m->debug_hook( $m->current_comp->path ) if ( HTML::Mason::Compiler::IN_PERL_DB() );
+
+#line 93 "/var/www/localhost/htdocs/rt/Admin/CustomFields/index.html"
+
+my $title = loc('Select a Custom Field');
+
+my $CustomFields = RT::CustomFields->new($session{'CurrentUser'});
+$CustomFields->UnLimit;
+$CustomFields->FindAllRows if $ShowDisabled;
+$CustomFields->LimitToLookupType( $Type ) if $Type;
+
+$m->callback(CallbackName => 'MassageCustomFields', CustomFields => $CustomFields);
+
+$Format ||= RT->Config->Get('AdminSearchResultFormat')->{'CustomFields'};
+my $Rows = RT->Config->Get('AdminSearchResultRows')->{'CustomFields'} || 50;
+
+#line 1 "/var/www/localhost/htdocs/rt/Admin/CustomFields/index.html"
+# BEGIN BPS TAGGED BLOCK {{{
+#
+# COPYRIGHT:
+#
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
+#                                          <sales@bestpractical.com>
+#
+# (Except where explicitly superseded by other copyright notices)
+#
+#
+# LICENSE:
+#
+# This work is made available to you under the terms of Version 2 of
+# the GNU General Public License. A copy of that license should have
+# been provided with this software, but in any event can be snarfed
+# from www.gnu.org.
+#
+# This work is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
+#
+#
+# CONTRIBUTION SUBMISSION POLICY:
+#
+# (The following paragraph is not intended to limit the rights granted
+# to you to modify and distribute this software under the terms of
+# the GNU General Public License and is only of importance to you if
+# you choose to contribute your changes and enhancements to the
+# community by submitting them to Best Practical Solutions, LLC.)
+#
+# By intentionally submitting any modifications, corrections or
+# derivatives to this work, or any other work intended for use with
+# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+# you are the copyright holder for those contributions and you grant
+# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+# royalty-free, perpetual, license to use, copy, create derivative
+# works based on those contributions, and sublicense and distribute
+# those contributions and any derivatives thereof.
+#
+# END BPS TAGGED BLOCK }}}
+$m->comp(   '/Admin/Elements/Header', Title => $title   
+); #line 48 "/var/www/localhost/htdocs/rt/Admin/CustomFields/index.html"
+$m->print( '
+' );
+#line 49 "/var/www/localhost/htdocs/rt/Admin/CustomFields/index.html"
+$m->comp(   '/Elements/Tabs'  
+); #line 49 "/var/www/localhost/htdocs/rt/Admin/CustomFields/index.html"
+$m->print( '
+
+' );
+#line 51 "/var/www/localhost/htdocs/rt/Admin/CustomFields/index.html"
+ my $tmp = RT::CustomField->new( $session{'CurrentUser'} );
+$m->print( '<h1>' );
+#line 52 "/var/www/localhost/htdocs/rt/Admin/CustomFields/index.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $Type ? loc("Custom Fields for [_1]", $Type) : loc('All Custom Fields') )) );
+#line 52 "/var/www/localhost/htdocs/rt/Admin/CustomFields/index.html"
+$m->print( '</h1>
+
+<form action="' );
+#line 54 "/var/www/localhost/htdocs/rt/Admin/CustomFields/index.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } (RT->Config->Get('WebPath'))) );
+#line 54 "/var/www/localhost/htdocs/rt/Admin/CustomFields/index.html"
+$m->print( '/Admin/CustomFields/index.html" method="get">
+' );
+#line 55 "/var/www/localhost/htdocs/rt/Admin/CustomFields/index.html"
+$m->comp( { content => sub {
+#line 55 "/var/www/localhost/htdocs/rt/Admin/CustomFields/index.html"
+$m->print( 'Only show custom fields for:' );
+#line 55 "/var/www/localhost/htdocs/rt/Admin/CustomFields/index.html"
+} }, '/l'
+ );
+#line 55 "/var/www/localhost/htdocs/rt/Admin/CustomFields/index.html"
+$m->print( '
+<select name="Type">
+<option value="" ' );
+#line 57 "/var/www/localhost/htdocs/rt/Admin/CustomFields/index.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( !$Type && 'selected="selected"')) );
+#line 57 "/var/www/localhost/htdocs/rt/Admin/CustomFields/index.html"
+$m->print( ' >' );
+#line 57 "/var/www/localhost/htdocs/rt/Admin/CustomFields/index.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( loc('(any)') )) );
+#line 57 "/var/www/localhost/htdocs/rt/Admin/CustomFields/index.html"
+$m->print( '</option>
+' );
+#line 58 "/var/www/localhost/htdocs/rt/Admin/CustomFields/index.html"
+ for my $type ( $tmp->LookupTypes ) {
+$m->print( '<option value="' );
+#line 59 "/var/www/localhost/htdocs/rt/Admin/CustomFields/index.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $type )) );
+#line 59 "/var/www/localhost/htdocs/rt/Admin/CustomFields/index.html"
+$m->print( '" ' );
+#line 59 "/var/www/localhost/htdocs/rt/Admin/CustomFields/index.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $type eq $Type && 'selected="selected"')) );
+#line 59 "/var/www/localhost/htdocs/rt/Admin/CustomFields/index.html"
+$m->print( ' >' );
+#line 59 "/var/www/localhost/htdocs/rt/Admin/CustomFields/index.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $tmp->FriendlyLookupType( $type ) )) );
+#line 59 "/var/www/localhost/htdocs/rt/Admin/CustomFields/index.html"
+$m->print( '</option>
+' );
+#line 60 "/var/www/localhost/htdocs/rt/Admin/CustomFields/index.html"
+ }
+$m->print( '</select>
+<br />
+<input type="checkbox" class="checkbox" id="ShowDisabled" name="ShowDisabled" value="1" ' );
+#line 63 "/var/www/localhost/htdocs/rt/Admin/CustomFields/index.html"
+$m->print(  $ShowDisabled && 'checked="checked"' );
+#line 63 "/var/www/localhost/htdocs/rt/Admin/CustomFields/index.html"
+$m->print( ' />
+<label for="ShowDisabled">' );
+#line 64 "/var/www/localhost/htdocs/rt/Admin/CustomFields/index.html"
+$m->comp( { content => sub {
+#line 64 "/var/www/localhost/htdocs/rt/Admin/CustomFields/index.html"
+$m->print( 'Include disabled custom fields in listing.' );
+#line 64 "/var/www/localhost/htdocs/rt/Admin/CustomFields/index.html"
+} }, '/l'
+ );
+#line 64 "/var/www/localhost/htdocs/rt/Admin/CustomFields/index.html"
+$m->print( '</label>
+<br />
+
+' );
+#line 67 "/var/www/localhost/htdocs/rt/Admin/CustomFields/index.html"
+ $m->callback(CallbackName => 'BeforeSubmit');
+$m->print( '
+<div align="right"><input type="submit" value="' );
+#line 69 "/var/www/localhost/htdocs/rt/Admin/CustomFields/index.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( loc('Go!') )) );
+#line 69 "/var/www/localhost/htdocs/rt/Admin/CustomFields/index.html"
+$m->print( '" /></div>
+</form>
+
+' );
+#line 72 "/var/www/localhost/htdocs/rt/Admin/CustomFields/index.html"
+$m->comp(   '/Elements/CollectionList',
+    OrderBy       => 'LookupType|Name',
+    Order         => 'ASC|ASC',
+    Rows          => $Rows,
+    %ARGS,
+    Collection    => $CustomFields,
+    Format        => $Format,
+    DisplayFormat => ($Type? '' : '__FriendlyLookupType__,'). $Format,
+    AllowSorting  => 1,
+    PassArguments => [
+        qw(Format Rows Page Order OrderBy),
+        qw(Type ShowDisabled)
+    ],
+  
+); #line 85 "/var/www/localhost/htdocs/rt/Admin/CustomFields/index.html"
+$m->print( '
+
+' );
+;return;
+},
+'declared_args' => {
+  '$Format' => { default => ' undef' },
+  '$ShowDisabled' => { default => ' 0' },
+  '$Type' => { default => ' \'\'' }
+},
+'load_time' => 1434738730,
+
+)
+;

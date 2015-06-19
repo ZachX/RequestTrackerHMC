@@ -1,0 +1,267 @@
+package HTML::Mason::Commands;
+use strict;
+use vars qw($m $DECODED_ARGS $r %session);
+HTML::Mason::Component::FileBased->new(
+'code' => sub {
+HTML::Mason::Exception::Params->throw
+    ( error =>
+      "Odd number of parameters passed to component expecting name/value pairs"
+    ) if @_ % 2;
+my %ARGS = @_;
+my ( $Class, $Collection, $TotalFound, $Format, $DisplayFormat, @Order, @OrderBy, $GenericQueryArgs, $Rows, $Page, $Title, $BaseURL, @PassArguments, $AllowSorting, $ShowNavigation, $ShowHeader, $ShowEmpty, $Query );
+{
+    my %pos;
+    for ( my $x = 0; $x < @_; $x += 2 )
+    {
+        $pos{ $_[$x] } = $x + 1;
+    }
+#line 186 "/var/www/localhost/htdocs/rt/Elements/CollectionList"
+     $Class = exists $pos{'Class'} ? $_[ $pos{'Class'} ] :  '';
+#line 187 "/var/www/localhost/htdocs/rt/Elements/CollectionList"
+     $Collection = exists $pos{'Collection'} ? $_[ $pos{'Collection'} ] :  undef;
+#line 188 "/var/www/localhost/htdocs/rt/Elements/CollectionList"
+     $TotalFound = exists $pos{'TotalFound'} ? $_[ $pos{'TotalFound'} ] :  undef;
+#line 189 "/var/www/localhost/htdocs/rt/Elements/CollectionList"
+     $Format = exists $pos{'Format'} ? $_[ $pos{'Format'} ] :  undef;
+#line 190 "/var/www/localhost/htdocs/rt/Elements/CollectionList"
+     $DisplayFormat = exists $pos{'DisplayFormat'} ? $_[ $pos{'DisplayFormat'} ] :  undef;
+#line 191 "/var/www/localhost/htdocs/rt/Elements/CollectionList"
+     @Order = exists $pos{'Order'} ? HTML::Mason::Tools::coerce_to_array( $_[ $pos{'Order'} ], '@Order') :  ();
+#line 192 "/var/www/localhost/htdocs/rt/Elements/CollectionList"
+     @OrderBy = exists $pos{'OrderBy'} ? HTML::Mason::Tools::coerce_to_array( $_[ $pos{'OrderBy'} ], '@OrderBy') :  ();
+#line 193 "/var/www/localhost/htdocs/rt/Elements/CollectionList"
+     $GenericQueryArgs = exists $pos{'GenericQueryArgs'} ? $_[ $pos{'GenericQueryArgs'} ] :  undef;
+#line 194 "/var/www/localhost/htdocs/rt/Elements/CollectionList"
+     $Rows = exists $pos{'Rows'} ? $_[ $pos{'Rows'} ] :  undef;
+#line 195 "/var/www/localhost/htdocs/rt/Elements/CollectionList"
+     $Page = exists $pos{'Page'} ? $_[ $pos{'Page'} ] :  1;
+#line 196 "/var/www/localhost/htdocs/rt/Elements/CollectionList"
+     $Title = exists $pos{'Title'} ? $_[ $pos{'Title'} ] :  loc('Ticket Search');
+#line 197 "/var/www/localhost/htdocs/rt/Elements/CollectionList"
+     $BaseURL = exists $pos{'BaseURL'} ? $_[ $pos{'BaseURL'} ] :  RT->Config->Get('WebPath') . $m->request_comp->path .'?';
+#line 198 "/var/www/localhost/htdocs/rt/Elements/CollectionList"
+     @PassArguments = exists $pos{'PassArguments'} ? HTML::Mason::Tools::coerce_to_array( $_[ $pos{'PassArguments'} ], '@PassArguments') :  qw( Query Format Rows Page Order OrderBy);
+#line 200 "/var/www/localhost/htdocs/rt/Elements/CollectionList"
+     $AllowSorting = exists $pos{'AllowSorting'} ? $_[ $pos{'AllowSorting'} ] :  0;
+#line 201 "/var/www/localhost/htdocs/rt/Elements/CollectionList"
+     $ShowNavigation = exists $pos{'ShowNavigation'} ? $_[ $pos{'ShowNavigation'} ] :  1;
+#line 202 "/var/www/localhost/htdocs/rt/Elements/CollectionList"
+     $ShowHeader = exists $pos{'ShowHeader'} ? $_[ $pos{'ShowHeader'} ] :  1;
+#line 203 "/var/www/localhost/htdocs/rt/Elements/CollectionList"
+     $ShowEmpty = exists $pos{'ShowEmpty'} ? $_[ $pos{'ShowEmpty'} ] :  0;
+#line 204 "/var/www/localhost/htdocs/rt/Elements/CollectionList"
+     $Query = exists $pos{'Query'} ? $_[ $pos{'Query'} ] :  0;
+}
+$m->debug_hook( $m->current_comp->path ) if ( HTML::Mason::Compiler::IN_PERL_DB() );
+
+#line 48 "/var/www/localhost/htdocs/rt/Elements/CollectionList"
+
+if (!$Collection && $Class eq 'RT::Tickets') {
+    $Collection = RT::Tickets->new( $session{'CurrentUser'} );
+    $Collection->FromSQL($Query);
+}
+
+$TotalFound = $Collection->CountAll() unless defined $TotalFound;
+return '' if !$TotalFound && !$ShowEmpty;
+
+if ( $Rows ) {
+    if ( $TotalFound <= $Rows ) {
+        $Page = 1;
+    }
+    else {
+        my $MaxPage = int( $TotalFound / $Rows ) + ( $TotalFound % $Rows ? 1 : 0 );
+        $Page = $MaxPage if $Page > $MaxPage;
+    }
+}
+
+# XXX: ->{'order_by'} is hacky, but there is no way to check if
+# collection is ordered or not
+if ( @OrderBy && ($AllowSorting || !$Collection->{'order_by'}) ) {
+    if ( $OrderBy[0] =~ /\|/ ) {
+        @OrderBy = split /\|/, $OrderBy[0];
+        @Order = split /\|/,$Order[0];
+    }
+    @OrderBy = grep length, @OrderBy;
+    $Collection->OrderByCols(
+        map { { FIELD => $OrderBy[$_], ORDER => $Order[$_] } }
+        ( 0 .. $#OrderBy )
+    );
+}
+
+$Collection->RowsPerPage( $Rows ) if $Rows;
+$Page = 1 unless $Page && $Page > 0;    # workaround problems with $Page = '' or undef
+$Collection->GotoPage( $Page - 1 ); # SB uses page 0 as the first page
+
+# DisplayFormat lets us use a "temporary" format for display, while 
+# still using our original format for next/prev page links.
+# bulk update uses this feature to add checkboxes
+
+$DisplayFormat ||= $Format;
+
+# Scrub the html of the format string to remove any potential nasties.
+$Format = $m->comp('/Elements/ScrubHTML', Content => $Format);
+$DisplayFormat = $m->comp('/Elements/ScrubHTML', Content => $DisplayFormat);
+
+my @Format = $m->comp('/Elements/CollectionAsTable/ParseFormat', Format => $DisplayFormat);
+
+# Find the maximum number of items in any row, so we can pad the table.
+my ($maxitems, $item) = (0, 0);
+foreach my $col (@Format) {
+    $item++;
+    if ( $col->{title} && ($col->{title} eq 'NEWLINE') ) {
+        $item = 0;
+    }
+    else {
+        $maxitems = $item if $item > $maxitems;
+    }
+}
+
+$Class ||= $Collection->ColumnMapClassName;
+if ($Class =~ /::/) { # older passed in value
+    $Class =~ s/s$//;
+    $Class =~ s/:/_/g;
+}
+
+$m->out('<table cellspacing="0" class="' .
+            ($Collection->isa('RT::Tickets') ? 'ticket-list' : 'collection') . ' collection-as-table">');
+
+if ( $ShowHeader ) {
+    $m->comp('/Elements/CollectionAsTable/Header',
+        %ARGS,
+        Class        => $Class,
+        Format       => \@Format,
+        FormatString => $Format,
+        Order        => \@Order,
+        OrderBy      => \@OrderBy,
+        Rows         => $Rows,
+        Page         => $Page,
+        AllowSorting => $AllowSorting,
+        BaseURL      => $BaseURL,
+        GenericQueryArgs => $GenericQueryArgs,
+        maxitems     => $maxitems,
+        PassArguments => \@PassArguments,
+    );
+}
+
+my ($i, $column_map) = (0, {});
+while ( my $record = $Collection->Next ) {
+    # Every ten rows, flush the buffer and put something on the page.
+    $m->flush_buffer unless ++$i % 10;
+
+    my $warning = 0;
+    my $Classes = '';
+
+    $m->callback(
+        CallbackName => 'EachRow',
+        Record       => $record,
+        Warning      => \$warning,
+        Classes      => \$Classes,
+        Format       => \@Format,
+    );
+
+    $m->comp('/Elements/CollectionAsTable/Row',
+        i         => $i,
+        Format    => \@Format,
+        record    => $record,
+        maxitems  => $maxitems,
+        ColumnMap => $column_map,
+        Class     => $Class,
+        Warning   => $warning,
+        Classes   => $Classes,
+    );
+}
+
+$m->out('</table>');
+if ( $Rows && $ShowNavigation && $TotalFound > $Rows ) {
+  my $oddRows = ($TotalFound && $TotalFound % $Rows == 0 )? 0 : 1;
+  my $pages = int( $TotalFound / $Rows ) + $oddRows;
+  $pages = 1 if $pages < 1;
+
+
+  my %query_args = map { $_ => $ARGS{$_} } @PassArguments;
+  $m->comp(
+        '/Elements/CollectionListPaging',
+        BaseURL     => $BaseURL,
+        Rows        => $Rows,
+        TotalFound  => $TotalFound,
+        CurrentPage => $Page,
+        Pages       => $pages,
+        URLParams   => \%query_args
+    );
+
+}
+
+#line 1 "/var/www/localhost/htdocs/rt/Elements/CollectionList"
+# BEGIN BPS TAGGED BLOCK {{{
+#
+# COPYRIGHT:
+#
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
+#                                          <sales@bestpractical.com>
+#
+# (Except where explicitly superseded by other copyright notices)
+#
+#
+# LICENSE:
+#
+# This work is made available to you under the terms of Version 2 of
+# the GNU General Public License. A copy of that license should have
+# been provided with this software, but in any event can be snarfed
+# from www.gnu.org.
+#
+# This work is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
+#
+#
+# CONTRIBUTION SUBMISSION POLICY:
+#
+# (The following paragraph is not intended to limit the rights granted
+# to you to modify and distribute this software under the terms of
+# the GNU General Public License and is only of importance to you if
+# you choose to contribute your changes and enhancements to the
+# community by submitting them to Best Practical Solutions, LLC.)
+#
+# By intentionally submitting any modifications, corrections or
+# derivatives to this work, or any other work intended for use with
+# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+# you are the copyright holder for those contributions and you grant
+# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+# royalty-free, perpetual, license to use, copy, create derivative
+# works based on those contributions, and sublicense and distribute
+# those contributions and any derivatives thereof.
+#
+# END BPS TAGGED BLOCK }}}
+;return;
+},
+'declared_args' => {
+  '$AllowSorting' => { default => ' 0' },
+  '$BaseURL' => { default => ' RT->Config->Get(\'WebPath\') . $m->request_comp->path .\'?\'' },
+  '$Class' => { default => ' \'\'' },
+  '$Collection' => { default => ' undef' },
+  '$DisplayFormat' => { default => ' undef' },
+  '$Format' => { default => ' undef' },
+  '$GenericQueryArgs' => { default => ' undef' },
+  '$Page' => { default => ' 1' },
+  '$Query' => { default => ' 0' },
+  '$Rows' => { default => ' undef' },
+  '$ShowEmpty' => { default => ' 0' },
+  '$ShowHeader' => { default => ' 1' },
+  '$ShowNavigation' => { default => ' 1' },
+  '$Title' => { default => ' loc(\'Ticket Search\')' },
+  '$TotalFound' => { default => ' undef' },
+  '@Order' => { default => ' ()' },
+  '@OrderBy' => { default => ' ()' },
+  '@PassArguments' => { default => ' qw( Query Format Rows Page Order OrderBy)' }
+},
+'load_time' => 1434735836,
+
+)
+;

@@ -1,0 +1,250 @@
+package HTML::Mason::Commands;
+use strict;
+use vars qw($m $DECODED_ARGS $r %session);
+HTML::Mason::Component::FileBased->new(
+'code' => sub {
+HTML::Mason::Exception::Params->throw
+    ( error =>
+      "Odd number of parameters passed to component expecting name/value pairs"
+    ) if @_ % 2;
+my %ARGS = @_;
+my ( $TicketObj );
+{
+    my %pos;
+    for ( my $x = 0; $x < @_; $x += 2 )
+    {
+        $pos{ $_[$x] } = $x + 1;
+    }
+
+    foreach my $arg ( qw( TicketObj ) )
+    {
+        HTML::Mason::Exception::Params->throw
+            ( error => "no value sent for required parameter '$arg'" )
+                unless exists $pos{$arg};
+    }
+#line 86 "/var/www/localhost/htdocs/rt/Ticket/Elements/UpdateCc"
+    $TicketObj = $_[ $pos{'TicketObj'} ];
+}
+$m->debug_hook( $m->current_comp->path ) if ( HTML::Mason::Compiler::IN_PERL_DB() );
+
+#line 88 "/var/www/localhost/htdocs/rt/Ticket/Elements/UpdateCc"
+
+my %txn_addresses = %{$TicketObj->TransactionAddresses};
+my @req_addresses = split /,/, $TicketObj->RequestorAddresses;
+my @one_time_Ccs;
+
+foreach my $addr ( keys %txn_addresses) {
+  next if ( grep {$addr eq $_} @req_addresses );
+  push @one_time_Ccs,$addr;
+}
+#line 1 "/var/www/localhost/htdocs/rt/Ticket/Elements/UpdateCc"
+# BEGIN BPS TAGGED BLOCK {{{
+#
+# COPYRIGHT:
+#
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
+#                                          <sales@bestpractical.com>
+#
+# (Except where explicitly superseded by other copyright notices)
+#
+#
+# LICENSE:
+#
+# This work is made available to you under the terms of Version 2 of
+# the GNU General Public License. A copy of that license should have
+# been provided with this software, but in any event can be snarfed
+# from www.gnu.org.
+#
+# This work is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
+#
+#
+# CONTRIBUTION SUBMISSION POLICY:
+#
+# (The following paragraph is not intended to limit the rights granted
+# to you to modify and distribute this software under the terms of
+# the GNU General Public License and is only of importance to you if
+# you choose to contribute your changes and enhancements to the
+# community by submitting them to Best Practical Solutions, LLC.)
+#
+# By intentionally submitting any modifications, corrections or
+# derivatives to this work, or any other work intended for use with
+# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+# you are the copyright holder for those contributions and you grant
+# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+# royalty-free, perpetual, license to use, copy, create derivative
+# works based on those contributions, and sublicense and distribute
+# those contributions and any derivatives thereof.
+#
+# END BPS TAGGED BLOCK }}}
+ $m->callback(CallbackName => 'BeforeCc', ARGSRef => \%ARGS, Ticket => $TicketObj, one_time_Ccs => \@one_time_Ccs, txn_addresses => \%txn_addresses);
+$m->print( '
+<tr><td class="label">' );
+#line 50 "/var/www/localhost/htdocs/rt/Ticket/Elements/UpdateCc"
+$m->comp( { content => sub {
+#line 50 "/var/www/localhost/htdocs/rt/Ticket/Elements/UpdateCc"
+$m->print( 'One-time Cc' );
+#line 50 "/var/www/localhost/htdocs/rt/Ticket/Elements/UpdateCc"
+} }, '/l'
+ );
+#line 50 "/var/www/localhost/htdocs/rt/Ticket/Elements/UpdateCc"
+$m->print( ':</td><td>' );
+#line 50 "/var/www/localhost/htdocs/rt/Ticket/Elements/UpdateCc"
+$m->comp(   '/Elements/EmailInput', Name => 'UpdateCc', Size => undef, Default => $ARGS{UpdateCc}, AutocompleteMultiple => 1   
+); #line 50 "/var/www/localhost/htdocs/rt/Ticket/Elements/UpdateCc"
+$m->print( '
+<input type="hidden" id="UpdateIgnoreAddressCheckboxes" name="UpdateIgnoreAddressCheckboxes" value="0">
+        <br />
+
+' );
+#line 54 "/var/www/localhost/htdocs/rt/Ticket/Elements/UpdateCc"
+if (scalar @one_time_Ccs) {
+$m->print( '<i class="label">(' );
+#line 55 "/var/www/localhost/htdocs/rt/Ticket/Elements/UpdateCc"
+$m->comp( { content => sub {
+#line 55 "/var/www/localhost/htdocs/rt/Ticket/Elements/UpdateCc"
+$m->print( 'check to add' );
+#line 55 "/var/www/localhost/htdocs/rt/Ticket/Elements/UpdateCc"
+} }, '/l'
+ );
+#line 55 "/var/www/localhost/htdocs/rt/Ticket/Elements/UpdateCc"
+$m->print( ')</i>
+' );
+#line 56 "/var/www/localhost/htdocs/rt/Ticket/Elements/UpdateCc"
+}
+foreach my $addr ( @one_time_Ccs ) {
+$m->print( '<input
+    id="UpdateCc-' );
+#line 59 "/var/www/localhost/htdocs/rt/Ticket/Elements/UpdateCc"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($addr)) );
+#line 59 "/var/www/localhost/htdocs/rt/Ticket/Elements/UpdateCc"
+$m->print( '"
+    name="UpdateCc-' );
+#line 60 "/var/www/localhost/htdocs/rt/Ticket/Elements/UpdateCc"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($addr)) );
+#line 60 "/var/www/localhost/htdocs/rt/Ticket/Elements/UpdateCc"
+$m->print( '"
+    class="onetime onetimecc"
+    type="checkbox"
+' );
+#line 63 "/var/www/localhost/htdocs/rt/Ticket/Elements/UpdateCc"
+ my $clean_addr = $txn_addresses{$addr}->format;
+$m->print( '    onClick="checkboxToInput(\'UpdateCc\', ' );
+#line 64 "/var/www/localhost/htdocs/rt/Ticket/Elements/UpdateCc"
+$m->print( (map {; $m->interp->apply_escapes($_, 'j') } ( "UpdateCc-$addr")) );
+#line 64 "/var/www/localhost/htdocs/rt/Ticket/Elements/UpdateCc"
+$m->print( ', ' );
+#line 64 "/var/www/localhost/htdocs/rt/Ticket/Elements/UpdateCc"
+$m->print( (map {; $m->interp->apply_escapes($_, 'j') } ($clean_addr)) );
+#line 64 "/var/www/localhost/htdocs/rt/Ticket/Elements/UpdateCc"
+$m->print( ' );"
+    ' );
+#line 65 "/var/www/localhost/htdocs/rt/Ticket/Elements/UpdateCc"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $ARGS{'UpdateCc-'.$addr} ? 'checked="checked"' : '')) );
+#line 65 "/var/www/localhost/htdocs/rt/Ticket/Elements/UpdateCc"
+$m->print( ' >
+      <label for="UpdateCc-' );
+#line 66 "/var/www/localhost/htdocs/rt/Ticket/Elements/UpdateCc"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($addr)) );
+#line 66 "/var/www/localhost/htdocs/rt/Ticket/Elements/UpdateCc"
+$m->print( '">' );
+#line 66 "/var/www/localhost/htdocs/rt/Ticket/Elements/UpdateCc"
+$m->comp(   '/Elements/ShowUser', Address => $txn_addresses{$addr}  
+); #line 66 "/var/www/localhost/htdocs/rt/Ticket/Elements/UpdateCc"
+$m->print( '</label>
+' );
+#line 67 "/var/www/localhost/htdocs/rt/Ticket/Elements/UpdateCc"
+}
+$m->print( '</td></tr>
+<tr><td class="label">' );
+#line 69 "/var/www/localhost/htdocs/rt/Ticket/Elements/UpdateCc"
+$m->comp( { content => sub {
+#line 69 "/var/www/localhost/htdocs/rt/Ticket/Elements/UpdateCc"
+$m->print( 'One-time Bcc' );
+#line 69 "/var/www/localhost/htdocs/rt/Ticket/Elements/UpdateCc"
+} }, '/l'
+ );
+#line 69 "/var/www/localhost/htdocs/rt/Ticket/Elements/UpdateCc"
+$m->print( ':</td><td>' );
+#line 69 "/var/www/localhost/htdocs/rt/Ticket/Elements/UpdateCc"
+$m->comp(   '/Elements/EmailInput', Name => 'UpdateBcc', Size => undef, Default => $ARGS{UpdateBcc}, AutocompleteMultiple => 1   
+); #line 69 "/var/www/localhost/htdocs/rt/Ticket/Elements/UpdateCc"
+$m->print( '<br />
+' );
+#line 70 "/var/www/localhost/htdocs/rt/Ticket/Elements/UpdateCc"
+if (scalar @one_time_Ccs) {
+$m->print( '<i class="label">(' );
+#line 71 "/var/www/localhost/htdocs/rt/Ticket/Elements/UpdateCc"
+$m->comp( { content => sub {
+#line 71 "/var/www/localhost/htdocs/rt/Ticket/Elements/UpdateCc"
+$m->print( 'check to add' );
+#line 71 "/var/www/localhost/htdocs/rt/Ticket/Elements/UpdateCc"
+} }, '/l'
+ );
+#line 71 "/var/www/localhost/htdocs/rt/Ticket/Elements/UpdateCc"
+$m->print( ')</i>
+' );
+#line 72 "/var/www/localhost/htdocs/rt/Ticket/Elements/UpdateCc"
+}
+foreach my $addr ( @one_time_Ccs ) {
+$m->print( '<input
+    id="UpdateBcc-' );
+#line 75 "/var/www/localhost/htdocs/rt/Ticket/Elements/UpdateCc"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($addr)) );
+#line 75 "/var/www/localhost/htdocs/rt/Ticket/Elements/UpdateCc"
+$m->print( '"
+    name="UpdateBcc-' );
+#line 76 "/var/www/localhost/htdocs/rt/Ticket/Elements/UpdateCc"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($addr)) );
+#line 76 "/var/www/localhost/htdocs/rt/Ticket/Elements/UpdateCc"
+$m->print( '"
+    class="onetime onetimebcc"
+    type="checkbox"
+' );
+#line 79 "/var/www/localhost/htdocs/rt/Ticket/Elements/UpdateCc"
+ my $clean_addr = $txn_addresses{$addr}->format;
+$m->print( '    onClick="checkboxToInput(\'UpdateBcc\', ' );
+#line 80 "/var/www/localhost/htdocs/rt/Ticket/Elements/UpdateCc"
+$m->print( (map {; $m->interp->apply_escapes($_, 'j') } ( "UpdateBcc-$addr")) );
+#line 80 "/var/www/localhost/htdocs/rt/Ticket/Elements/UpdateCc"
+$m->print( ', ' );
+#line 80 "/var/www/localhost/htdocs/rt/Ticket/Elements/UpdateCc"
+$m->print( (map {; $m->interp->apply_escapes($_, 'j') } ($clean_addr)) );
+#line 80 "/var/www/localhost/htdocs/rt/Ticket/Elements/UpdateCc"
+$m->print( ' );"
+    ' );
+#line 81 "/var/www/localhost/htdocs/rt/Ticket/Elements/UpdateCc"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $ARGS{'UpdateBcc-'.$addr} ? 'checked="checked"' : '')) );
+#line 81 "/var/www/localhost/htdocs/rt/Ticket/Elements/UpdateCc"
+$m->print( ' >
+      <label for="UpdateBcc-' );
+#line 82 "/var/www/localhost/htdocs/rt/Ticket/Elements/UpdateCc"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($addr)) );
+#line 82 "/var/www/localhost/htdocs/rt/Ticket/Elements/UpdateCc"
+$m->print( '">' );
+#line 82 "/var/www/localhost/htdocs/rt/Ticket/Elements/UpdateCc"
+$m->comp(   '/Elements/ShowUser', Address => $txn_addresses{$addr}  
+); #line 82 "/var/www/localhost/htdocs/rt/Ticket/Elements/UpdateCc"
+$m->print( '</label>
+' );
+#line 83 "/var/www/localhost/htdocs/rt/Ticket/Elements/UpdateCc"
+}
+$m->print( '</td></tr>
+' );
+;return;
+},
+'declared_args' => {
+  '$TicketObj' => { default => undef }
+},
+'load_time' => 1432969611,
+
+)
+;

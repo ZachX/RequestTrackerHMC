@@ -1,0 +1,151 @@
+package HTML::Mason::Commands;
+use strict;
+use vars qw($m $DECODED_ARGS $r %session);
+HTML::Mason::Component::FileBased->new(
+'code' => sub {
+HTML::Mason::Exception::Params->throw
+    ( error =>
+      "Odd number of parameters passed to component expecting name/value pairs"
+    ) if @_ % 2;
+my %ARGS = @_;
+my ( $titlebox, @actions );
+{
+    my %pos;
+    for ( my $x = 0; $x < @_; $x += 2 )
+    {
+        $pos{ $_[$x] } = $x + 1;
+    }
+#line 99 "/var/www/localhost/htdocs/rt/Elements/ListActions"
+     $titlebox = exists $pos{'titlebox'} ? $_[ $pos{'titlebox'} ] :  {};
+#line 100 "/var/www/localhost/htdocs/rt/Elements/ListActions"
+     @actions = exists $pos{'actions'} ? HTML::Mason::Tools::coerce_to_array( $_[ $pos{'actions'} ], '@actions') :  undef;
+}
+$m->debug_hook( $m->current_comp->path ) if ( HTML::Mason::Compiler::IN_PERL_DB() );
+
+#line 60 "/var/www/localhost/htdocs/rt/Elements/ListActions"
+
+
+# backward compatibility, don't use array in new code, but use keyed hash
+if ( ref( $session{'Actions'} ) eq 'ARRAY' ) {
+    unshift @actions, @{ delete $session{'Actions'} };
+    $session{'i'}++;
+}
+
+if ( ref( $session{'Actions'}{''} ) eq 'ARRAY' ) {
+    unshift @actions, @{ delete $session{'Actions'}{''} };
+    $session{'i'}++;
+}
+
+my $actions_pointer = $DECODED_ARGS->{'results'};
+
+if ($actions_pointer &&  ref( $session{'Actions'}->{$actions_pointer} ) eq 'ARRAY' ) {
+    unshift @actions, @{ delete $session{'Actions'}->{$actions_pointer} };
+    $session{'i'}++;
+}
+
+# XXX: run callbacks per row really crazy idea
+@actions =
+    grep $_,
+    grep {
+        my $skip;
+        $m->callback(
+            %ARGS,
+            row  => \$_,
+            skip => \$skip,
+            CallbackName => 'ModifyRow',
+        );
+        !$skip;
+    }
+    grep $_, @actions;
+
+return unless @actions;
+
+#line 1 "/var/www/localhost/htdocs/rt/Elements/ListActions"
+# BEGIN BPS TAGGED BLOCK {{{
+#
+# COPYRIGHT:
+#
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
+#                                          <sales@bestpractical.com>
+#
+# (Except where explicitly superseded by other copyright notices)
+#
+#
+# LICENSE:
+#
+# This work is made available to you under the terms of Version 2 of
+# the GNU General Public License. A copy of that license should have
+# been provided with this software, but in any event can be snarfed
+# from www.gnu.org.
+#
+# This work is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
+#
+#
+# CONTRIBUTION SUBMISSION POLICY:
+#
+# (The following paragraph is not intended to limit the rights granted
+# to you to modify and distribute this software under the terms of
+# the GNU General Public License and is only of importance to you if
+# you choose to contribute your changes and enhancements to the
+# community by submitting them to Best Practical Solutions, LLC.)
+#
+# By intentionally submitting any modifications, corrections or
+# derivatives to this work, or any other work intended for use with
+# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+# you are the copyright holder for those contributions and you grant
+# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+# royalty-free, perpetual, license to use, copy, create derivative
+# works based on those contributions, and sublicense and distribute
+# those contributions and any derivatives thereof.
+#
+# END BPS TAGGED BLOCK }}}
+ $m->out($$_) for grep {ref $_} @actions;
+ if (grep {not ref $_} @actions) {
+$m->print( '<div class="results">
+' );
+#line 51 "/var/www/localhost/htdocs/rt/Elements/ListActions"
+$m->comp( { content => sub {
+#line 51 "/var/www/localhost/htdocs/rt/Elements/ListActions"
+$m->print( '
+  <ul class="action-results">
+' );
+#line 53 "/var/www/localhost/htdocs/rt/Elements/ListActions"
+ foreach my $action (grep {not ref $_} @actions) {
+$m->print( '    <li>' );
+#line 54 "/var/www/localhost/htdocs/rt/Elements/ListActions"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($action)) );
+#line 54 "/var/www/localhost/htdocs/rt/Elements/ListActions"
+$m->print( '</li>
+' );
+#line 55 "/var/www/localhost/htdocs/rt/Elements/ListActions"
+ }
+$m->print( '  </ul>
+' );
+#line 57 "/var/www/localhost/htdocs/rt/Elements/ListActions"
+} }, '/Widgets/TitleBox', title => loc('Results'), %{$titlebox || {}}
+ );
+#line 57 "/var/www/localhost/htdocs/rt/Elements/ListActions"
+$m->print( '
+</div>
+' );
+#line 59 "/var/www/localhost/htdocs/rt/Elements/ListActions"
+ }
+;return;
+},
+'declared_args' => {
+  '$titlebox' => { default => ' {}' },
+  '@actions' => { default => ' undef' }
+},
+'load_time' => 1434735744,
+
+)
+;

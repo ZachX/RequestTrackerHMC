@@ -1,0 +1,261 @@
+package HTML::Mason::Commands;
+use strict;
+use vars qw($m $DECODED_ARGS $r %session);
+HTML::Mason::Component::FileBased->new(
+'code' => sub {
+HTML::Mason::Exception::Params->throw
+    ( error =>
+      "Odd number of parameters passed to component expecting name/value pairs"
+    ) if @_ % 2;
+my %ARGS = @_;
+my ( $Order, $OrderBy, $RowsPerPage, $Format, $GroupBy );
+{
+    my %pos;
+    for ( my $x = 0; $x < @_; $x += 2 )
+    {
+        $pos{ $_[$x] } = $x + 1;
+    }
+#line 135 "/var/www/localhost/htdocs/rt/Search/Elements/EditSort"
+     $Order = exists $pos{'Order'} ? $_[ $pos{'Order'} ] :  '';
+#line 136 "/var/www/localhost/htdocs/rt/Search/Elements/EditSort"
+     $OrderBy = exists $pos{'OrderBy'} ? $_[ $pos{'OrderBy'} ] :  '';
+#line 137 "/var/www/localhost/htdocs/rt/Search/Elements/EditSort"
+     $RowsPerPage = exists $pos{'RowsPerPage'} ? $_[ $pos{'RowsPerPage'} ] :  undef;
+#line 138 "/var/www/localhost/htdocs/rt/Search/Elements/EditSort"
+     $Format = exists $pos{'Format'} ? $_[ $pos{'Format'} ] :  undef;
+#line 139 "/var/www/localhost/htdocs/rt/Search/Elements/EditSort"
+     $GroupBy = exists $pos{'GroupBy'} ? $_[ $pos{'GroupBy'} ] :  'id';
+}
+$m->debug_hook( $m->current_comp->path ) if ( HTML::Mason::Compiler::IN_PERL_DB() );
+
+#line 100 "/var/www/localhost/htdocs/rt/Search/Elements/EditSort"
+
+my $tickets = RT::Tickets->new($session{'CurrentUser'});
+my %FieldDescriptions = %{$tickets->FIELDS};
+my %fields;
+
+for my $field (keys %FieldDescriptions) {
+    next if $field eq 'EffectiveId';
+    next unless $FieldDescriptions{$field}->[0] =~ /^(?:ENUM|INT|DATE|STRING|ID)$/;
+    $fields{$field} = $field;
+}
+
+$fields{'Owner'} = 'Owner';
+$fields{ $_ . '.EmailAddress' } = $_ . '.EmailAddress'
+    for qw(Requestor Cc AdminCc);
+
+# Add all available CustomFields to the list of sortable columns.
+my @cfs = grep /^CustomField/, @{$ARGS{AvailableColumns}};
+$fields{$_} = $_ for @cfs;
+
+# Add PAW sort
+$fields{'Custom.Ownership'} = 'Custom.Ownership';
+
+$m->callback(CallbackName => 'MassageSortFields', Fields => \%fields );
+
+my @Order = split /\|/, $Order;
+my @OrderBy = split /\|/, $OrderBy;
+if ($Order =~ /\|/) {
+    @Order = split /\|/, $Order;
+} else {
+    @Order = ( $Order );
+}
+
+#line 1 "/var/www/localhost/htdocs/rt/Search/Elements/EditSort"
+# BEGIN BPS TAGGED BLOCK {{{
+#
+# COPYRIGHT:
+#
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
+#                                          <sales@bestpractical.com>
+#
+# (Except where explicitly superseded by other copyright notices)
+#
+#
+# LICENSE:
+#
+# This work is made available to you under the terms of Version 2 of
+# the GNU General Public License. A copy of that license should have
+# been provided with this software, but in any event can be snarfed
+# from www.gnu.org.
+#
+# This work is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
+#
+#
+# CONTRIBUTION SUBMISSION POLICY:
+#
+# (The following paragraph is not intended to limit the rights granted
+# to you to modify and distribute this software under the terms of
+# the GNU General Public License and is only of importance to you if
+# you choose to contribute your changes and enhancements to the
+# community by submitting them to Best Practical Solutions, LLC.)
+#
+# By intentionally submitting any modifications, corrections or
+# derivatives to this work, or any other work intended for use with
+# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+# you are the copyright holder for those contributions and you grant
+# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+# royalty-free, perpetual, license to use, copy, create derivative
+# works based on those contributions, and sublicense and distribute
+# those contributions and any derivatives thereof.
+#
+# END BPS TAGGED BLOCK }}}
+$m->print( '<table valign="top">
+
+' );
+#line 50 "/var/www/localhost/htdocs/rt/Search/Elements/EditSort"
+ for my $o (0..3) {
+ $Order[$o] ||= ''; $OrderBy[$o] ||= '';
+$m->print( '<tr>
+<td class="label">
+' );
+#line 54 "/var/www/localhost/htdocs/rt/Search/Elements/EditSort"
+ if ($o == 0) {
+$m->comp( { content => sub {
+#line 55 "/var/www/localhost/htdocs/rt/Search/Elements/EditSort"
+$m->print( 'Order by' );
+#line 55 "/var/www/localhost/htdocs/rt/Search/Elements/EditSort"
+} }, '/l'
+ );
+#line 55 "/var/www/localhost/htdocs/rt/Search/Elements/EditSort"
+$m->print( ':
+' );
+#line 56 "/var/www/localhost/htdocs/rt/Search/Elements/EditSort"
+ }
+$m->print( '</td>
+<td class="value">
+<select name="OrderBy">
+' );
+#line 60 "/var/www/localhost/htdocs/rt/Search/Elements/EditSort"
+ if ($o > 0) {
+$m->print( '<option value="">' );
+#line 61 "/var/www/localhost/htdocs/rt/Search/Elements/EditSort"
+$m->comp( { content => sub {
+#line 61 "/var/www/localhost/htdocs/rt/Search/Elements/EditSort"
+$m->print( '~[none~]' );
+#line 61 "/var/www/localhost/htdocs/rt/Search/Elements/EditSort"
+} }, '/l'
+ );
+#line 61 "/var/www/localhost/htdocs/rt/Search/Elements/EditSort"
+$m->print( '</option>
+' );
+#line 62 "/var/www/localhost/htdocs/rt/Search/Elements/EditSort"
+ }
+ # %fields maps display name to SQL column/function
+ foreach my $field (sort keys %fields) {
+    next unless $field;
+    my $fieldval = $fields{$field};
+$m->print( '<option value="' );
+#line 67 "/var/www/localhost/htdocs/rt/Search/Elements/EditSort"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($fieldval)) );
+#line 67 "/var/www/localhost/htdocs/rt/Search/Elements/EditSort"
+$m->print( '"
+' );
+#line 68 "/var/www/localhost/htdocs/rt/Search/Elements/EditSort"
+ if (defined $OrderBy[$o] and $fieldval eq $OrderBy[$o]) {
+$m->print( 'selected="selected"
+' );
+#line 70 "/var/www/localhost/htdocs/rt/Search/Elements/EditSort"
+ }
+$m->print( '>' );
+#line 71 "/var/www/localhost/htdocs/rt/Search/Elements/EditSort"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $field =~ /^(?:CustomField|CF)\./ ? $field : loc($field) )) );
+#line 71 "/var/www/localhost/htdocs/rt/Search/Elements/EditSort"
+$m->print( '</option>
+' );
+#line 72 "/var/www/localhost/htdocs/rt/Search/Elements/EditSort"
+ }
+$m->print( '</select>
+<select name="Order">
+<option value="ASC"
+' );
+#line 76 "/var/www/localhost/htdocs/rt/Search/Elements/EditSort"
+ unless ( ($Order[$o]||'') eq "DESC" ) {
+$m->print( 'selected="selected"
+' );
+#line 78 "/var/www/localhost/htdocs/rt/Search/Elements/EditSort"
+ }
+$m->print( '>' );
+#line 79 "/var/www/localhost/htdocs/rt/Search/Elements/EditSort"
+$m->comp( { content => sub {
+#line 79 "/var/www/localhost/htdocs/rt/Search/Elements/EditSort"
+$m->print( 'Asc' );
+#line 79 "/var/www/localhost/htdocs/rt/Search/Elements/EditSort"
+} }, '/l'
+ );
+#line 79 "/var/www/localhost/htdocs/rt/Search/Elements/EditSort"
+$m->print( '</option>
+<option value="DESC"
+' );
+#line 81 "/var/www/localhost/htdocs/rt/Search/Elements/EditSort"
+ if ( ($Order[$o]||'') eq "DESC" ) {
+$m->print( 'selected="selected"
+' );
+#line 83 "/var/www/localhost/htdocs/rt/Search/Elements/EditSort"
+ }
+$m->print( '>' );
+#line 84 "/var/www/localhost/htdocs/rt/Search/Elements/EditSort"
+$m->comp( { content => sub {
+#line 84 "/var/www/localhost/htdocs/rt/Search/Elements/EditSort"
+$m->print( 'Desc' );
+#line 84 "/var/www/localhost/htdocs/rt/Search/Elements/EditSort"
+} }, '/l'
+ );
+#line 84 "/var/www/localhost/htdocs/rt/Search/Elements/EditSort"
+$m->print( '</option>
+</select>
+</td>
+</tr>
+' );
+#line 88 "/var/www/localhost/htdocs/rt/Search/Elements/EditSort"
+ }
+$m->print( '<tr>
+<td class="label">
+' );
+#line 91 "/var/www/localhost/htdocs/rt/Search/Elements/EditSort"
+$m->comp( { content => sub {
+#line 91 "/var/www/localhost/htdocs/rt/Search/Elements/EditSort"
+$m->print( 'Rows per page' );
+#line 91 "/var/www/localhost/htdocs/rt/Search/Elements/EditSort"
+} }, '/l'
+ );
+#line 91 "/var/www/localhost/htdocs/rt/Search/Elements/EditSort"
+$m->print( ':
+</td><td class="value">
+' );
+#line 93 "/var/www/localhost/htdocs/rt/Search/Elements/EditSort"
+$m->comp(   '/Elements/SelectResultsPerPage', 
+    Name => "RowsPerPage", 
+    Default => $RowsPerPage   
+); #line 95 "/var/www/localhost/htdocs/rt/Search/Elements/EditSort"
+$m->print( '
+</td>
+</tr>
+</table>
+
+' );
+#line 133 "/var/www/localhost/htdocs/rt/Search/Elements/EditSort"
+$m->print( '
+' );
+;return;
+},
+'declared_args' => {
+  '$Format' => { default => ' undef' },
+  '$GroupBy' => { default => ' \'id\'' },
+  '$Order' => { default => ' \'\'' },
+  '$OrderBy' => { default => ' \'\'' },
+  '$RowsPerPage' => { default => ' undef' }
+},
+'load_time' => 1434738676,
+
+)
+;

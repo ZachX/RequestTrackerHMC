@@ -1,0 +1,262 @@
+package HTML::Mason::Commands;
+use strict;
+use vars qw($m $DECODED_ARGS $r %session);
+HTML::Mason::Component::FileBased->new(
+'code' => sub {
+HTML::Mason::Exception::Params->throw
+    ( error =>
+      "Odd number of parameters passed to component expecting name/value pairs"
+    ) if @_ % 2;
+my %ARGS = @_;
+my ( $Object, $Transactions, $Attachments, $AttachmentContent, $ShowHeaders, $ShowTitle, $ShowDisplayModes, $PathPrefix );
+{
+    my %pos;
+    for ( my $x = 0; $x < @_; $x += 2 )
+    {
+        $pos{ $_[$x] } = $x + 1;
+    }
+
+    foreach my $arg ( qw( Object ) )
+    {
+        HTML::Mason::Exception::Params->throw
+            ( error => "no value sent for required parameter '$arg'" )
+                unless exists $pos{$arg};
+    }
+#line 181 "/var/www/localhost/htdocs/rt/Elements/ShowHistory"
+    $Object = $_[ $pos{'Object'} ];
+#line 182 "/var/www/localhost/htdocs/rt/Elements/ShowHistory"
+     $Transactions = exists $pos{'Transactions'} ? $_[ $pos{'Transactions'} ] :  $Object->SortedTransactions;
+#line 183 "/var/www/localhost/htdocs/rt/Elements/ShowHistory"
+     $Attachments = exists $pos{'Attachments'} ? $_[ $pos{'Attachments'} ] :  $Object->Attachments( WithHeaders => 1 );
+#line 184 "/var/www/localhost/htdocs/rt/Elements/ShowHistory"
+     $AttachmentContent = exists $pos{'AttachmentContent'} ? $_[ $pos{'AttachmentContent'} ] :  $Object->TextAttachments;
+#line 186 "/var/www/localhost/htdocs/rt/Elements/ShowHistory"
+     $ShowHeaders = exists $pos{'ShowHeaders'} ? $_[ $pos{'ShowHeaders'} ] :  0;
+#line 187 "/var/www/localhost/htdocs/rt/Elements/ShowHistory"
+     $ShowTitle = exists $pos{'ShowTitle'} ? $_[ $pos{'ShowTitle'} ] :  1;
+#line 188 "/var/www/localhost/htdocs/rt/Elements/ShowHistory"
+     $ShowDisplayModes = exists $pos{'ShowDisplayModes'} ? $_[ $pos{'ShowDisplayModes'} ] :  1;
+#line 190 "/var/www/localhost/htdocs/rt/Elements/ShowHistory"
+     $PathPrefix = exists $pos{'PathPrefix'} ? $_[ $pos{'PathPrefix'} ] :  '';
+}
+$m->debug_hook( $m->current_comp->path ) if ( HTML::Mason::Compiler::IN_PERL_DB() );
+
+#line 145 "/var/www/localhost/htdocs/rt/Elements/ShowHistory"
+
+my $trans_content = {};
+my $trans_attachments = {};
+
+for my $content (@{$AttachmentContent->ItemsArrayRef()}) {
+    $trans_content->{$content->TransactionId}->{$content->Id} = $content;
+}
+
+for my $attachment (@{$Attachments->ItemsArrayRef()}) {
+    my $tmp = $trans_attachments->{ $attachment->TransactionId } ||= {};
+    push @{ $tmp->{ $attachment->Parent || 0 } ||= [] }, $attachment;
+}
+
+{
+    my %tmp = (
+        DisplayPath     => 'Display.html',
+        AttachmentPath  => 'Attachment',
+        UpdatePath      => 'Update.html',
+        ForwardPath     => 'Forward.html',
+        EmailRecordPath => 'ShowEmailRecord.html',
+        EncryptionPath  => 'Crypt.html',
+    );
+
+    my $prefix = $ARGS{PathPrefix}||'';
+    while ( my ($arg, $path) = each %tmp ) {
+        next if defined $ARGS{ $arg };
+        $ARGS{ $arg } = $prefix.$path;
+    }
+}
+
+my $record_type = $Object->RecordType;
+my $histid      = "\L$record_type\E-" . $Object->id . "-history";
+
+my $HasTxnCFs = ($Object->can("TransactionCustomFields") and $Object->TransactionCustomFields->Count);
+#line 1 "/var/www/localhost/htdocs/rt/Elements/ShowHistory"
+# BEGIN BPS TAGGED BLOCK {{{
+#
+# COPYRIGHT:
+#
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
+#                                          <sales@bestpractical.com>
+#
+# (Except where explicitly superseded by other copyright notices)
+#
+#
+# LICENSE:
+#
+# This work is made available to you under the terms of Version 2 of
+# the GNU General Public License. A copy of that license should have
+# been provided with this software, but in any event can be snarfed
+# from www.gnu.org.
+#
+# This work is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
+#
+#
+# CONTRIBUTION SUBMISSION POLICY:
+#
+# (The following paragraph is not intended to limit the rights granted
+# to you to modify and distribute this software under the terms of
+# the GNU General Public License and is only of importance to you if
+# you choose to contribute your changes and enhancements to the
+# community by submitting them to Best Practical Solutions, LLC.)
+#
+# By intentionally submitting any modifications, corrections or
+# derivatives to this work, or any other work intended for use with
+# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+# you are the copyright holder for those contributions and you grant
+# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+# royalty-free, perpetual, license to use, copy, create derivative
+# works based on those contributions, and sublicense and distribute
+# those contributions and any derivatives thereof.
+#
+# END BPS TAGGED BLOCK }}}
+$m->print( '<div class="history ' );
+#line 48 "/var/www/localhost/htdocs/rt/Elements/ShowHistory"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( lc $record_type )) );
+#line 48 "/var/www/localhost/htdocs/rt/Elements/ShowHistory"
+$m->print( '" id="' );
+#line 48 "/var/www/localhost/htdocs/rt/Elements/ShowHistory"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $histid )) );
+#line 48 "/var/www/localhost/htdocs/rt/Elements/ShowHistory"
+$m->print( '">
+' );
+#line 49 "/var/www/localhost/htdocs/rt/Elements/ShowHistory"
+
+if ( $ShowDisplayModes or $ShowTitle ) {
+    my $title = $ShowTitle
+                    ? loc('History')
+                    : '&nbsp;';
+
+    my $titleright = '';
+    if ( $ShowDisplayModes ) {
+        if ( RT->Config->Get( 'QuoteFolding', $session{CurrentUser} ) ) {
+            my $open_all  = $m->interp->apply_escapes( loc("Show all quoted text"), 'j' );
+            my $open_html = $m->interp->apply_escapes( loc("Show all quoted text"), 'h' );
+            my $close_all = $m->interp->apply_escapes( loc("Hide all quoted text"), 'j' );
+            $titleright .=    '<a href="#" data-direction="open" '
+                            . qq{onclick="return toggle_all_folds(this, $open_all, $close_all);"}
+                            . ">$open_html</a> &mdash; ";
+        }
+
+        if ($ShowHeaders) {
+            $titleright .= qq{<a href="?ForceShowHistory=1;id=} .
+                           $Object->id.qq{#$histid">} .
+                           loc("Show brief headers") .
+                           qq{</a>};
+        } else {
+            $titleright .= qq{<a href="?ForceShowHistory=1;ShowHeaders=1;id=} .
+                           $Object->id.qq{#$histid">} .
+                           loc("Show full headers") .
+                           qq{</a>};
+        }
+    }
+#line 79 "/var/www/localhost/htdocs/rt/Elements/ShowHistory"
+$m->comp(   '/Widgets/TitleBoxStart', title => $title, titleright_raw => $titleright   
+); #line 79 "/var/www/localhost/htdocs/rt/Elements/ShowHistory"
+$m->print( '
+' );
+#line 80 "/var/www/localhost/htdocs/rt/Elements/ShowHistory"
+ }
+$m->print( '
+<div class="history-container">
+' );
+#line 83 "/var/www/localhost/htdocs/rt/Elements/ShowHistory"
+
+$m->callback( %ARGS, Object => $Object, CallbackName => 'BeforeTransactions' );
+my $i = 1;
+while ( my $Transaction = $Transactions->Next ) {
+    my $skip = 0;
+
+    # Skip display of SetWatcher transactions for ticket Owner groups.  Owner
+    # was a single member role group and denormalized into a column well before
+    # the generic role group handling and transactions came about.  For
+    # tickets, we rely on rendering ownership changes using the Set-Owner
+    # transaction.  For all other record types, or even potential ticket single
+    # role groups which aren't Owner, we use SetWatcher to render history and
+    # skip the Set transactions.  This complication is necessary to avoid
+    # creating backdated transactions on upgrade which normalize to one type or
+    # another.
+    # 
+    # These conditions assumes ticket Owner is a single-member denormalized
+    # role group, which is safe since that is unlikely to ever change in the
+    # future.
+    if ($Object->isa("RT::Ticket") and ($Transaction->Field || '') eq "Owner") {
+        $skip = 1 if $Transaction->Type eq "SetWatcher";
+    } else {
+        $skip = 1 if $Transaction->Type eq "Set"
+                 and $Transaction->Field
+                 and $Object->DOES("RT::Record::Role::Roles")
+                 and $Object->HasRole( $Transaction->Field )
+                 and $Object->RoleGroup( $Transaction->Field )->SingleMemberRoleGroupColumn;
+    }
+
+    $m->callback(
+        %ARGS,
+        Transaction   => $Transaction,
+        skip          => \$skip,
+        CallbackName  => 'SkipTransaction',
+    );
+    next if $skip;
+
+    # ARGS is first because we're clobbering the "Attachments" parameter
+    $m->comp( 'ShowTransaction',
+        %ARGS,
+        Object            => $Object,
+        Transaction       => $Transaction,
+        ShowHeaders       => $ShowHeaders,
+        RowNum            => $i,
+        Attachments       => $trans_attachments->{$Transaction->id} || {},
+        AttachmentContent => $trans_content,
+        HasTxnCFs         => $HasTxnCFs,
+    );
+
+    # manually flush the content buffer after each txn,
+    # so the user sees some update
+    $m->flush_buffer;
+
+    $i++;
+}
+
+#line 140 "/var/www/localhost/htdocs/rt/Elements/ShowHistory"
+$m->print( '</div>
+' );
+#line 141 "/var/www/localhost/htdocs/rt/Elements/ShowHistory"
+ if ($ShowDisplayModes or $ShowTitle) {
+$m->comp(   '/Widgets/TitleBoxEnd'  
+); #line 142 "/var/www/localhost/htdocs/rt/Elements/ShowHistory"
+$m->print( '
+' );
+#line 143 "/var/www/localhost/htdocs/rt/Elements/ShowHistory"
+ }
+$m->print( '</div>
+' );
+;return;
+},
+'declared_args' => {
+  '$AttachmentContent' => { default => ' $Object->TextAttachments' },
+  '$Attachments' => { default => ' $Object->Attachments( WithHeaders => 1 )' },
+  '$Object' => { default => undef },
+  '$PathPrefix' => { default => ' \'\'' },
+  '$ShowDisplayModes' => { default => ' 1' },
+  '$ShowHeaders' => { default => ' 0' },
+  '$ShowTitle' => { default => ' 1' },
+  '$Transactions' => { default => ' $Object->SortedTransactions' }
+},
+'load_time' => 1434735749,
+
+)
+;

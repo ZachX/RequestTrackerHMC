@@ -1,0 +1,154 @@
+package HTML::Mason::Commands;
+use strict;
+use vars qw($m $DECODED_ARGS $r %session);
+HTML::Mason::Component::FileBased->new(
+'code' => sub {
+HTML::Mason::Exception::Params->throw
+    ( error =>
+      "Odd number of parameters passed to component expecting name/value pairs"
+    ) if @_ % 2;
+my ( $UserObj, $Limit );
+{
+    my %pos;
+    for ( my $x = 0; $x < @_; $x += 2 )
+    {
+        $pos{ $_[$x] } = $x + 1;
+    }
+
+    foreach my $arg ( qw( UserObj ) )
+    {
+        HTML::Mason::Exception::Params->throw
+            ( error => "no value sent for required parameter '$arg'" )
+                unless exists $pos{$arg};
+    }
+#line 92 "/var/www/localhost/htdocs/rt/Elements/ShowMemberships"
+    $UserObj = $_[ $pos{'UserObj'} ];
+#line 93 "/var/www/localhost/htdocs/rt/Elements/ShowMemberships"
+     $Limit = exists $pos{'Limit'} ? $_[ $pos{'Limit'} ] :  undef;
+}
+$m->debug_hook( $m->current_comp->path ) if ( HTML::Mason::Compiler::IN_PERL_DB() );
+
+#line 59 "/var/www/localhost/htdocs/rt/Elements/ShowMemberships"
+
+my $GroupMembers = RT::GroupMembers->new($session{'CurrentUser'});
+$GroupMembers->Limit( FIELD => 'MemberId', VALUE => $UserObj->Id );
+my $alias = $GroupMembers->Join(
+    TYPE       => 'left',
+    ALIAS1     => 'main',
+    FIELD1     => 'GroupId',
+    TABLE2     => 'Groups',
+    FIELD2     => 'id'
+);
+$GroupMembers->Limit(
+    ALIAS      => $alias,
+    FIELD      => 'Domain',
+    OPERATOR   => '=',
+    VALUE      => 'SystemInternal',
+    CASESENSITIVE => 0,
+);
+$GroupMembers->Limit(
+    ALIAS      => $alias,
+    FIELD      => 'Domain',
+    OPERATOR   => '=',
+    VALUE      => 'UserDefined',
+    CASESENSITIVE => 0,
+);
+$GroupMembers->OrderByCols(
+    { ALIAS => $alias, FIELD => 'Domain' },
+    { ALIAS => $alias, FIELD => 'Name' },
+);
+
+$GroupMembers->RowsPerPage($Limit) if $Limit;
+
+#line 1 "/var/www/localhost/htdocs/rt/Elements/ShowMemberships"
+# BEGIN BPS TAGGED BLOCK {{{
+#
+# COPYRIGHT:
+#
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
+#                                          <sales@bestpractical.com>
+#
+# (Except where explicitly superseded by other copyright notices)
+#
+#
+# LICENSE:
+#
+# This work is made available to you under the terms of Version 2 of
+# the GNU General Public License. A copy of that license should have
+# been provided with this software, but in any event can be snarfed
+# from www.gnu.org.
+#
+# This work is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
+#
+#
+# CONTRIBUTION SUBMISSION POLICY:
+#
+# (The following paragraph is not intended to limit the rights granted
+# to you to modify and distribute this software under the terms of
+# the GNU General Public License and is only of importance to you if
+# you choose to contribute your changes and enhancements to the
+# community by submitting them to Best Practical Solutions, LLC.)
+#
+# By intentionally submitting any modifications, corrections or
+# derivatives to this work, or any other work intended for use with
+# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+# you are the copyright holder for those contributions and you grant
+# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+# royalty-free, perpetual, license to use, copy, create derivative
+# works based on those contributions, and sublicense and distribute
+# those contributions and any derivatives thereof.
+#
+# END BPS TAGGED BLOCK }}}
+$m->print( '<ul>
+' );
+#line 49 "/var/www/localhost/htdocs/rt/Elements/ShowMemberships"
+ while ( my $GroupMember = $GroupMembers->Next ) {
+    my $Group = RT::Group->new($session{'CurrentUser'});
+    $Group->Load($GroupMember->GroupId) or next;
+    if ($Group->Domain eq 'UserDefined') {
+$m->print( '<li><a href="' );
+#line 53 "/var/www/localhost/htdocs/rt/Elements/ShowMemberships"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } (RT->Config->Get('WebPath'))) );
+#line 53 "/var/www/localhost/htdocs/rt/Elements/ShowMemberships"
+$m->print( '/Admin/Groups/Modify.html?id=' );
+#line 53 "/var/www/localhost/htdocs/rt/Elements/ShowMemberships"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $Group->Id )) );
+#line 53 "/var/www/localhost/htdocs/rt/Elements/ShowMemberships"
+$m->print( '">' );
+#line 53 "/var/www/localhost/htdocs/rt/Elements/ShowMemberships"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $Group->Name )) );
+#line 53 "/var/www/localhost/htdocs/rt/Elements/ShowMemberships"
+$m->print( '</a></li>
+' );
+#line 54 "/var/www/localhost/htdocs/rt/Elements/ShowMemberships"
+    } elsif ($Group->Domain eq 'SystemInternal') {
+$m->print( '<li><em>' );
+#line 55 "/var/www/localhost/htdocs/rt/Elements/ShowMemberships"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( loc($Group->Name) )) );
+#line 55 "/var/www/localhost/htdocs/rt/Elements/ShowMemberships"
+$m->print( '</em></li>
+' );
+#line 56 "/var/www/localhost/htdocs/rt/Elements/ShowMemberships"
+    }
+ }
+$m->print( '</ul>
+' );
+;return;
+},
+'declared_args' => {
+  '$Limit' => { default => ' undef' },
+  '$UserObj' => { default => undef }
+},
+'load_time' => 1434746019,
+
+)
+;

@@ -1,0 +1,51 @@
+package HTML::Mason::Commands;
+use strict;
+use vars qw($m $DECODED_ARGS $r %session);
+HTML::Mason::Component::FileBased->new(
+'code' => sub {
+HTML::Mason::Exception::Params->throw
+    ( error =>
+      "Odd number of parameters passed to component expecting name/value pairs"
+    ) if @_ % 2;
+my ( $TicketObj, $Fields );
+{
+    my %pos;
+    for ( my $x = 0; $x < @_; $x += 2 )
+    {
+        $pos{ $_[$x] } = $x + 1;
+    }
+#line 2 "/RT-Extension-PriorityAsString/html/Callbacks/PriorityAsString/Ticket/Elements/EditBasics/MassageFields"
+     $TicketObj = exists $pos{'TicketObj'} ? $_[ $pos{'TicketObj'} ] :  undef;
+#line 3 "/RT-Extension-PriorityAsString/html/Callbacks/PriorityAsString/Ticket/Elements/EditBasics/MassageFields"
+     $Fields = exists $pos{'Fields'} ? $_[ $pos{'Fields'} ] :  undef;
+}
+$m->debug_hook( $m->current_comp->path ) if ( HTML::Mason::Compiler::IN_PERL_DB() );
+
+#line 5 "/RT-Extension-PriorityAsString/html/Callbacks/PriorityAsString/Ticket/Elements/EditBasics/MassageFields"
+
+my %as_string = RT->Config->Get('PriorityAsStringQueues');
+
+# Leave it as-is if all queues use PriorityAsString; the overridden
+# /Elements/SelectPriority catches this case and always shows the
+# drop-down
+return unless keys %as_string;
+
+# Only applies if the ticket is in a PriorityAsString queue
+return unless $TicketObj and $as_string{$TicketObj->QueueObj->Name};
+
+# Swap out the /Elements/SelectPriority for /Elements/SelectPriorityAsString
+for my $field (@{ $Fields }) {
+    next unless ($field->{comp}||'') eq "/Elements/SelectPriority";
+    $field->{comp} = "/Elements/SelectPriorityAsString";
+    $field->{args}{Mapping} = $as_string{$TicketObj->QueueObj->Name};
+}
+;return;
+},
+'declared_args' => {
+  '$Fields' => { default => ' undef' },
+  '$TicketObj' => { default => ' undef' }
+},
+'load_time' => 1434735752,
+
+)
+;

@@ -1,0 +1,664 @@
+package HTML::Mason::Commands;
+use strict;
+use vars qw($m $DECODED_ARGS $r %session);
+HTML::Mason::Component::FileBased->new(
+'code' => sub {
+HTML::Mason::Exception::Params->throw
+    ( error =>
+      "Odd number of parameters passed to component expecting name/value pairs"
+    ) if @_ % 2;
+my %ARGS = @_;
+my ( $id, $result, $Name, $Create, $Description, $CorrespondAddress, $CommentAddress, $InitialPriority, $FinalPriority, $DefaultDueIn, $SetEnabled, $SetCrypt, $Enabled );
+{
+    my %pos;
+    for ( my $x = 0; $x < @_; $x += 2 )
+    {
+        $pos{ $_[$x] } = $x + 1;
+    }
+#line 256 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+     $id = exists $pos{'id'} ? $_[ $pos{'id'} ] :  undef;
+#line 257 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+     $result = exists $pos{'result'} ? $_[ $pos{'result'} ] :  undef;
+#line 258 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+     $Name = exists $pos{'Name'} ? $_[ $pos{'Name'} ] :  undef;
+#line 259 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+     $Create = exists $pos{'Create'} ? $_[ $pos{'Create'} ] :  undef;
+#line 260 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+     $Description = exists $pos{'Description'} ? $_[ $pos{'Description'} ] :  undef;
+#line 261 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+     $CorrespondAddress = exists $pos{'CorrespondAddress'} ? $_[ $pos{'CorrespondAddress'} ] :  undef;
+#line 262 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+     $CommentAddress = exists $pos{'CommentAddress'} ? $_[ $pos{'CommentAddress'} ] :  undef;
+#line 263 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+     $InitialPriority = exists $pos{'InitialPriority'} ? $_[ $pos{'InitialPriority'} ] :  undef;
+#line 264 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+     $FinalPriority = exists $pos{'FinalPriority'} ? $_[ $pos{'FinalPriority'} ] :  undef;
+#line 265 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+     $DefaultDueIn = exists $pos{'DefaultDueIn'} ? $_[ $pos{'DefaultDueIn'} ] :  undef;
+#line 266 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+     $SetEnabled = exists $pos{'SetEnabled'} ? $_[ $pos{'SetEnabled'} ] :  undef;
+#line 267 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+     $SetCrypt = exists $pos{'SetCrypt'} ? $_[ $pos{'SetCrypt'} ] :  undef;
+#line 268 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+     $Enabled = exists $pos{'Enabled'} ? $_[ $pos{'Enabled'} ] :  undef;
+}
+$m->debug_hook( $m->current_comp->path ) if ( HTML::Mason::Compiler::IN_PERL_DB() );
+
+#line 173 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+
+my ($title, @results, @no_redirect_results, $Disabled, $EnabledChecked);
+my $QueueObj = RT::Queue->new( $session{'CurrentUser'} );
+$QueueObj->Load( $id ) if !$id || $id eq 'new';
+
+$EnabledChecked = 'checked="checked"';
+
+unless ($Create) {
+    if ( defined $id && $id eq 'new' ) {
+        my ($val, $msg) = $QueueObj->Create( Name => $Name );
+        if (!$val) {
+            $Create = 1; # Create failed, so bring us back to step 1
+        }
+        push @results, $msg;
+    } else {
+        $QueueObj->Load($id) || $QueueObj->Load($Name) || Abort(loc("Couldn't load queue '[_1]'", $Name));
+    }
+}
+
+if ( $QueueObj->Id ) {
+    $title = loc('Configuration for queue [_1]', $QueueObj->Name );
+    my @attribs= qw(Description CorrespondAddress CommentAddress Name
+        InitialPriority FinalPriority DefaultDueIn Sign SignAuto Encrypt Lifecycle SubjectTag Disabled);
+
+    # we're asking about enabled on the web page but really care about disabled
+    if ( $SetEnabled ) {
+        $Disabled = $ARGS{'Disabled'} = $Enabled? 0: 1;
+    }
+    if ( $SetCrypt ) {
+        $ARGS{$_} = 0 foreach grep !defined $ARGS{$_} || !length $ARGS{$_},
+            qw(Sign SignAuto Encrypt);
+    }
+
+    $m->callback(
+        CallbackName => 'BeforeUpdate',
+        Queue => $QueueObj,
+        AttributesRef => \@attribs,
+        ARGSRef => \%ARGS,
+    );
+
+    push @results, UpdateRecordObject(
+        AttributesRef => \@attribs,
+        Object => $QueueObj,
+        ARGSRef => \%ARGS
+    );
+
+    $Disabled = $ARGS{'Disabled'} = $Enabled? 0: 1;
+
+    $EnabledChecked = "" if $QueueObj->Disabled;
+
+    my @linkresults;
+    $m->callback(
+        results      => \@linkresults,
+        RecordObj    => $QueueObj,
+        ARGSRef      => \%ARGS, 
+        CallbackName => 'ProcessLinks'
+    );
+    push @results, @linkresults;
+    push @results, ProcessObjectCustomFieldUpdates( ARGSRef => \%ARGS, Object => $QueueObj );
+    if ( RT->Config->Get('RTAddressRegexp') ) {
+        foreach my $address ( $QueueObj->CorrespondAddress, $QueueObj->CommentAddress ) {
+            next unless defined $address && length $address;
+            next if RT::EmailParser->IsRTAddress( $address );
+            push @no_redirect_results, loc("RTAddressRegexp option in the config doesn't match [_1]", $address );
+        }
+    }
+} else {
+    $title = loc("Create a queue");
+}
+
+my $InternalQueue = ($QueueObj->Id and $QueueObj->Disabled == 2);
+
+# This code does automatic redirection if any updates happen.
+MaybeRedirectForResults(
+    Actions   => \@results,
+    Arguments => { id => $QueueObj->Id },
+) if $QueueObj->id;
+
+push @results, @no_redirect_results;
+#line 1 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+# BEGIN BPS TAGGED BLOCK {{{
+#
+# COPYRIGHT:
+#
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
+#                                          <sales@bestpractical.com>
+#
+# (Except where explicitly superseded by other copyright notices)
+#
+#
+# LICENSE:
+#
+# This work is made available to you under the terms of Version 2 of
+# the GNU General Public License. A copy of that license should have
+# been provided with this software, but in any event can be snarfed
+# from www.gnu.org.
+#
+# This work is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
+#
+#
+# CONTRIBUTION SUBMISSION POLICY:
+#
+# (The following paragraph is not intended to limit the rights granted
+# to you to modify and distribute this software under the terms of
+# the GNU General Public License and is only of importance to you if
+# you choose to contribute your changes and enhancements to the
+# community by submitting them to Best Practical Solutions, LLC.)
+#
+# By intentionally submitting any modifications, corrections or
+# derivatives to this work, or any other work intended for use with
+# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+# you are the copyright holder for those contributions and you grant
+# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+# royalty-free, perpetual, license to use, copy, create derivative
+# works based on those contributions, and sublicense and distribute
+# those contributions and any derivatives thereof.
+#
+# END BPS TAGGED BLOCK }}}
+$m->comp(   '/Admin/Elements/Header', Title => $title   
+); #line 48 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->print( '
+' );
+#line 49 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->comp(   '/Elements/Tabs'  
+); #line 49 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->print( '
+' );
+#line 50 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->comp(   '/Elements/ListActions', actions => \@results   
+); #line 50 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->print( '
+
+
+
+<form action="' );
+#line 54 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } (RT->Config->Get('WebPath'))) );
+#line 54 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->print( '/Admin/Queues/Modify.html" name="ModifyQueue" method="post" enctype="multipart/form-data">
+<input type="hidden" class="hidden" name="id" value="' );
+#line 55 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $Create? 'new': $QueueObj->Id )) );
+#line 55 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->print( '" />
+
+<table>
+<tr><td align="right">' );
+#line 58 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->comp( { content => sub {
+#line 58 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->print( 'Queue Name' );
+#line 58 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+} }, '/l'
+ );
+#line 58 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->print( ':</td><td colspan="3">
+' );
+#line 59 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+ if ($InternalQueue) {
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $QueueObj->Name )) );
+#line 60 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->print( '
+' );
+#line 61 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+ } else {
+$m->print( '<input name="Name" value="' );
+#line 62 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $Create ? "" : $QueueObj->Name || $Name )) );
+#line 62 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->print( '" />
+' );
+#line 63 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+ }
+$m->print( '</td></tr>
+
+<tr><td align="right">' );
+#line 66 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->comp( { content => sub {
+#line 66 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->print( 'Description' );
+#line 66 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+} }, '/l'
+ );
+#line 66 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->print( ':</td>
+<td colspan="3"><input name="Description" value="' );
+#line 67 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $Create ? "" : $QueueObj->Description || $Description || '' )) );
+#line 67 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->print( '" size="60" /></td>
+</tr>
+
+<tr><td align="right">' );
+#line 70 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->comp( { content => sub {
+#line 70 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->print( 'Lifecycle' );
+#line 70 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+} }, '/l'
+ );
+#line 70 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->print( ':</td><td colspan="3">
+' );
+#line 71 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+ if ($InternalQueue) {
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $QueueObj->Lifecycle )) );
+#line 72 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->print( '
+' );
+#line 73 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+ } else {
+$m->comp(   '/Widgets/Form/Select:InputOnly',
+    Name         => 'Lifecycle',
+    Values       => [ sort { loc($a) cmp loc($b) } RT::Lifecycle->List ],
+    CurrentValue => $Create ? "default" : $QueueObj->Lifecycle || $ARGS{'Lifecycle'},
+    Default      => 0,
+  
+); #line 79 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->print( '
+' );
+#line 80 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+ }
+$m->print( '</td></tr>
+
+<tr><td align="right">' );
+#line 83 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->comp( { content => sub {
+#line 83 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->print( 'Subject Tag' );
+#line 83 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+} }, '/l'
+ );
+#line 83 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->print( ':</td>
+<td colspan="3"><input name="SubjectTag" value="' );
+#line 84 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $ARGS{'SubjectTag'} || ($Create ? "" : $QueueObj->SubjectTag || '' ) )) );
+#line 84 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->print( '" size="60" /></td>
+</tr>
+
+<tr><td align="right">' );
+#line 87 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->comp( { content => sub {
+#line 87 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->print( 'Reply Address' );
+#line 87 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+} }, '/l'
+ );
+#line 87 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->print( ':</td>
+<td><input name="CorrespondAddress" value="' );
+#line 88 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $Create ? "" : $QueueObj->CorrespondAddress || $CorrespondAddress || '' )) );
+#line 88 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->print( '" />
+<br /><span><em>' );
+#line 89 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->comp( { content => sub {
+#line 89 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->print( '(If left blank, will default to [_1])' );
+#line 89 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+} }, '/l', RT->Config->Get('CorrespondAddress')
+ );
+#line 89 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->print( '</em></span></td>
+<td align="right">' );
+#line 90 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->comp( { content => sub {
+#line 90 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->print( 'Comment Address' );
+#line 90 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+} }, '/l'
+ );
+#line 90 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->print( ':</td>
+<td><input name="CommentAddress" value="' );
+#line 91 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $Create ? "" : $QueueObj->CommentAddress || $CommentAddress || '' )) );
+#line 91 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->print( '" />
+<br /><span><em>' );
+#line 92 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->comp( { content => sub {
+#line 92 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->print( '(If left blank, will default to [_1])' );
+#line 92 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+} }, '/l', RT->Config->Get('CommentAddress')
+ );
+#line 92 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->print( '</em></span></td>
+</tr>
+
+<tr><td align="right">' );
+#line 95 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->comp( { content => sub {
+#line 95 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->print( 'Priority starts at' );
+#line 95 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+} }, '/l'
+ );
+#line 95 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->print( ':</td>
+<td>' );
+#line 96 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->comp(   '/Elements/SelectPriority',
+    Name => "InitialPriority",
+    Default => $Create? 0: $QueueObj->InitialPriority || $InitialPriority,
+  
+); #line 99 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->print( '</td>
+<td align="right">' );
+#line 100 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->comp( { content => sub {
+#line 100 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->print( 'Over time, priority moves toward' );
+#line 100 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+} }, '/l'
+ );
+#line 100 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->print( ':</td>
+<td>' );
+#line 101 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->comp(   '/Elements/SelectPriority',
+    Name => "FinalPriority",
+    Default => $Create? 0: $QueueObj->FinalPriority || $FinalPriority,
+  
+); #line 104 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->print( '<br /><span><em>' );
+#line 104 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->comp( { content => sub {
+#line 104 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->print( 'requires running rt-crontool' );
+#line 104 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+} }, '/l'
+ );
+#line 104 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->print( '</em></span></td>
+</tr>
+
+<tr><td align="right">' );
+#line 107 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->comp( { content => sub {
+#line 107 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->print( 'Requests should be due in' );
+#line 107 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+} }, '/l'
+ );
+#line 107 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->print( ':</td>
+<td colspan="3"><input name="DefaultDueIn" value="' );
+#line 108 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( ($Create) ? "" : $QueueObj->DefaultDueIn || $DefaultDueIn || "" )) );
+#line 108 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->print( '" /> ' );
+#line 108 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->comp( { content => sub {
+#line 108 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->print( 'days' );
+#line 108 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+} }, '/l'
+ );
+#line 108 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->print( '.</td>
+</tr>
+
+' );
+#line 111 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+ my $CFs = $QueueObj->CustomFields;
+ while (my $CF = $CFs->Next) {
+$m->print( '<tr valign="top"><td align="right">
+' );
+#line 114 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $CF->Name )) );
+#line 114 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->print( ':
+</td><td>
+' );
+#line 116 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->comp(   '/Elements/EditCustomField', CustomField => $CF,
+                              Object => $QueueObj,   
+); #line 117 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->print( '
+</td></tr>
+' );
+#line 119 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+ }
+$m->print( '
+' );
+#line 121 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+ if ( RT->Config->Get('Crypt')->{'Enable'} ) {
+$m->print( '<tr><td align="right"><input type="checkbox" class="checkbox" id="Sign" name="Sign" value="1" ' );
+#line 122 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->print(  $QueueObj->Sign? 'checked="checked"': '' );
+#line 122 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->print( ' /></td>
+<td><label for="Sign">' );
+#line 123 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->comp( { content => sub {
+#line 123 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->print( 'Sign by default' );
+#line 123 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+} }, '/l'
+ );
+#line 123 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->print( '</label></td>
+<td align="right"><input type="checkbox" class="checkbox" id="Encrypt" name="Encrypt" value="1" ' );
+#line 124 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->print(  $QueueObj->Encrypt? 'checked="checked"': '' );
+#line 124 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->print( ' /></td>
+<td><label for="Encrypt">' );
+#line 125 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->comp( { content => sub {
+#line 125 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->print( 'Encrypt by default' );
+#line 125 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+} }, '/l'
+ );
+#line 125 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->print( '</label></td>
+</tr>
+<tr><td align="right"><input type="checkbox" class="checkbox" id="SignAuto" name="SignAuto" value="1" ' );
+#line 127 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->print(  $QueueObj->SignAuto? 'checked="checked"': '' );
+#line 127 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->print( ' /></td>
+<td colspan="3"><label for="SignAuto">' );
+#line 128 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->comp( { content => sub {
+#line 128 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->print( 'Sign all auto-generated mail.  [_1]Caution[_2]: Enabling this option alters the signature from providing [_3]authentication[_4] to providing [_3]integrity[_4].' );
+#line 128 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+} }, '/l_unsafe', "<b>","</b>","<i>","</i>"
+ );
+#line 128 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->print( '</label></td></tr>
+' );
+#line 129 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+ }
+$m->print( '
+' );
+#line 131 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+ unless ($InternalQueue) {
+$m->print( '<tr><td align="right"><input type="checkbox" class="checkbox" id="Enabled" name="Enabled" value="1" ' );
+#line 132 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->print( $EnabledChecked );
+#line 132 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->print( ' /></td>
+<td colspan="3"><label for="Enabled">' );
+#line 133 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->comp( { content => sub {
+#line 133 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->print( 'Enabled (Unchecking this box disables this queue)' );
+#line 133 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+} }, '/l'
+ );
+#line 133 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->print( '</label><br />
+<input type="hidden" class="hidden" name="SetEnabled" value="1" />
+' );
+#line 135 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+ $m->callback( %ARGS, QueueObj => $QueueObj, results => \@results );
+$m->print( '</td></tr>
+' );
+#line 137 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+ }
+$m->print( '
+' );
+#line 139 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+ if ( RT->Config->Get('Crypt')->{'Enable'} ) {
+$m->print( '<tr><td colspan="4">
+<input type="hidden" class="hidden" name="SetCrypt" value="1" />
+' );
+#line 142 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+ if ( my $email = $QueueObj->CorrespondAddress || RT->Config->Get('CorrespondAddress') ) {
+$m->comp(   '/Admin/Elements/ShowKeyInfo', Type => 'private', EmailAddress => $email   
+); #line 143 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->print( '
+' );
+#line 144 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+ } else {
+$m->comp( { content => sub {
+#line 145 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->print( '
+<i>' );
+#line 146 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->comp( { content => sub {
+#line 146 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->print( 'You have enabled encryption support but have not set a correspondence address for this queue.' );
+#line 146 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+} }, '/l'
+ );
+#line 146 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->print( '
+' );
+#line 147 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->comp( { content => sub {
+#line 147 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->print( 'You must set a correspondence address for this queue in order to configure a private key.' );
+#line 147 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+} }, '/l'
+ );
+#line 147 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->print( '</i>
+' );
+#line 148 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+} }, '/Widgets/TitleBox', title => loc( 'Private keys')
+ );
+#line 148 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->print( '
+' );
+#line 149 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+ }
+$m->print( '</td></tr>
+<tr><td colspan="4">
+' );
+#line 152 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+ if ( my $email = $QueueObj->CommentAddress || RT->Config->Get('CommentAddress') ) {
+$m->comp(   '/Admin/Elements/ShowKeyInfo', Type => 'private', EmailAddress => $email   
+); #line 153 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->print( '
+' );
+#line 154 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+ } else {
+$m->comp( { content => sub {
+#line 155 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->print( '
+<i>' );
+#line 156 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->comp( { content => sub {
+#line 156 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->print( 'You have enabled encryption support but have not set a comment address for this queue.' );
+#line 156 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+} }, '/l'
+ );
+#line 156 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->print( '
+' );
+#line 157 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->comp( { content => sub {
+#line 157 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->print( 'You must set a comment address for this queue in order to configure a private key.' );
+#line 157 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+} }, '/l'
+ );
+#line 157 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->print( '</i>
+' );
+#line 158 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+} }, '/Widgets/TitleBox', title => loc( 'Private keys')
+ );
+#line 158 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->print( '
+' );
+#line 159 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+}
+$m->print( '</td></tr>
+' );
+#line 161 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+ }
+$m->print( '
+</table>
+' );
+#line 164 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+ if ( $Create ) {
+$m->comp(   '/Elements/Submit', Label => loc('Create')   
+); #line 165 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->print( '
+' );
+#line 166 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+ } else {
+$m->comp(   '/Elements/Submit', Label => loc('Save Changes')   
+); #line 167 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->print( '
+' );
+#line 168 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+ }
+$m->print( '</form>
+
+
+
+' );
+#line 253 "/var/www/localhost/htdocs/rt/Admin/Queues/Modify.html"
+$m->print( '
+
+' );
+;return;
+},
+'declared_args' => {
+  '$CommentAddress' => { default => ' undef' },
+  '$CorrespondAddress' => { default => ' undef' },
+  '$Create' => { default => ' undef' },
+  '$DefaultDueIn' => { default => ' undef' },
+  '$Description' => { default => ' undef' },
+  '$Enabled' => { default => ' undef' },
+  '$FinalPriority' => { default => ' undef' },
+  '$InitialPriority' => { default => ' undef' },
+  '$Name' => { default => ' undef' },
+  '$SetCrypt' => { default => ' undef' },
+  '$SetEnabled' => { default => ' undef' },
+  '$id' => { default => ' undef' },
+  '$result' => { default => ' undef' }
+},
+'load_time' => 1434740264,
+
+)
+;

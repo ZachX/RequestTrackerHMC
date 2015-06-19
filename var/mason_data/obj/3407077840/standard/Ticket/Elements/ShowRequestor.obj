@@ -1,0 +1,385 @@
+package HTML::Mason::Commands;
+use strict;
+use vars qw($m $DECODED_ARGS $r %session);
+HTML::Mason::Component::FileBased->new(
+'code' => sub {
+HTML::Mason::Exception::Params->throw
+    ( error =>
+      "Odd number of parameters passed to component expecting name/value pairs"
+    ) if @_ % 2;
+my %ARGS = @_;
+my ( $Ticket, $DefaultTicketsTab, $ShowComments, $ShowTickets, $ShowGroups, $Title );
+{
+    my %pos;
+    for ( my $x = 0; $x < @_; $x += 2 )
+    {
+        $pos{ $_[$x] } = $x + 1;
+    }
+#line 181 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowRequestor"
+     $Ticket = exists $pos{'Ticket'} ? $_[ $pos{'Ticket'} ] : undef;
+#line 182 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowRequestor"
+     $DefaultTicketsTab = exists $pos{'DefaultTicketsTab'} ? $_[ $pos{'DefaultTicketsTab'} ] :  undef;
+#line 183 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowRequestor"
+     $ShowComments = exists $pos{'ShowComments'} ? $_[ $pos{'ShowComments'} ] :  1;
+#line 184 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowRequestor"
+     $ShowTickets = exists $pos{'ShowTickets'} ? $_[ $pos{'ShowTickets'} ] :  1;
+#line 185 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowRequestor"
+     $ShowGroups = exists $pos{'ShowGroups'} ? $_[ $pos{'ShowGroups'} ] :  1;
+#line 186 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowRequestor"
+     $Title = exists $pos{'Title'} ? $_[ $pos{'Title'} ] :  'More about [_1]';
+}
+$m->debug_hook( $m->current_comp->path ) if ( HTML::Mason::Compiler::IN_PERL_DB() );
+
+#line 140 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowRequestor"
+
+my $show_privileged = RT->Config->Get('ShowMoreAboutPrivilegedUsers');
+
+my $people = $Ticket->Requestors->UserMembersObj;
+$people->LimitToUnprivileged unless $show_privileged;
+
+my $count = $people->Count;
+return unless $count;
+
+my $has_right_adminusers = $session{'CurrentUser'}->HasRight(
+    Object => $RT::System, Right => 'AdminUsers'
+);
+$has_right_adminusers &&= $session{'CurrentUser'}->HasRight(
+    Object => $RT::System, Right => 'ShowConfigTab'
+);
+
+# Ticket list tabs
+my $selected = -1;
+$DefaultTicketsTab ||= RT->Config->Get('MoreAboutRequestorTicketList', $session{CurrentUser}) || 'Active';
+my $status_link_text = {Active   => loc('Active Tickets'),
+                        Inactive => loc('Inactive Tickets'),
+                        All      => loc('All Tickets')};
+my $status_order = [qw/Active Inactive All/];
+$m->callback( CallbackName => 'AddStatus', status_link_text => \$status_link_text, status_order => \$status_order );
+
+$ShowTickets = 0 if $DefaultTicketsTab eq 'None';
+
+my $TicketTemplate;
+if ($ShowTickets) {
+    for (0 .. (@$status_order - 1)) {
+        $selected = $_ && last
+            if $status_order->[$_] eq $DefaultTicketsTab;
+    }
+
+    $TicketTemplate = "ShowRequestorTickets$DefaultTicketsTab";
+    $TicketTemplate = "ShowRequestorTicketsActive"
+        unless RT::Interface::Web->ComponentPathIsSafe($TicketTemplate)
+            and $m->comp_exists($TicketTemplate);
+}
+#line 1 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowRequestor"
+# BEGIN BPS TAGGED BLOCK {{{
+#
+# COPYRIGHT:
+#
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
+#                                          <sales@bestpractical.com>
+#
+# (Except where explicitly superseded by other copyright notices)
+#
+#
+# LICENSE:
+#
+# This work is made available to you under the terms of Version 2 of
+# the GNU General Public License. A copy of that license should have
+# been provided with this software, but in any event can be snarfed
+# from www.gnu.org.
+#
+# This work is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
+#
+#
+# CONTRIBUTION SUBMISSION POLICY:
+#
+# (The following paragraph is not intended to limit the rights granted
+# to you to modify and distribute this software under the terms of
+# the GNU General Public License and is only of importance to you if
+# you choose to contribute your changes and enhancements to the
+# community by submitting them to Best Practical Solutions, LLC.)
+#
+# By intentionally submitting any modifications, corrections or
+# derivatives to this work, or any other work intended for use with
+# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+# you are the copyright holder for those contributions and you grant
+# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+# royalty-free, perpetual, license to use, copy, create derivative
+# works based on those contributions, and sublicense and distribute
+# those contributions and any derivatives thereof.
+#
+# END BPS TAGGED BLOCK }}}
+ if ($ShowTickets) {
+$m->print( '<script type="text/javascript">
+    jQuery(function() {
+        jQuery(".more-about-requestor-tickets").tabs({
+            cache: true,
+            collapsible: true,
+            selected: ' );
+#line 54 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowRequestor"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $selected )) );
+#line 54 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowRequestor"
+$m->print( '
+        });
+    });
+</script>
+' );
+#line 58 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowRequestor"
+ }
+$m->print( '
+' );
+#line 60 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowRequestor"
+$m->comp( { content => sub {
+#line 63 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowRequestor"
+$m->print( '
+
+<div id="requestor-accordion" class="user-accordion">
+
+' );
+#line 67 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowRequestor"
+ while ( my $requestor = $people->Next ) {
+$m->print( '<h3><a href="#">' );
+#line 68 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowRequestor"
+$m->comp(   '/Elements/ShowUser', User => $requestor, Link => 0   
+); #line 68 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowRequestor"
+$m->print( '</a>
+    <a class="user-summary" href="' );
+#line 69 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowRequestor"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } (RT->Config->Get('WebPath'))) );
+#line 69 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowRequestor"
+$m->print( '/User/Summary.html?id=' );
+#line 69 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowRequestor"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($requestor->Id)) );
+#line 69 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowRequestor"
+$m->print( '">User Summary</a></h3>
+  <div class="details">
+
+' );
+#line 72 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowRequestor"
+# Additional information about this user.  Empty by default.
+ $m->callback( requestor => $requestor, %ARGS, CallbackName => 'AboutThisUser' );
+$m->comp(   'ShowRequestorExtraInfo', Requestor => $requestor   
+); #line 74 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowRequestor"
+$m->print( '
+
+' );
+#line 76 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowRequestor"
+ if ( $ShowComments ) {
+$m->print( '<div class="comments-about-user">
+  <span class="label">' );
+#line 78 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowRequestor"
+$m->comp( { content => sub {
+#line 78 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowRequestor"
+$m->print( 'Comments about this user' );
+#line 78 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowRequestor"
+} }, '/l'
+ );
+#line 78 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowRequestor"
+$m->print( ':</span>
+  <span class="value">' );
+#line 79 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowRequestor"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( ($requestor->Comments || loc("No comment entered about this user")) )) );
+#line 79 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowRequestor"
+$m->print( '</span>
+</div>
+' );
+#line 81 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowRequestor"
+ }
+$m->print( '
+' );
+#line 83 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowRequestor"
+ $m->callback( requestor => $requestor, %ARGS, CallbackName => 'AfterComments' );
+$m->print( '
+' );
+#line 85 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowRequestor"
+ if ( $ShowTickets ) {
+$m->print( '<div class="more-about-requestor-tickets ui-tabs" id="more-about-requestor-tickets-' );
+#line 86 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowRequestor"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($requestor->Id)) );
+#line 86 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowRequestor"
+$m->print( '">
+  <ul>
+' );
+#line 88 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowRequestor"
+ my $index = 1;
+ for my $status ( @$status_order ) {
+$m->print( '    <li>
+' );
+#line 91 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowRequestor"
+ if ( $status eq $DefaultTicketsTab ) {
+$m->print( '      <a href="#requestor-' );
+#line 92 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowRequestor"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($requestor->Id)) );
+#line 92 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowRequestor"
+$m->print( '-ticket-tab-default">' );
+#line 93 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowRequestor"
+ } else {
+     my $url = RT->Config->Get('WebPath').'/Helpers/Toggle/ShowRequestor?'.
+     $m->comp('/Elements/QueryString', Requestor => $requestor->Id , Status => $status);
+$m->print( '      <a href="' );
+#line 96 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowRequestor"
+$m->print(  $url );
+#line 96 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowRequestor"
+$m->print( '" title="requestor-' );
+#line 96 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowRequestor"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($requestor->Id)) );
+#line 96 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowRequestor"
+$m->print( '-ticket-tab-' );
+#line 96 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowRequestor"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $index++ )) );
+#line 96 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowRequestor"
+$m->print( '">' );
+#line 97 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowRequestor"
+ }
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $status_link_text->{$status} )) );
+#line 98 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowRequestor"
+$m->print( '</a>
+    </li>
+' );
+#line 100 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowRequestor"
+ }
+$m->print( '  </ul>
+' );
+#line 102 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowRequestor"
+ $index = 1;
+ for my $status (@$status_order) {
+ if ( $status eq $DefaultTicketsTab ) {
+$m->print( '  <div id="requestor-' );
+#line 105 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowRequestor"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($requestor->Id)) );
+#line 105 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowRequestor"
+$m->print( '-ticket-tab-default">
+    ' );
+#line 106 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowRequestor"
+$m->comp(   $TicketTemplate, Requestor => $requestor   
+); #line 106 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowRequestor"
+$m->print( '
+' );
+#line 107 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowRequestor"
+ } else {
+$m->print( '  <div id="requestor-' );
+#line 108 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowRequestor"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($requestor->Id)) );
+#line 108 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowRequestor"
+$m->print( '-ticket-tab-' );
+#line 108 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowRequestor"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $index++ )) );
+#line 108 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowRequestor"
+$m->print( '" class="hidden">
+    <span class="label">' );
+#line 109 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowRequestor"
+$m->comp( { content => sub {
+#line 109 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowRequestor"
+$m->print( 'Loading...' );
+#line 109 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowRequestor"
+} }, '/l'
+ );
+#line 109 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowRequestor"
+$m->print( '</span>
+' );
+#line 110 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowRequestor"
+ }
+$m->print( '  </div>
+' );
+#line 112 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowRequestor"
+ }
+$m->print( '</div>
+' );
+#line 114 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowRequestor"
+ }
+$m->print( '
+' );
+#line 116 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowRequestor"
+ my $grouplimit = RT->Config->Get('MoreAboutRequestorGroupsLimit');
+ if ( $ShowGroups and defined $grouplimit ) {
+$m->print( '<div class="more-about-user-groups">
+  <span class="label">
+    ' );
+#line 120 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowRequestor"
+$m->comp( { content => sub {
+#line 120 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowRequestor"
+$m->print( 'Groups this user belongs to' );
+#line 120 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowRequestor"
+} }, '/l'
+ );
+#line 120 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowRequestor"
+$m->print( '
+    
+' );
+#line 122 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowRequestor"
+ if ( $session{CurrentUser}->HasRight( Right => 'AdminUsers', Object => $RT::System ) &&
+      $session{CurrentUser}->HasRight( Right => 'ShowConfigTab', Object =>$RT::System ) ) {
+$m->print( '  [<a href=' );
+#line 124 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowRequestor"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( RT->Config->Get('WebPath') . '/Admin/Users/Memberships.html?id=' . $requestor->id )) );
+#line 124 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowRequestor"
+$m->print( ' >' );
+#line 124 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowRequestor"
+$m->comp( { content => sub {
+#line 124 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowRequestor"
+$m->print( 'Edit' );
+#line 124 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowRequestor"
+} }, '/l'
+ );
+#line 124 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowRequestor"
+$m->print( '</a>]
+' );
+#line 125 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowRequestor"
+ }
+$m->print( '  </span>
+  <span class="value">' );
+#line 127 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowRequestor"
+$m->comp(   '/Elements/ShowMemberships', UserObj => $requestor, Limit => $grouplimit   
+); #line 127 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowRequestor"
+$m->print( '</span>
+</div>
+' );
+#line 129 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowRequestor"
+ }
+$m->print( '
+' );
+#line 131 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowRequestor"
+# end of individual requestor details <div>
+$m->print( '  </div>
+' );
+#line 133 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowRequestor"
+ }
+# end of requestors loop
+$m->print( '
+' );
+#line 136 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowRequestor"
+ $m->callback( %ARGS, CallbackName => 'AfterRequestors' );
+$m->print( '
+</div>
+' );
+#line 139 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowRequestor"
+} }, '/Widgets/TitleBox',
+    title_raw => loc("More about the requestors"),
+    class => 'ticket-info-requestor'
+ );
+#line 139 "/var/www/localhost/htdocs/rt/Ticket/Elements/ShowRequestor"
+$m->print( '
+' );
+;return;
+},
+'declared_args' => {
+  '$DefaultTicketsTab' => { default => ' undef' },
+  '$ShowComments' => { default => ' 1' },
+  '$ShowGroups' => { default => ' 1' },
+  '$ShowTickets' => { default => ' 1' },
+  '$Ticket' => { default => undef },
+  '$Title' => { default => ' \'More about [_1]\'' }
+},
+'load_time' => 1432969539,
+
+)
+;

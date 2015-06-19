@@ -1,0 +1,181 @@
+package HTML::Mason::Commands;
+use strict;
+use vars qw($m $DECODED_ARGS $r %session);
+HTML::Mason::Component::FileBased->new(
+'code' => sub {
+HTML::Mason::Exception::Params->throw
+    ( error =>
+      "Odd number of parameters passed to component expecting name/value pairs"
+    ) if @_ % 2;
+my ( $SavedSearchId, $SavedChartSearchId, $Query, $Format, $Rows, $OrderBy, $Order, @actions );
+{
+    my %pos;
+    for ( my $x = 0; $x < @_; $x += 2 )
+    {
+        $pos{ $_[$x] } = $x + 1;
+    }
+#line 80 "/var/www/localhost/htdocs/rt/Search/Edit.html"
+     $SavedSearchId = exists $pos{'SavedSearchId'} ? $_[ $pos{'SavedSearchId'} ] :  'new';
+#line 81 "/var/www/localhost/htdocs/rt/Search/Edit.html"
+     $SavedChartSearchId = exists $pos{'SavedChartSearchId'} ? $_[ $pos{'SavedChartSearchId'} ] :  'new';
+#line 82 "/var/www/localhost/htdocs/rt/Search/Edit.html"
+     $Query = exists $pos{'Query'} ? $_[ $pos{'Query'} ] :  '';
+#line 83 "/var/www/localhost/htdocs/rt/Search/Edit.html"
+     $Format = exists $pos{'Format'} ? $_[ $pos{'Format'} ] :  '';
+#line 84 "/var/www/localhost/htdocs/rt/Search/Edit.html"
+     $Rows = exists $pos{'Rows'} ? $_[ $pos{'Rows'} ] :  '50';
+#line 85 "/var/www/localhost/htdocs/rt/Search/Edit.html"
+     $OrderBy = exists $pos{'OrderBy'} ? $_[ $pos{'OrderBy'} ] :  'id';
+#line 86 "/var/www/localhost/htdocs/rt/Search/Edit.html"
+     $Order = exists $pos{'Order'} ? $_[ $pos{'Order'} ] :  'ASC';
+#line 88 "/var/www/localhost/htdocs/rt/Search/Edit.html"
+     @actions = exists $pos{'actions'} ? HTML::Mason::Tools::coerce_to_array( $_[ $pos{'actions'} ], '@actions') :  ();
+}
+$m->debug_hook( $m->current_comp->path ) if ( HTML::Mason::Compiler::IN_PERL_DB() );
+
+#line 65 "/var/www/localhost/htdocs/rt/Search/Edit.html"
+
+my $title = loc("Edit Query");
+$Format = $m->comp('/Elements/ScrubHTML', Content => $Format);
+my $QueryString = $m->comp('/Elements/QueryString',
+                           Query   => $Query,
+                           Format  => $Format,
+                           RowsPerPage    => $Rows,
+                           OrderBy => $OrderBy,
+                           Order   => $Order,
+                          );
+
+#line 1 "/var/www/localhost/htdocs/rt/Search/Edit.html"
+# BEGIN BPS TAGGED BLOCK {{{
+#
+# COPYRIGHT:
+#
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
+#                                          <sales@bestpractical.com>
+#
+# (Except where explicitly superseded by other copyright notices)
+#
+#
+# LICENSE:
+#
+# This work is made available to you under the terms of Version 2 of
+# the GNU General Public License. A copy of that license should have
+# been provided with this software, but in any event can be snarfed
+# from www.gnu.org.
+#
+# This work is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
+#
+#
+# CONTRIBUTION SUBMISSION POLICY:
+#
+# (The following paragraph is not intended to limit the rights granted
+# to you to modify and distribute this software under the terms of
+# the GNU General Public License and is only of importance to you if
+# you choose to contribute your changes and enhancements to the
+# community by submitting them to Best Practical Solutions, LLC.)
+#
+# By intentionally submitting any modifications, corrections or
+# derivatives to this work, or any other work intended for use with
+# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+# you are the copyright holder for those contributions and you grant
+# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+# royalty-free, perpetual, license to use, copy, create derivative
+# works based on those contributions, and sublicense and distribute
+# those contributions and any derivatives thereof.
+#
+# END BPS TAGGED BLOCK }}}
+$m->comp(   '/Elements/Header', Title => $title  
+); #line 48 "/var/www/localhost/htdocs/rt/Search/Edit.html"
+$m->print( '
+' );
+#line 49 "/var/www/localhost/htdocs/rt/Search/Edit.html"
+$m->comp(   '/Elements/Tabs'  
+); #line 49 "/var/www/localhost/htdocs/rt/Search/Edit.html"
+$m->print( '
+
+' );
+#line 51 "/var/www/localhost/htdocs/rt/Search/Edit.html"
+$m->comp(   'Elements/NewListActions', actions => \@actions   
+); #line 51 "/var/www/localhost/htdocs/rt/Search/Edit.html"
+$m->print( '
+
+<form method="post" action="Build.html" id="BuildQueryAdvanced" name="BuildQueryAdvanced">
+<input type="hidden" class="hidden" name="SavedSearchId" value="' );
+#line 54 "/var/www/localhost/htdocs/rt/Search/Edit.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $SavedSearchId )) );
+#line 54 "/var/www/localhost/htdocs/rt/Search/Edit.html"
+$m->print( '" />
+<input type="hidden" class="hidden" name="SavedChartSearchId" value="' );
+#line 55 "/var/www/localhost/htdocs/rt/Search/Edit.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $SavedChartSearchId )) );
+#line 55 "/var/www/localhost/htdocs/rt/Search/Edit.html"
+$m->print( '" />
+' );
+#line 56 "/var/www/localhost/htdocs/rt/Search/Edit.html"
+$m->comp( { content => sub {
+#line 56 "/var/www/localhost/htdocs/rt/Search/Edit.html"
+$m->print( '
+<textarea name="Query" rows="8" cols="72">' );
+#line 57 "/var/www/localhost/htdocs/rt/Search/Edit.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $Query )) );
+#line 57 "/var/www/localhost/htdocs/rt/Search/Edit.html"
+$m->print( '</textarea>
+' );
+#line 58 "/var/www/localhost/htdocs/rt/Search/Edit.html"
+} }, '/Widgets/TitleBox', title => loc('Query'),
+ );
+#line 58 "/var/www/localhost/htdocs/rt/Search/Edit.html"
+$m->print( '
+' );
+#line 59 "/var/www/localhost/htdocs/rt/Search/Edit.html"
+$m->comp( { content => sub {
+#line 59 "/var/www/localhost/htdocs/rt/Search/Edit.html"
+$m->print( '
+<textarea name="Format" rows="8" cols="72">' );
+#line 60 "/var/www/localhost/htdocs/rt/Search/Edit.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $Format )) );
+#line 60 "/var/www/localhost/htdocs/rt/Search/Edit.html"
+$m->print( '</textarea>
+' );
+#line 61 "/var/www/localhost/htdocs/rt/Search/Edit.html"
+} }, '/Widgets/TitleBox', title => loc('Format'),
+ );
+#line 61 "/var/www/localhost/htdocs/rt/Search/Edit.html"
+$m->print( '
+' );
+#line 62 "/var/www/localhost/htdocs/rt/Search/Edit.html"
+$m->comp(   '/Elements/Submit', Label => loc("Apply"), Reset => 1, Caption => loc("Apply your changes")  
+); #line 62 "/var/www/localhost/htdocs/rt/Search/Edit.html"
+$m->print( '
+</form>
+
+' );
+#line 77 "/var/www/localhost/htdocs/rt/Search/Edit.html"
+$m->print( '
+
+' );
+;return;
+},
+'declared_args' => {
+  '$Format' => { default => ' \'\'' },
+  '$Order' => { default => ' \'ASC\'' },
+  '$OrderBy' => { default => ' \'id\'' },
+  '$Query' => { default => ' \'\'' },
+  '$Rows' => { default => ' \'50\'' },
+  '$SavedChartSearchId' => { default => ' \'new\'' },
+  '$SavedSearchId' => { default => ' \'new\'' },
+  '@actions' => { default => ' ()' }
+},
+'load_time' => 1434752680,
+
+)
+;

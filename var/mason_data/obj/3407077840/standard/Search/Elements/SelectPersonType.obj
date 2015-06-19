@@ -1,0 +1,171 @@
+package HTML::Mason::Commands;
+use strict;
+use vars qw($m $DECODED_ARGS $r %session);
+HTML::Mason::Component::FileBased->new(
+'code' => sub {
+HTML::Mason::Exception::Params->throw
+    ( error =>
+      "Odd number of parameters passed to component expecting name/value pairs"
+    ) if @_ % 2;
+my ( $AllowNull, $Suffix, $Default, $Scope, $Name );
+{
+    my %pos;
+    for ( my $x = 0; $x < @_; $x += 2 )
+    {
+        $pos{ $_[$x] } = $x + 1;
+    }
+#line 79 "/var/www/localhost/htdocs/rt/Search/Elements/SelectPersonType"
+     $AllowNull = exists $pos{'AllowNull'} ? $_[ $pos{'AllowNull'} ] :  1;
+#line 80 "/var/www/localhost/htdocs/rt/Search/Elements/SelectPersonType"
+     $Suffix = exists $pos{'Suffix'} ? $_[ $pos{'Suffix'} ] :  '';
+#line 81 "/var/www/localhost/htdocs/rt/Search/Elements/SelectPersonType"
+     $Default = exists $pos{'Default'} ? $_[ $pos{'Default'} ] : undef;
+#line 82 "/var/www/localhost/htdocs/rt/Search/Elements/SelectPersonType"
+     $Scope = exists $pos{'Scope'} ? $_[ $pos{'Scope'} ] :  'ticket';
+#line 83 "/var/www/localhost/htdocs/rt/Search/Elements/SelectPersonType"
+     $Name = exists $pos{'Name'} ? $_[ $pos{'Name'} ] :  'WatcherType';
+}
+$m->debug_hook( $m->current_comp->path ) if ( HTML::Mason::Compiler::IN_PERL_DB() );
+
+#line 63 "/var/www/localhost/htdocs/rt/Search/Elements/SelectPersonType"
+
+my @types;
+if ($Scope =~ /queue/) {
+   @types = qw(Cc AdminCc);
+}
+elsif ($Suffix eq 'Group') {
+   @types = qw(Owner Requestor Cc AdminCc Watcher);
+}
+else { 
+   @types = qw(Requestor Cc AdminCc Watcher Owner QueueCc QueueAdminCc QueueWatcher);
+}
+
+my @subtypes = @{ $RT::Tickets::SEARCHABLE_SUBFIELDS{'User'} };
+
+#line 1 "/var/www/localhost/htdocs/rt/Search/Elements/SelectPersonType"
+# BEGIN BPS TAGGED BLOCK {{{
+#
+# COPYRIGHT:
+#
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
+#                                          <sales@bestpractical.com>
+#
+# (Except where explicitly superseded by other copyright notices)
+#
+#
+# LICENSE:
+#
+# This work is made available to you under the terms of Version 2 of
+# the GNU General Public License. A copy of that license should have
+# been provided with this software, but in any event can be snarfed
+# from www.gnu.org.
+#
+# This work is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
+#
+#
+# CONTRIBUTION SUBMISSION POLICY:
+#
+# (The following paragraph is not intended to limit the rights granted
+# to you to modify and distribute this software under the terms of
+# the GNU General Public License and is only of importance to you if
+# you choose to contribute your changes and enhancements to the
+# community by submitting them to Best Practical Solutions, LLC.)
+#
+# By intentionally submitting any modifications, corrections or
+# derivatives to this work, or any other work intended for use with
+# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+# you are the copyright holder for those contributions and you grant
+# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+# royalty-free, perpetual, license to use, copy, create derivative
+# works based on those contributions, and sublicense and distribute
+# those contributions and any derivatives thereof.
+#
+# END BPS TAGGED BLOCK }}}
+$m->print( '<select id="' );
+#line 48 "/var/www/localhost/htdocs/rt/Search/Elements/SelectPersonType"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($Name)) );
+#line 48 "/var/www/localhost/htdocs/rt/Search/Elements/SelectPersonType"
+$m->print( '" name="' );
+#line 48 "/var/www/localhost/htdocs/rt/Search/Elements/SelectPersonType"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($Name)) );
+#line 48 "/var/www/localhost/htdocs/rt/Search/Elements/SelectPersonType"
+$m->print( '">
+' );
+#line 49 "/var/www/localhost/htdocs/rt/Search/Elements/SelectPersonType"
+ if ($AllowNull) {
+$m->print( '<option value="">-</option>
+' );
+#line 51 "/var/www/localhost/htdocs/rt/Search/Elements/SelectPersonType"
+ }
+ for my $option (@types) {
+  if ($Suffix) {
+$m->print( '<option value="' );
+#line 54 "/var/www/localhost/htdocs/rt/Search/Elements/SelectPersonType"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $option )) );
+#line 54 "/var/www/localhost/htdocs/rt/Search/Elements/SelectPersonType"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $Suffix )) );
+#line 54 "/var/www/localhost/htdocs/rt/Search/Elements/SelectPersonType"
+$m->print( '"' );
+#line 54 "/var/www/localhost/htdocs/rt/Search/Elements/SelectPersonType"
+$m->print( $option eq $Default && qq[ selected="selected"] );
+#line 54 "/var/www/localhost/htdocs/rt/Search/Elements/SelectPersonType"
+$m->print( ' >' );
+#line 54 "/var/www/localhost/htdocs/rt/Search/Elements/SelectPersonType"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( loc($option) )) );
+#line 54 "/var/www/localhost/htdocs/rt/Search/Elements/SelectPersonType"
+$m->print( ' ' );
+#line 54 "/var/www/localhost/htdocs/rt/Search/Elements/SelectPersonType"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( loc('Group') )) );
+#line 54 "/var/www/localhost/htdocs/rt/Search/Elements/SelectPersonType"
+$m->print( '</option>
+' );
+#line 55 "/var/www/localhost/htdocs/rt/Search/Elements/SelectPersonType"
+   next;
+  }
+  foreach my $subtype (@subtypes) {
+$m->print( '<option value="' );
+#line 58 "/var/www/localhost/htdocs/rt/Search/Elements/SelectPersonType"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ("$option.$subtype")) );
+#line 58 "/var/www/localhost/htdocs/rt/Search/Elements/SelectPersonType"
+$m->print( '"' );
+#line 58 "/var/www/localhost/htdocs/rt/Search/Elements/SelectPersonType"
+$m->print( $option eq $Default && $subtype eq 'EmailAddress' && qq[ selected="selected"] );
+#line 58 "/var/www/localhost/htdocs/rt/Search/Elements/SelectPersonType"
+$m->print( ' >' );
+#line 58 "/var/www/localhost/htdocs/rt/Search/Elements/SelectPersonType"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( loc($option) )) );
+#line 58 "/var/www/localhost/htdocs/rt/Search/Elements/SelectPersonType"
+$m->print( ' ' );
+#line 58 "/var/www/localhost/htdocs/rt/Search/Elements/SelectPersonType"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( loc($subtype) )) );
+#line 58 "/var/www/localhost/htdocs/rt/Search/Elements/SelectPersonType"
+$m->print( '</option>
+' );
+#line 59 "/var/www/localhost/htdocs/rt/Search/Elements/SelectPersonType"
+  }
+ }
+$m->print( '</select>
+
+' );
+;return;
+},
+'declared_args' => {
+  '$AllowNull' => { default => ' 1' },
+  '$Default' => { default => undef },
+  '$Name' => { default => ' \'WatcherType\'' },
+  '$Scope' => { default => ' \'ticket\'' },
+  '$Suffix' => { default => ' \'\'' }
+},
+'load_time' => 1434746455,
+
+)
+;

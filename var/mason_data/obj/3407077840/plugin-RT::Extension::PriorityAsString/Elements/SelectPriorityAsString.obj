@@ -1,0 +1,95 @@
+package HTML::Mason::Commands;
+use strict;
+use vars qw($m $DECODED_ARGS $r %session);
+HTML::Mason::Component::FileBased->new(
+'code' => sub {
+HTML::Mason::Exception::Params->throw
+    ( error =>
+      "Odd number of parameters passed to component expecting name/value pairs"
+    ) if @_ % 2;
+my ( $Name, $Default, $Mapping );
+{
+    my %pos;
+    for ( my $x = 0; $x < @_; $x += 2 )
+    {
+        $pos{ $_[$x] } = $x + 1;
+    }
+#line 18 "/RT-Extension-PriorityAsString/html/Elements/SelectPriorityAsString"
+     $Name = exists $pos{'Name'} ? $_[ $pos{'Name'} ] :  'Priority';
+#line 19 "/RT-Extension-PriorityAsString/html/Elements/SelectPriorityAsString"
+     $Default = exists $pos{'Default'} ? $_[ $pos{'Default'} ] :  undef;
+#line 20 "/RT-Extension-PriorityAsString/html/Elements/SelectPriorityAsString"
+     $Mapping = exists $pos{'Mapping'} ? $_[ $pos{'Mapping'} ] :  undef;
+}
+$m->debug_hook( $m->current_comp->path ) if ( HTML::Mason::Compiler::IN_PERL_DB() );
+
+#line 22 "/RT-Extension-PriorityAsString/html/Elements/SelectPriorityAsString"
+
+
+my %map   = $Mapping ? %{ $Mapping } : RT->Config->Get('PriorityAsString');
+my @order;
+if (not $Mapping and RT->Config->Get('PriorityAsStringOrder')) {
+    @order = grep {exists $map{$_}} RT->Config->Get('PriorityAsStringOrder');
+} else {
+    @order = sort { $map{$a} <=> $map{$b} } keys %map;
+}
+
+my $default_label = '';
+if ( defined $Default && length $Default ) {
+    $default_label = RT::Ticket->_PriorityAsString( $Default, \%map ) || '';
+}
+#line 1 "/RT-Extension-PriorityAsString/html/Elements/SelectPriorityAsString"
+$m->print( '<select class="select-priority" name="' );
+#line 1 "/RT-Extension-PriorityAsString/html/Elements/SelectPriorityAsString"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $Name )) );
+#line 1 "/RT-Extension-PriorityAsString/html/Elements/SelectPriorityAsString"
+$m->print( '">
+' );
+#line 2 "/RT-Extension-PriorityAsString/html/Elements/SelectPriorityAsString"
+ unless ( defined $Default ) {
+$m->print( '<option value="">-</option>
+' );
+#line 4 "/RT-Extension-PriorityAsString/html/Elements/SelectPriorityAsString"
+ }
+
+foreach my $label ( @order ) {
+    my ($value, $selected);
+    if ( $label eq $default_label ) {
+        ($value, $selected) = ($Default, 'selected="selected"');
+    } else {
+        ($value, $selected) = ($map{ $label }, '');
+    }
+#line 14 "/RT-Extension-PriorityAsString/html/Elements/SelectPriorityAsString"
+$m->print( '<option class="' );
+#line 14 "/RT-Extension-PriorityAsString/html/Elements/SelectPriorityAsString"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( lc $label )) );
+#line 14 "/RT-Extension-PriorityAsString/html/Elements/SelectPriorityAsString"
+$m->print( '" value="' );
+#line 14 "/RT-Extension-PriorityAsString/html/Elements/SelectPriorityAsString"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $value )) );
+#line 14 "/RT-Extension-PriorityAsString/html/Elements/SelectPriorityAsString"
+$m->print( '" ' );
+#line 14 "/RT-Extension-PriorityAsString/html/Elements/SelectPriorityAsString"
+$m->print(  $selected );
+#line 14 "/RT-Extension-PriorityAsString/html/Elements/SelectPriorityAsString"
+$m->print( '>' );
+#line 14 "/RT-Extension-PriorityAsString/html/Elements/SelectPriorityAsString"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( loc($label) )) );
+#line 14 "/RT-Extension-PriorityAsString/html/Elements/SelectPriorityAsString"
+$m->print( '</option>
+' );
+#line 15 "/RT-Extension-PriorityAsString/html/Elements/SelectPriorityAsString"
+ }
+$m->print( '</select>
+' );
+;return;
+},
+'declared_args' => {
+  '$Default' => { default => ' undef' },
+  '$Mapping' => { default => ' undef' },
+  '$Name' => { default => ' \'Priority\'' }
+},
+'load_time' => 1434736257,
+
+)
+;

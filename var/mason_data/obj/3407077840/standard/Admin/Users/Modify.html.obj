@@ -1,0 +1,775 @@
+package HTML::Mason::Commands;
+use strict;
+use vars qw($m $DECODED_ARGS $r %session);
+HTML::Mason::Component::FileBased->new(
+'code' => sub {
+HTML::Mason::Exception::Params->throw
+    ( error =>
+      "Odd number of parameters passed to component expecting name/value pairs"
+    ) if @_ % 2;
+my %ARGS = @_;
+my ( $id, $CurrentPass, $Pass1, $Pass2, $Create );
+{
+    my %pos;
+    for ( my $x = 0; $x < @_; $x += 2 )
+    {
+        $pos{ $_[$x] } = $x + 1;
+    }
+#line 318 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+     $id = exists $pos{'id'} ? $_[ $pos{'id'} ] :  undef;
+#line 319 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+     $CurrentPass = exists $pos{'CurrentPass'} ? $_[ $pos{'CurrentPass'} ] :  undef;
+#line 320 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+     $Pass1 = exists $pos{'Pass1'} ? $_[ $pos{'Pass1'} ] :  undef;
+#line 321 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+     $Pass2 = exists $pos{'Pass2'} ? $_[ $pos{'Pass2'} ] :  undef;
+#line 322 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+     $Create = exists $pos{'Create'} ? $_[ $pos{'Create'} ] :  undef;
+}
+$m->debug_hook( $m->current_comp->path ) if ( HTML::Mason::Compiler::IN_PERL_DB() );
+
+#line 231 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+
+
+my $UserObj = RT::User->new($session{'CurrentUser'});
+my ($title, @results);
+
+my ($val, $msg);
+
+$ARGS{Privileged} = $ARGS{Privileged} ? 1 : 0;
+delete $ARGS{Privileged} unless $ARGS{SetPrivileged};
+
+$ARGS{Disabled} = $ARGS{Enabled} ? 0 : 1;
+delete $ARGS{Disabled} unless $ARGS{SetEnabled};
+
+my @fields = qw(Name Comments Signature EmailAddress FreeformContactInfo
+                Organization RealName NickName Lang EmailEncoding WebEncoding
+                ExternalContactInfoId ContactInfoSystem Gecos ExternalAuthId
+                AuthSystem HomePhone WorkPhone MobilePhone PagerPhone Address1
+                Address2 City State Zip Country
+               );
+
+if ($Create) {
+    $title = loc("Create a new user");
+} elsif ( defined $id && $id eq 'new') {
+    ( $val, $msg ) = $UserObj->Create(
+        (map {($_ => $ARGS{$_})} @fields),
+        Privileged => $ARGS{'Privileged'},
+        Disabled   => $ARGS{'Disabled'},
+    );
+
+    if ($val) {
+        push @results, $msg;
+        push @results, ProcessObjectCustomFieldUpdates( ARGSRef => \%ARGS, Object => $UserObj );
+        $title = loc("Modify the user [_1]", $UserObj->Name);
+    } else {
+        push @results, loc('User could not be created: [_1]', $msg);
+        $title = loc("Create a new user");
+        $Create = 1;
+    }
+} else {
+    $UserObj->Load($id) || $UserObj->Load($ARGS{Name})
+        || Abort("Couldn't load user '" . ( $ARGS{Name} || '') . "'");
+
+    $title = loc("Modify the user [_1]", $UserObj->Name);
+
+    $m->callback( %ARGS, CallbackName => 'BeforeUpdate', User => $UserObj, ARGSRef => \%ARGS, Results => \@results );
+
+    my @fieldresults = UpdateRecordObject ( AttributesRef => \@fields,
+                                            Object => $UserObj,
+                                            ARGSRef => \%ARGS );
+    push (@results,@fieldresults);
+    push @results, ProcessObjectCustomFieldUpdates( ARGSRef => \%ARGS, Object => $UserObj );
+
+    if ( defined $ARGS{Privileged} and $ARGS{Privileged} != ($UserObj->Privileged || 0) ) {
+        my ($code, $msg) = $UserObj->SetPrivileged($ARGS{Privileged});
+        push @results, loc('Privileged status: [_1]', loc_fuzzy($msg));
+    }
+
+    if ( defined $ARGS{Disabled} and $ARGS{Disabled} != $UserObj->Disabled ) {
+        my ($code, $msg) = $UserObj->SetDisabled($ARGS{Disabled});
+        push @results, $msg;
+    }
+}
+
+if ( $UserObj->Id ) {
+    # Deal with Password field
+    my ($status, $msg) = $UserObj->SafeSetPassword(
+        Current      => $CurrentPass,
+        New          => $Pass1,
+        Confirmation => $Pass2,
+    );
+    push @results, $msg;
+
+    if ( $id eq 'new' && !$status ) {
+        push @results, loc("A password was not set, so user won't be able to login.");
+    }
+}
+
+# This code does automatic redirection if any updates happen.
+MaybeRedirectForResults(
+    Actions   => \@results,
+    Arguments => { id => $UserObj->Id },
+) if $UserObj->Id;
+
+#line 1 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+# BEGIN BPS TAGGED BLOCK {{{
+#
+# COPYRIGHT:
+#
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
+#                                          <sales@bestpractical.com>
+#
+# (Except where explicitly superseded by other copyright notices)
+#
+#
+# LICENSE:
+#
+# This work is made available to you under the terms of Version 2 of
+# the GNU General Public License. A copy of that license should have
+# been provided with this software, but in any event can be snarfed
+# from www.gnu.org.
+#
+# This work is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
+#
+#
+# CONTRIBUTION SUBMISSION POLICY:
+#
+# (The following paragraph is not intended to limit the rights granted
+# to you to modify and distribute this software under the terms of
+# the GNU General Public License and is only of importance to you if
+# you choose to contribute your changes and enhancements to the
+# community by submitting them to Best Practical Solutions, LLC.)
+#
+# By intentionally submitting any modifications, corrections or
+# derivatives to this work, or any other work intended for use with
+# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+# you are the copyright holder for those contributions and you grant
+# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+# royalty-free, perpetual, license to use, copy, create derivative
+# works based on those contributions, and sublicense and distribute
+# those contributions and any derivatives thereof.
+#
+# END BPS TAGGED BLOCK }}}
+$m->comp(   '/Admin/Elements/Header', Title => $title    
+); #line 48 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( '
+' );
+#line 49 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->comp(   '/Elements/Tabs'  
+); #line 49 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( '
+
+' );
+#line 51 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->comp(   '/Elements/ListActions', actions => \@results   
+); #line 51 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( '
+
+<form action="' );
+#line 53 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } (RT->Config->Get('WebPath'))) );
+#line 53 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( '/Admin/Users/Modify.html" method="post" enctype="multipart/form-data" name="' );
+#line 53 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $Create ? 'UserCreate': 'UserModify' )) );
+#line 53 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( '">
+' );
+#line 54 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+if ($Create) {
+$m->print( '<input type="hidden" class="hidden" name="id" value="new" />
+' );
+#line 56 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+ } else {
+$m->print( '<input type="hidden" class="hidden" name="id" value="' );
+#line 57 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($UserObj->Id)) );
+#line 57 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( '" />
+' );
+#line 58 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+ }
+$m->print( '<table width="100%" border="0">
+<tr>
+
+<td valign="top" class="boxcontainer">
+' );
+#line 63 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->comp( { content => sub {
+#line 63 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( '
+
+<table>
+<tr><td align="right">
+' );
+#line 67 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->comp( { content => sub {
+#line 67 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( 'Username' );
+#line 67 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+} }, '/l'
+ );
+#line 67 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( ':
+</td><td>
+<input name="Name" value="' );
+#line 69 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($UserObj->Name//$ARGS{Name}//'')) );
+#line 69 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( '" /> <strong>' );
+#line 69 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->comp( { content => sub {
+#line 69 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( '(required)' );
+#line 69 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+} }, '/l'
+ );
+#line 69 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( '</strong>
+</td></tr>
+<tr><td align="right">
+' );
+#line 72 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->comp( { content => sub {
+#line 72 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( 'Email' );
+#line 72 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+} }, '/l'
+ );
+#line 72 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( ':
+</td><td>
+<input name="EmailAddress" value="' );
+#line 74 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($UserObj->EmailAddress//$ARGS{EmailAddress}//'')) );
+#line 74 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( '" />
+</td></tr>
+<tr><td align="right">
+' );
+#line 77 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->comp( { content => sub {
+#line 77 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( 'Real Name' );
+#line 77 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+} }, '/l'
+ );
+#line 77 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( ':
+</td><td>
+<input name="RealName" value="' );
+#line 79 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($UserObj->RealName//$ARGS{RealName}//'')) );
+#line 79 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( '" />
+</td></tr>
+<tr><td align="right">
+' );
+#line 82 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->comp( { content => sub {
+#line 82 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( 'Nickname' );
+#line 82 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+} }, '/l'
+ );
+#line 82 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( ':
+</td><td>
+<input name="NickName" value="' );
+#line 84 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($UserObj->NickName//$ARGS{NickName}//'')) );
+#line 84 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( '" />
+</td></tr>
+<tr><td align="right">
+' );
+#line 87 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->comp( { content => sub {
+#line 87 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( 'Unix login' );
+#line 87 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+} }, '/l'
+ );
+#line 87 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( ':
+</td><td>
+<input name="Gecos" value="' );
+#line 89 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($UserObj->Gecos//$ARGS{Gecos}//'')) );
+#line 89 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( '" />
+</td></tr>
+<tr><td align="right">
+' );
+#line 92 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->comp( { content => sub {
+#line 92 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( 'Language' );
+#line 92 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+} }, '/l'
+ );
+#line 92 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( ':
+</td><td>
+' );
+#line 94 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->comp(   '/Elements/SelectLang', Name => 'Lang', Default => $UserObj->Lang//$ARGS{Lang}   
+); #line 94 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( '
+</td></tr>
+<tr><td align="right">
+' );
+#line 97 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->comp( { content => sub {
+#line 97 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( 'Extra info' );
+#line 97 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+} }, '/l'
+ );
+#line 97 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( ':
+</td><td>
+<textarea name="FreeformContactInfo" cols="20" rows="5">' );
+#line 99 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($UserObj->FreeformContactInfo//$ARGS{FreeformContactInfo}//'')) );
+#line 99 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( '</textarea>
+</td></tr>
+' );
+#line 101 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->comp(   '/Elements/EditCustomFields', Object => $UserObj, Grouping => 'Identity', InTable => 1   
+); #line 101 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( '
+</table>
+' );
+#line 103 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+} }, '/Widgets/TitleBox', title => loc('Identity'), class => 'user-info-identity'
+ );
+#line 103 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( '
+
+<br />
+' );
+#line 106 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->comp( { content => sub {
+#line 106 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( '
+<input type="hidden" class="hidden" name="SetEnabled" value="1" />
+<input type="checkbox" class="checkbox" id="Enabled" name="Enabled" value="1" ' );
+#line 108 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print(  ($UserObj->Id && $UserObj->Disabled) ? '' : 'checked="checked"' );
+#line 108 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( ' />
+<label for="Enabled">' );
+#line 109 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->comp( { content => sub {
+#line 109 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( 'Let this user access RT' );
+#line 109 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+} }, '/l'
+ );
+#line 109 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( '</label><br />
+
+
+' );
+#line 112 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+ my $PrivilegedChecked = ((!$Create && $UserObj->Privileged()) or (!$UserObj->Id and $ARGS{Privileged})) ? 'checked="checked"' : '';
+$m->print( '<input type="hidden" class="hidden" name="SetPrivileged" value="1" />
+<input type="checkbox" class="checkbox" id="Privileged" name="Privileged" value="1" ' );
+#line 114 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( $PrivilegedChecked );
+#line 114 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( ' />
+<label for="Privileged">' );
+#line 115 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->comp( { content => sub {
+#line 115 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( 'Let this user be granted rights' );
+#line 115 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+} }, '/l'
+ );
+#line 115 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( ' (' );
+#line 115 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->comp( { content => sub {
+#line 115 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( 'Privileged' );
+#line 115 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+} }, '/l'
+ );
+#line 115 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( ')</label><br />
+
+' );
+#line 117 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->comp(   '/Elements/EditPassword',
+    User => $UserObj,
+    Name => [qw(CurrentPass Pass1 Pass2)],
+  
+); #line 120 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( '
+
+' );
+#line 122 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->comp(   '/Elements/EditCustomFields', Object => $UserObj, Grouping => 'Access control'   
+); #line 122 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( '
+
+' );
+#line 124 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+} }, '/Widgets/TitleBox', title => loc('Access control'), class => 'user-info-access-control'
+ );
+#line 124 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( '
+' );
+#line 125 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+ $m->callback( %ARGS, CallbackName => 'LeftColumnBottom', UserObj => $UserObj );
+$m->print( '</td>
+
+<td valign="top" class="boxcontainer">
+' );
+#line 129 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->comp( { content => sub {
+#line 129 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( '
+<table>
+<tr><td align="right">
+' );
+#line 132 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->comp( { content => sub {
+#line 132 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( 'Organization' );
+#line 132 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+} }, '/l'
+ );
+#line 132 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( ':
+</td><td>
+<input name="Organization" value="' );
+#line 134 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($UserObj->Organization//$ARGS{Organization}//'')) );
+#line 134 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( '" />
+</td></tr>
+<tr><td align="right">
+' );
+#line 137 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->comp( { content => sub {
+#line 137 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( 'Address1' );
+#line 137 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+} }, '/l'
+ );
+#line 137 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( ':
+</td><td>
+<input name="Address1" value="' );
+#line 139 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($UserObj->Address1//$ARGS{Address1}//'')) );
+#line 139 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( '" />
+</td></tr>
+<tr><td align="right">
+' );
+#line 142 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->comp( { content => sub {
+#line 142 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( 'Address2' );
+#line 142 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+} }, '/l'
+ );
+#line 142 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( ':
+</td><td>
+<input name="Address2" value="' );
+#line 144 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($UserObj->Address2//$ARGS{Address2}//'')) );
+#line 144 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( '" />
+</td></tr>
+<tr><td align="right">
+' );
+#line 147 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->comp( { content => sub {
+#line 147 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( 'City' );
+#line 147 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+} }, '/l'
+ );
+#line 147 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( ':
+</td><td>
+<input name="City" value="' );
+#line 149 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($UserObj->City//$ARGS{City}//'')) );
+#line 149 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( '" size="14" />
+
+</td></tr>
+<tr><td align="right">
+' );
+#line 153 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->comp( { content => sub {
+#line 153 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( 'State' );
+#line 153 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+} }, '/l'
+ );
+#line 153 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( ':
+</td><td>
+<input name="State" value="' );
+#line 155 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($UserObj->State//$ARGS{State}//'')) );
+#line 155 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( '" size="3" />
+
+</td></tr>
+<tr><td align="right">
+' );
+#line 159 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->comp( { content => sub {
+#line 159 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( 'Zip' );
+#line 159 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+} }, '/l'
+ );
+#line 159 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( ':
+</td><td>
+<input name="Zip" value="' );
+#line 161 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($UserObj->Zip//$ARGS{Zip}//'')) );
+#line 161 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( '" size="9" />
+</td></tr>
+<tr><td align="right">
+' );
+#line 164 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->comp( { content => sub {
+#line 164 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( 'Country' );
+#line 164 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+} }, '/l'
+ );
+#line 164 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( ':
+</td><td>
+<input name="Country" value="' );
+#line 166 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($UserObj->Country//$ARGS{Country}//'')) );
+#line 166 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( '" />
+</td></tr>
+
+' );
+#line 169 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->comp(   '/Elements/EditCustomFields', Object => $UserObj, Grouping => 'Location', InTable => 1   
+); #line 169 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( '
+
+</table>
+' );
+#line 172 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+} }, '/Widgets/TitleBox', title => loc('Location'), class => 'user-info-location'
+ );
+#line 172 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( '
+<br />
+' );
+#line 174 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->comp( { content => sub {
+#line 174 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( '
+<table>
+<tr><td align="right">
+' );
+#line 177 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->comp( { content => sub {
+#line 177 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( 'Residence' );
+#line 177 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+} }, '/l'
+ );
+#line 177 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( ':
+</td><td>
+<input name="HomePhone" value="' );
+#line 179 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($UserObj->HomePhone//$ARGS{HomePhone}//'')) );
+#line 179 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( '" size="13" /><br />
+</td></tr>
+<tr><td align="right">
+' );
+#line 182 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->comp( { content => sub {
+#line 182 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( 'Work' );
+#line 182 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+} }, '/l'
+ );
+#line 182 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( ':
+</td><td>
+<input name="WorkPhone" value="' );
+#line 184 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($UserObj->WorkPhone//$ARGS{WorkPhone}//'')) );
+#line 184 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( '" size="13" /><br />
+</td></tr>
+<tr><td align="right">
+' );
+#line 187 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->comp( { content => sub {
+#line 187 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( 'Mobile' );
+#line 187 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+} }, '/l'
+ );
+#line 187 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( ':
+</td><td>
+<input name="MobilePhone" value="' );
+#line 189 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($UserObj->MobilePhone//$ARGS{MobilePhone}//'')) );
+#line 189 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( '" size="13" /><br />
+</td></tr>
+<tr><td align="right">
+' );
+#line 192 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->comp( { content => sub {
+#line 192 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( 'Pager' );
+#line 192 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+} }, '/l'
+ );
+#line 192 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( ':
+</td><td>
+<input name="PagerPhone" value="' );
+#line 194 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($UserObj->PagerPhone//$ARGS{PagerPhone}//'')) );
+#line 194 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( '" size="13" /><br />
+</td>
+</tr>
+
+' );
+#line 198 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->comp(   '/Elements/EditCustomFields', Object => $UserObj, Grouping => 'Phones', InTable => 1   
+); #line 198 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( '
+
+</table>
+' );
+#line 201 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+} }, '/Widgets/TitleBox', title => loc('Phone numbers'), class => 'user-info-phones'
+ );
+#line 201 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( '
+<br />
+
+' );
+#line 204 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->comp(   '/Elements/EditCustomFieldCustomGroupings', Object => $UserObj   
+); #line 204 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( '
+
+' );
+#line 206 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+ $m->callback( %ARGS, CallbackName => 'RightColumnBottom', UserObj => $UserObj );
+$m->print( '</td></tr>
+<tr>
+<td colspan="2">
+' );
+#line 210 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->comp( { content => sub {
+#line 210 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( '
+<textarea class="comments" name="Comments" cols="80" rows="5" wrap="virtual">' );
+#line 211 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($UserObj->Comments//$ARGS{Comments}//'')) );
+#line 211 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( '</textarea>
+' );
+#line 212 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+} }, '/Widgets/TitleBox', title => loc('Comments about this user'), class => 'user-info-comments'
+ );
+#line 212 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( '
+' );
+#line 213 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+if (!$Create && $UserObj->Privileged) {
+$m->print( '<br />
+' );
+#line 215 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->comp( { content => sub {
+#line 215 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( '
+<textarea class="signature" cols="80" rows="5" name="Signature" wrap="hard">' );
+#line 216 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($UserObj->Signature//$ARGS{Signature}//'')) );
+#line 216 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( '</textarea>
+' );
+#line 217 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+} }, '/Widgets/TitleBox', title => loc('Signature'), class => 'user-info-signature'
+ );
+#line 217 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( '
+' );
+#line 218 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+ }
+$m->print( '
+</td>
+</tr>
+</table>
+
+' );
+#line 224 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+ if ( $Create ) {
+$m->comp(   '/Elements/Submit', Label => loc('Create')   
+); #line 225 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( '
+' );
+#line 226 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+ } else {
+$m->comp(   '/Elements/Submit', Label => loc('Save Changes')   
+); #line 227 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( '
+' );
+#line 228 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+ }
+$m->print( '</form>
+
+' );
+#line 315 "/var/www/localhost/htdocs/rt/Admin/Users/Modify.html"
+$m->print( '
+
+' );
+;return;
+},
+'declared_args' => {
+  '$Create' => { default => ' undef' },
+  '$CurrentPass' => { default => ' undef' },
+  '$Pass1' => { default => ' undef' },
+  '$Pass2' => { default => ' undef' },
+  '$id' => { default => ' undef' }
+},
+'load_time' => 1434739338,
+
+)
+;

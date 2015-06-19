@@ -1,0 +1,346 @@
+package HTML::Mason::Commands;
+use strict;
+use vars qw($m $DECODED_ARGS $r %session);
+HTML::Mason::Component::FileBased->new(
+'code' => sub {
+HTML::Mason::Exception::Params->throw
+    ( error =>
+      "Odd number of parameters passed to component expecting name/value pairs"
+    ) if @_ % 2;
+my %ARGS = @_;
+my ( @AddMembersUsers, @AddMembersGroups, $id, $SkipSeenUsers, $SkipSeenGroups );
+{
+    my %pos;
+    for ( my $x = 0; $x < @_; $x += 2 )
+    {
+        $pos{ $_[$x] } = $x + 1;
+    }
+#line 166 "/var/www/localhost/htdocs/rt/Admin/Groups/Members.html"
+     @AddMembersUsers = exists $pos{'AddMembersUsers'} ? HTML::Mason::Tools::coerce_to_array( $_[ $pos{'AddMembersUsers'} ], '@AddMembersUsers') :  ();
+#line 167 "/var/www/localhost/htdocs/rt/Admin/Groups/Members.html"
+     @AddMembersGroups = exists $pos{'AddMembersGroups'} ? HTML::Mason::Tools::coerce_to_array( $_[ $pos{'AddMembersGroups'} ], '@AddMembersGroups') :  ();
+#line 168 "/var/www/localhost/htdocs/rt/Admin/Groups/Members.html"
+     $id = exists $pos{'id'} ? $_[ $pos{'id'} ] :  undef;
+#line 169 "/var/www/localhost/htdocs/rt/Admin/Groups/Members.html"
+     $SkipSeenUsers = exists $pos{'SkipSeenUsers'} ? $_[ $pos{'SkipSeenUsers'} ] :  1;
+#line 170 "/var/www/localhost/htdocs/rt/Admin/Groups/Members.html"
+     $SkipSeenGroups = exists $pos{'SkipSeenGroups'} ? $_[ $pos{'SkipSeenGroups'} ] :  1;
+}
+$m->debug_hook( $m->current_comp->path ) if ( HTML::Mason::Compiler::IN_PERL_DB() );
+
+#line 112 "/var/www/localhost/htdocs/rt/Admin/Groups/Members.html"
+
+
+my $Group = RT::Group->new($session{'CurrentUser'});
+$Group->Load($id) || Abort(loc('Could not load group'));
+
+my $title = loc("Modify the group [_1]", $Group->Name);
+
+my (%UsersSeen, %GroupsSeen);
+$GroupsSeen{ $Group->id } = 1; # can't be a member of ourself
+
+my (@results);
+
+# XXX: safe member id in value instead of name
+foreach my $key (keys %ARGS) {
+    next unless $key =~ /^DeleteMember-(\d+)$/;
+
+    my ($val,$msg) = $Group->DeleteMember($1);
+    push (@results, $msg);
+}
+
+# Process new users
+foreach my $member (grep $_, @AddMembersUsers) {
+    my $principal = RT::User->new($session{'CurrentUser'});
+
+    if ($member =~ /^User-(\d+)$/) {
+        # Old style, using id
+        $principal->Load($1);
+    } else {
+        # New style, just a username
+        $principal->Load($member);
+    }
+
+    my ($val, $msg) = $Group->AddMember($principal->PrincipalId);
+    push (@results, $msg);
+}
+
+# Process new groups
+foreach my $member (grep $_, @AddMembersGroups) {
+    my $principal = RT::Group->new($session{'CurrentUser'});
+
+    if ($member =~ /^Group-(\d+)$/) {
+        # Old style, using id
+        $principal->Load($1);
+    } else {
+        # New style, just a group name
+        $principal->LoadUserDefinedGroup($member);
+    }
+
+    my ($val, $msg) = $Group->AddMember($principal->PrincipalId);
+    push (@results, $msg);
+}
+#line 1 "/var/www/localhost/htdocs/rt/Admin/Groups/Members.html"
+# BEGIN BPS TAGGED BLOCK {{{
+#
+# COPYRIGHT:
+#
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
+#                                          <sales@bestpractical.com>
+#
+# (Except where explicitly superseded by other copyright notices)
+#
+#
+# LICENSE:
+#
+# This work is made available to you under the terms of Version 2 of
+# the GNU General Public License. A copy of that license should have
+# been provided with this software, but in any event can be snarfed
+# from www.gnu.org.
+#
+# This work is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
+#
+#
+# CONTRIBUTION SUBMISSION POLICY:
+#
+# (The following paragraph is not intended to limit the rights granted
+# to you to modify and distribute this software under the terms of
+# the GNU General Public License and is only of importance to you if
+# you choose to contribute your changes and enhancements to the
+# community by submitting them to Best Practical Solutions, LLC.)
+#
+# By intentionally submitting any modifications, corrections or
+# derivatives to this work, or any other work intended for use with
+# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+# you are the copyright holder for those contributions and you grant
+# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+# royalty-free, perpetual, license to use, copy, create derivative
+# works based on those contributions, and sublicense and distribute
+# those contributions and any derivatives thereof.
+#
+# END BPS TAGGED BLOCK }}}
+$m->comp(   '/Admin/Elements/Header', Title => $title   
+); #line 48 "/var/www/localhost/htdocs/rt/Admin/Groups/Members.html"
+$m->print( '
+' );
+#line 49 "/var/www/localhost/htdocs/rt/Admin/Groups/Members.html"
+$m->comp(   '/Elements/Tabs'  
+); #line 49 "/var/www/localhost/htdocs/rt/Admin/Groups/Members.html"
+$m->print( '
+' );
+#line 50 "/var/www/localhost/htdocs/rt/Admin/Groups/Members.html"
+$m->comp(   '/Elements/ListActions', actions => \@results   
+); #line 50 "/var/www/localhost/htdocs/rt/Admin/Groups/Members.html"
+$m->print( '
+
+<form action="' );
+#line 52 "/var/www/localhost/htdocs/rt/Admin/Groups/Members.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( RT->Config->Get('WebPath') )) );
+#line 52 "/var/www/localhost/htdocs/rt/Admin/Groups/Members.html"
+$m->print( '/Admin/Groups/Members.html" method="post">
+<input type="hidden" class="hidden" name="id" value="' );
+#line 53 "/var/www/localhost/htdocs/rt/Admin/Groups/Members.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($Group->Id)) );
+#line 53 "/var/www/localhost/htdocs/rt/Admin/Groups/Members.html"
+$m->print( '" />
+
+' );
+#line 55 "/var/www/localhost/htdocs/rt/Admin/Groups/Members.html"
+$m->comp( { content => sub {
+#line 55 "/var/www/localhost/htdocs/rt/Admin/Groups/Members.html"
+$m->print( '
+
+<table width="100%">
+<tr>
+<td>
+<h3>' );
+#line 60 "/var/www/localhost/htdocs/rt/Admin/Groups/Members.html"
+$m->comp( { content => sub {
+#line 60 "/var/www/localhost/htdocs/rt/Admin/Groups/Members.html"
+$m->print( 'Current members' );
+#line 60 "/var/www/localhost/htdocs/rt/Admin/Groups/Members.html"
+} }, '/l'
+ );
+#line 60 "/var/www/localhost/htdocs/rt/Admin/Groups/Members.html"
+$m->print( '</h3>
+</td>
+<td>
+<h3>' );
+#line 63 "/var/www/localhost/htdocs/rt/Admin/Groups/Members.html"
+$m->comp( { content => sub {
+#line 63 "/var/www/localhost/htdocs/rt/Admin/Groups/Members.html"
+$m->print( 'Add members' );
+#line 63 "/var/www/localhost/htdocs/rt/Admin/Groups/Members.html"
+} }, '/l'
+ );
+#line 63 "/var/www/localhost/htdocs/rt/Admin/Groups/Members.html"
+$m->print( '</h3>
+</td>
+</tr>
+
+<tr>
+<td valign="top">
+
+' );
+#line 70 "/var/www/localhost/htdocs/rt/Admin/Groups/Members.html"
+ if ($Group->MembersObj->Count == 0 ) {
+$m->print( '<em>' );
+#line 71 "/var/www/localhost/htdocs/rt/Admin/Groups/Members.html"
+$m->comp( { content => sub {
+#line 71 "/var/www/localhost/htdocs/rt/Admin/Groups/Members.html"
+$m->print( '(No members)' );
+#line 71 "/var/www/localhost/htdocs/rt/Admin/Groups/Members.html"
+} }, '/l'
+ );
+#line 71 "/var/www/localhost/htdocs/rt/Admin/Groups/Members.html"
+$m->print( '</em>
+' );
+#line 72 "/var/www/localhost/htdocs/rt/Admin/Groups/Members.html"
+ } else {
+$m->comp( { content => sub {
+#line 73 "/var/www/localhost/htdocs/rt/Admin/Groups/Members.html"
+$m->print( 'Users' );
+#line 73 "/var/www/localhost/htdocs/rt/Admin/Groups/Members.html"
+} }, '/l'
+ );
+#line 73 "/var/www/localhost/htdocs/rt/Admin/Groups/Members.html"
+$m->print( '
+' );
+#line 74 "/var/www/localhost/htdocs/rt/Admin/Groups/Members.html"
+ my $Users = $Group->UserMembersObj( Recursively => 0 );
+
+my @users = sort { lc($a->[0]) cmp lc($b->[0]) }
+            map { [$m->scomp("/Elements/ShowUser", User => $_), $_] }
+            @{ $Users->ItemsArrayRef };
+#line 80 "/var/www/localhost/htdocs/rt/Admin/Groups/Members.html"
+$m->print( '<ul>
+' );
+#line 81 "/var/www/localhost/htdocs/rt/Admin/Groups/Members.html"
+ for (@users) {
+ my ($rendered, $user) = @$_;
+ $UsersSeen{ $user->id } = 1 if $SkipSeenUsers;
+$m->print( '<li><input type="checkbox" class="checkbox" name="DeleteMember-' );
+#line 84 "/var/www/localhost/htdocs/rt/Admin/Groups/Members.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $user->PrincipalObj->Id )) );
+#line 84 "/var/www/localhost/htdocs/rt/Admin/Groups/Members.html"
+$m->print( '" value="1" />
+<a href="' );
+#line 85 "/var/www/localhost/htdocs/rt/Admin/Groups/Members.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( RT->Config->Get('WebPath') )) );
+#line 85 "/var/www/localhost/htdocs/rt/Admin/Groups/Members.html"
+$m->print( '/Admin/Users/Modify.html?id=' );
+#line 85 "/var/www/localhost/htdocs/rt/Admin/Groups/Members.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $user->id )) );
+#line 85 "/var/www/localhost/htdocs/rt/Admin/Groups/Members.html"
+$m->print( '">' );
+#line 85 "/var/www/localhost/htdocs/rt/Admin/Groups/Members.html"
+$m->print(  $rendered );
+#line 85 "/var/www/localhost/htdocs/rt/Admin/Groups/Members.html"
+$m->print( '</a></li>
+' );
+#line 86 "/var/www/localhost/htdocs/rt/Admin/Groups/Members.html"
+ }
+$m->print( '</ul>
+' );
+#line 88 "/var/www/localhost/htdocs/rt/Admin/Groups/Members.html"
+$m->comp( { content => sub {
+#line 88 "/var/www/localhost/htdocs/rt/Admin/Groups/Members.html"
+$m->print( 'Groups' );
+#line 88 "/var/www/localhost/htdocs/rt/Admin/Groups/Members.html"
+} }, '/l'
+ );
+#line 88 "/var/www/localhost/htdocs/rt/Admin/Groups/Members.html"
+$m->print( '
+<ul>
+' );
+#line 90 "/var/www/localhost/htdocs/rt/Admin/Groups/Members.html"
+ my $GroupMembers = $Group->MembersObj;
+ $GroupMembers->LimitToGroups();
+ while ( my $member = $GroupMembers->Next ) {
+ $GroupsSeen{ $member->MemberId } = 1 if $SkipSeenGroups;
+$m->print( '<li><input type="checkbox" class="checkbox" name="DeleteMember-' );
+#line 94 "/var/www/localhost/htdocs/rt/Admin/Groups/Members.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $member->MemberId )) );
+#line 94 "/var/www/localhost/htdocs/rt/Admin/Groups/Members.html"
+$m->print( '" value="1" />
+<a href="' );
+#line 95 "/var/www/localhost/htdocs/rt/Admin/Groups/Members.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( RT->Config->Get('WebPath') )) );
+#line 95 "/var/www/localhost/htdocs/rt/Admin/Groups/Members.html"
+$m->print( '/Admin/Groups/Modify.html?id=' );
+#line 95 "/var/www/localhost/htdocs/rt/Admin/Groups/Members.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $member->MemberObj->Object->id )) );
+#line 95 "/var/www/localhost/htdocs/rt/Admin/Groups/Members.html"
+$m->print( '">' );
+#line 95 "/var/www/localhost/htdocs/rt/Admin/Groups/Members.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $member->MemberObj->Object->Name )) );
+#line 95 "/var/www/localhost/htdocs/rt/Admin/Groups/Members.html"
+$m->print( '</a>
+' );
+#line 96 "/var/www/localhost/htdocs/rt/Admin/Groups/Members.html"
+ }
+$m->print( '</ul>
+' );
+#line 98 "/var/www/localhost/htdocs/rt/Admin/Groups/Members.html"
+ }
+$m->print( '</td>
+<td valign="top">
+' );
+#line 101 "/var/www/localhost/htdocs/rt/Admin/Groups/Members.html"
+$m->comp(   '/Admin/Elements/SelectNewGroupMembers', Name => "AddMembers", Group => $Group,
+    SkipUsers => \%UsersSeen, SkipGroups => \%GroupsSeen   
+); #line 102 "/var/www/localhost/htdocs/rt/Admin/Groups/Members.html"
+$m->print( '
+</td>
+</tr>
+</table>
+' );
+#line 106 "/var/www/localhost/htdocs/rt/Admin/Groups/Members.html"
+} }, '/Widgets/TitleBox', title => loc('Editing membership for group [_1]', $Group->Name)
+ );
+#line 106 "/var/www/localhost/htdocs/rt/Admin/Groups/Members.html"
+$m->print( '
+<em>' );
+#line 107 "/var/www/localhost/htdocs/rt/Admin/Groups/Members.html"
+$m->comp( { content => sub {
+#line 107 "/var/www/localhost/htdocs/rt/Admin/Groups/Members.html"
+$m->print( '(Check box to delete)' );
+#line 107 "/var/www/localhost/htdocs/rt/Admin/Groups/Members.html"
+} }, '/l'
+ );
+#line 107 "/var/www/localhost/htdocs/rt/Admin/Groups/Members.html"
+$m->print( '</em>
+' );
+#line 108 "/var/www/localhost/htdocs/rt/Admin/Groups/Members.html"
+$m->comp(   '/Elements/Submit', Label => loc('Modify Members'), Reset => 1   
+); #line 108 "/var/www/localhost/htdocs/rt/Admin/Groups/Members.html"
+$m->print( '
+</form>
+
+
+' );
+#line 164 "/var/www/localhost/htdocs/rt/Admin/Groups/Members.html"
+$m->print( '
+' );
+;return;
+},
+'declared_args' => {
+  '$SkipSeenGroups' => { default => ' 1' },
+  '$SkipSeenUsers' => { default => ' 1' },
+  '$id' => { default => ' undef' },
+  '@AddMembersGroups' => { default => ' ()' },
+  '@AddMembersUsers' => { default => ' ()' }
+},
+'load_time' => 1434739320,
+
+)
+;

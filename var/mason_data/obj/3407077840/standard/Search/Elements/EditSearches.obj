@@ -1,0 +1,531 @@
+package HTML::Mason::Commands;
+use strict;
+use vars qw($m $DECODED_ARGS $r %session);
+my %_method =
+(
+'Init' => HTML::Mason::Component::Subcomponent->new(
+'code' => sub {
+HTML::Mason::Exception::Params->throw
+    ( error =>
+      "Odd number of parameters passed to component expecting name/value pairs"
+    ) if @_ % 2;
+my %ARGS = @_;
+my ( $Query, $SavedSearch, @SearchFields );
+{
+    my %pos;
+    for ( my $x = 0; $x < @_; $x += 2 )
+    {
+        $pos{ $_[$x] } = $x + 1;
+    }
+#line 141 "/var/www/localhost/htdocs/rt/Search/Elements/EditSearches"
+     $Query = exists $pos{'Query'} ? $_[ $pos{'Query'} ] :  {};
+#line 142 "/var/www/localhost/htdocs/rt/Search/Elements/EditSearches"
+     $SavedSearch = exists $pos{'SavedSearch'} ? $_[ $pos{'SavedSearch'} ] :  {};
+#line 143 "/var/www/localhost/htdocs/rt/Search/Elements/EditSearches"
+     @SearchFields = exists $pos{'SearchFields'} ? HTML::Mason::Tools::coerce_to_array( $_[ $pos{'SearchFields'} ], '@SearchFields') :  qw(Query Format OrderBy Order RowsPerPage);
+}
+$m->debug_hook( $m->current_comp->path ) if ( HTML::Mason::Compiler::IN_PERL_DB() );
+
+#line 145 "/var/www/localhost/htdocs/rt/Search/Elements/EditSearches"
+
+
+$SavedSearch->{'Id'}          = ( $ARGS{Type} && $ARGS{Type} eq 'Chart' ?
+$ARGS{'SavedChartSearchId'} : $ARGS{'SavedSearchId'} ) || 'new';
+$SavedSearch->{'Description'} = $ARGS{'SavedSearchDescription'} || '';
+$SavedSearch->{'Privacy'}     = $ARGS{'SavedSearchOwner'}       || undef;
+
+my @results;
+
+if ( $ARGS{'SavedSearchRevert'} ) {
+    $ARGS{'SavedSearchLoad'} = $SavedSearch->{'Id'};
+}
+
+if ( $ARGS{'SavedSearchLoad'} ) {
+    my ($container, $id ) = _parse_saved_search ($ARGS{'SavedSearchLoad'});
+    if ( $container ) {
+        my $search = RT::Attribute->new( $session{'CurrentUser'} );
+        $search->Load( $id );
+        $SavedSearch->{'Id'}          = $ARGS{'SavedSearchLoad'};
+        $SavedSearch->{'Object'}      = $search;
+        $SavedSearch->{'Description'} = $search->Description;
+        $Query->{$_} = $search->SubValue($_) foreach @SearchFields;
+
+        if ( $ARGS{'SavedSearchRevert'} ) {
+            push @results, loc('Loaded original "[_1]" saved search', $SavedSearch->{'Description'} );
+        } else {
+            push @results, loc('Loaded saved search "[_1]"', $SavedSearch->{'Description'} );
+        }
+    }
+    else {
+        push @results, loc( 'Can not load saved search "[_1]"',
+                $ARGS{'SavedSearchLoad'} );
+        return @results;
+    }
+}
+elsif ( $ARGS{'SavedSearchDelete'} ) {
+    # We set $SearchId to 'new' above already, so peek into the %ARGS
+    my ($container, $id) = _parse_saved_search( $SavedSearch->{'Id'} );
+    if ( $container && $container->id ) {
+        # We have the object the entry is an attribute on; delete the entry...
+        my ($val, $msg) = $container->Attributes->DeleteEntry( Name => 'SavedSearch', id => $id );
+        unless ( $val ) {
+            push @results, $msg;
+            return @results;
+        }
+    }
+    $SavedSearch->{'Id'}          = 'new';
+    $SavedSearch->{'Object'}      = undef;
+    $SavedSearch->{'Description'} = undef;
+    push @results, loc("Deleted saved search");
+}
+elsif ( $ARGS{'SavedSearchCopy'} ) {
+    my ($container, $id ) = _parse_saved_search( $ARGS{'SavedSearchId'} );
+    $SavedSearch->{'Object'} = RT::Attribute->new( $session{'CurrentUser'} );
+    $SavedSearch->{'Object'}->Load( $id );
+    if ( $ARGS{'SavedSearchDescription'} && $ARGS{'SavedSearchDescription'} ne $SavedSearch->{'Object'}->Description ) {
+        $SavedSearch->{'Description'} = $ARGS{'SavedSearchDescription'};
+    } else {
+        $SavedSearch->{'Description'} = loc( "[_1] copy", $SavedSearch->{'Object'}->Description );
+    }
+    $SavedSearch->{'Id'}          = 'new';
+    $SavedSearch->{'Object'}      = undef;
+}
+
+if ( $SavedSearch->{'Id'} && $SavedSearch->{'Id'} ne 'new'
+     && !$SavedSearch->{'Object'} )
+{
+    my ($container, $id ) = _parse_saved_search( $ARGS{'SavedSearchId'} );
+    $SavedSearch->{'Object'} = RT::Attribute->new( $session{'CurrentUser'} );
+    $SavedSearch->{'Object'}->Load( $id );
+    $SavedSearch->{'Description'} ||= $SavedSearch->{'Object'}->Description;
+}
+
+return @results;
+
+#line 139 "/var/www/localhost/htdocs/rt/Search/Elements/EditSearches"
+$m->print( '
+' );
+;return;
+},
+'declared_args' => {
+  '$Query' => { default => ' {}' },
+  '$SavedSearch' => { default => ' {}' },
+  '@SearchFields' => { default => ' qw(Query Format OrderBy Order RowsPerPage)' }
+},
+
+)
+,
+'Save' => HTML::Mason::Component::Subcomponent->new(
+'code' => sub {
+HTML::Mason::Exception::Params->throw
+    ( error =>
+      "Odd number of parameters passed to component expecting name/value pairs"
+    ) if @_ % 2;
+my %ARGS = @_;
+my ( $Query, $SavedSearch, @SearchFields );
+{
+    my %pos;
+    for ( my $x = 0; $x < @_; $x += 2 )
+    {
+        $pos{ $_[$x] } = $x + 1;
+    }
+#line 225 "/var/www/localhost/htdocs/rt/Search/Elements/EditSearches"
+     $Query = exists $pos{'Query'} ? $_[ $pos{'Query'} ] :  {};
+#line 226 "/var/www/localhost/htdocs/rt/Search/Elements/EditSearches"
+     $SavedSearch = exists $pos{'SavedSearch'} ? $_[ $pos{'SavedSearch'} ] :  {};
+#line 227 "/var/www/localhost/htdocs/rt/Search/Elements/EditSearches"
+     @SearchFields = exists $pos{'SearchFields'} ? HTML::Mason::Tools::coerce_to_array( $_[ $pos{'SearchFields'} ], '@SearchFields') :  qw(Query Format OrderBy Order RowsPerPage);
+}
+$m->debug_hook( $m->current_comp->path ) if ( HTML::Mason::Compiler::IN_PERL_DB() );
+
+#line 229 "/var/www/localhost/htdocs/rt/Search/Elements/EditSearches"
+
+
+return unless $ARGS{'SavedSearchSave'} || $ARGS{'SavedSearchCopy'};
+
+my @results;
+my $obj  = $SavedSearch->{'Object'};
+my $id   = $SavedSearch->{'Id'};
+my $desc = $SavedSearch->{'Description'};
+my $privacy = $SavedSearch->{'Privacy'};
+
+my %params = map { $_ => $Query->{$_} } @SearchFields;
+my ($new_obj_type, $new_obj_id) = split(/\-/, ($privacy || ''));
+
+if ( $obj && $obj->id ) {
+    # permission check
+    if ($obj->Object->isa('RT::System')) {
+        unless ($session{'CurrentUser'}->HasRight( Object=> $RT::System, Right => 'SuperUser')) {
+            push @results, loc("No permission to save system-wide searches");
+            return @results;
+        }
+    }
+
+    $obj->SetSubValues( %params );
+    $obj->SetDescription( $desc );
+
+    my $obj_type = ref($obj->Object);
+    # We need to get current obj_id now, because when we change obj_type to
+    # RT::System, $obj->Object->Id returns 1, not the old one :(
+    my $obj_id = $obj->Object->Id;
+
+    if ( $new_obj_type && $new_obj_id ) {
+        my ($val, $msg);
+
+        # we need to check right before we change any of ObjectType and ObjectId, 
+        # or it will fail the 2nd change if we use SetObjectType and
+        # SetObjectId sequentially
+
+        if ( $obj->CurrentUserHasRight('update') ) {
+            if ( $new_obj_type ne $obj_type ) {
+                ( $val, $msg ) = $obj->__Set(
+                    Field => 'ObjectType',
+                    Value => $new_obj_type,
+                );
+                push @results, loc( 'Unable to set privacy object: [_1]', $msg )
+                  unless ($val);
+            }
+            if ( $new_obj_id != $obj_id ) {
+                ( $val, $msg ) = $obj->__Set(
+                    Field => 'ObjectId',
+                    Value => $new_obj_id,
+                );
+                push @results, loc( 'Unable to set privacy id: [_1]', $msg )
+                  unless ($val);
+            }
+        }
+        else {
+            # two loc are just for convenience so we don't need to
+            # write an extra i18n translation item
+            push @results,
+              loc( 'Unable to set privacy object or id: [_1]',
+                loc('Permission Denied') )
+        }
+    } else {
+        push @results, loc('Unable to determine object type or id');
+    }
+    push @results, loc('Updated saved search "[_1]"', $desc);
+}
+elsif ( $id eq 'new' and defined $desc and length $desc ) {
+    my $saved_search = RT::SavedSearch->new( $session{'CurrentUser'} );
+    my ($status, $msg) = $saved_search->Save(
+        Privacy      => $privacy,
+        Name         => $desc,
+        Type         => $SavedSearch->{'Type'},
+        SearchParams => \%params,
+    );
+
+    if ( $status ) {
+        $SavedSearch->{'Object'} = RT::Attribute->new( $session{'CurrentUser'} );
+        $SavedSearch->{'Object'}->Load( $saved_search->Id );
+        # Build new SearchId
+        $SavedSearch->{'Id'} =
+                ref( $session{'CurrentUser'}->UserObj ) . '-'
+                    . $session{'CurrentUser'}->UserObj->Id
+                    . '-SavedSearch-'
+                    . $SavedSearch->{'Object'}->Id;
+    }
+    else {
+        push @results, loc("Can't find a saved search to work with").': '.loc($msg);
+    }
+}
+elsif ( $id eq 'new' ) {
+    push @results, loc("Can't save a search without a Description");
+}
+else {
+    push @results, loc("Can't save this search");
+}
+
+return @results;
+
+#line 223 "/var/www/localhost/htdocs/rt/Search/Elements/EditSearches"
+$m->print( '
+' );
+;return;
+},
+'declared_args' => {
+  '$Query' => { default => ' {}' },
+  '$SavedSearch' => { default => ' {}' },
+  '@SearchFields' => { default => ' qw(Query Format OrderBy Order RowsPerPage)' }
+},
+
+)
+,
+
+);
+HTML::Mason::Component::FileBased->new(
+'code' => sub {
+HTML::Mason::Exception::Params->throw
+    ( error =>
+      "Odd number of parameters passed to component expecting name/value pairs"
+    ) if @_ % 2;
+my ( $Id, $Object, $Type, $Description, $CurrentSearch, @SearchFields, $AllowCopy, $Title );
+{
+    my %pos;
+    for ( my $x = 0; $x < @_; $x += 2 )
+    {
+        $pos{ $_[$x] } = $x + 1;
+    }
+#line 129 "/var/www/localhost/htdocs/rt/Search/Elements/EditSearches"
+     $Id = exists $pos{'Id'} ? $_[ $pos{'Id'} ] :  'new';
+#line 130 "/var/www/localhost/htdocs/rt/Search/Elements/EditSearches"
+     $Object = exists $pos{'Object'} ? $_[ $pos{'Object'} ] :  undef;
+#line 131 "/var/www/localhost/htdocs/rt/Search/Elements/EditSearches"
+     $Type = exists $pos{'Type'} ? $_[ $pos{'Type'} ] :  'Ticket';
+#line 132 "/var/www/localhost/htdocs/rt/Search/Elements/EditSearches"
+     $Description = exists $pos{'Description'} ? $_[ $pos{'Description'} ] :  '';
+#line 133 "/var/www/localhost/htdocs/rt/Search/Elements/EditSearches"
+     $CurrentSearch = exists $pos{'CurrentSearch'} ? $_[ $pos{'CurrentSearch'} ] :  {};
+#line 134 "/var/www/localhost/htdocs/rt/Search/Elements/EditSearches"
+     @SearchFields = exists $pos{'SearchFields'} ? HTML::Mason::Tools::coerce_to_array( $_[ $pos{'SearchFields'} ], '@SearchFields') :  ();
+#line 135 "/var/www/localhost/htdocs/rt/Search/Elements/EditSearches"
+     $AllowCopy = exists $pos{'AllowCopy'} ? $_[ $pos{'AllowCopy'} ] :  1;
+#line 136 "/var/www/localhost/htdocs/rt/Search/Elements/EditSearches"
+     $Title = exists $pos{'Title'} ? $_[ $pos{'Title'} ] :  loc('Saved searches');
+}
+$m->debug_hook( $m->current_comp->path ) if ( HTML::Mason::Compiler::IN_PERL_DB() );
+
+#line 84 "/var/www/localhost/htdocs/rt/Search/Elements/EditSearches"
+
+return unless $session{'CurrentUser'}->HasRight(
+    Right  => 'LoadSavedSearch',
+    Object => $RT::System,
+);
+
+my $can_modify = $session{'CurrentUser'}->HasRight(
+    Right  => 'CreateSavedSearch',
+    Object => $RT::System,
+);
+
+use RT::SavedSearch;
+my @Objects = RT::SavedSearch->new($session{CurrentUser})->_PrivacyObjects;
+push @Objects, RT::System->new( $session{'CurrentUser'} )
+    if $session{'CurrentUser'}->HasRight( Object=> $RT::System,
+                                          Right => 'SuperUser' );
+
+my $is_dirty = sub {
+    my %arg = (
+        Query       => {},
+        SavedSearch => {},
+        SearchFields => [qw(Query Format OrderBy Order RowsPerPage)],
+        @_
+    );
+
+    my $obj  = $arg{'SavedSearch'}->{'Object'};
+    return 0 unless $obj && $obj->id;
+
+    foreach( @{ $arg{'SearchFields'} } ) {
+        return 1 if $obj->SubValue( $_ ) ne $arg{'Query'}->{$_};
+    }
+
+    return 0;
+};
+
+# If we're modifying an old query, check if it's been changed
+my $Dirty = $is_dirty->(
+    Query       => $CurrentSearch,
+    SavedSearch => { Id => $Id, Object => $Object, Description => $Description },
+    SearchFields => \@SearchFields,
+);
+
+#line 1 "/var/www/localhost/htdocs/rt/Search/Elements/EditSearches"
+# BEGIN BPS TAGGED BLOCK {{{
+#
+# COPYRIGHT:
+#
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
+#                                          <sales@bestpractical.com>
+#
+# (Except where explicitly superseded by other copyright notices)
+#
+#
+# LICENSE:
+#
+# This work is made available to you under the terms of Version 2 of
+# the GNU General Public License. A copy of that license should have
+# been provided with this software, but in any event can be snarfed
+# from www.gnu.org.
+#
+# This work is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
+#
+#
+# CONTRIBUTION SUBMISSION POLICY:
+#
+# (The following paragraph is not intended to limit the rights granted
+# to you to modify and distribute this software under the terms of
+# the GNU General Public License and is only of importance to you if
+# you choose to contribute your changes and enhancements to the
+# community by submitting them to Best Practical Solutions, LLC.)
+#
+# By intentionally submitting any modifications, corrections or
+# derivatives to this work, or any other work intended for use with
+# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+# you are the copyright holder for those contributions and you grant
+# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+# royalty-free, perpetual, license to use, copy, create derivative
+# works based on those contributions, and sublicense and distribute
+# those contributions and any derivatives thereof.
+#
+# END BPS TAGGED BLOCK }}}
+$m->print( '<div class="edit-saved-searches">
+' );
+#line 49 "/var/www/localhost/htdocs/rt/Search/Elements/EditSearches"
+$m->comp( { content => sub {
+#line 49 "/var/www/localhost/htdocs/rt/Search/Elements/EditSearches"
+$m->print( '
+
+' );
+#line 51 "/var/www/localhost/htdocs/rt/Search/Elements/EditSearches"
+# Hide all the save functionality if the user shouldn't see it.
+ if ( $can_modify ) {
+$m->print( '<span class="label">' );
+#line 53 "/var/www/localhost/htdocs/rt/Search/Elements/EditSearches"
+$m->comp( { content => sub {
+#line 53 "/var/www/localhost/htdocs/rt/Search/Elements/EditSearches"
+$m->print( 'Privacy' );
+#line 53 "/var/www/localhost/htdocs/rt/Search/Elements/EditSearches"
+} }, '/l'
+ );
+#line 53 "/var/www/localhost/htdocs/rt/Search/Elements/EditSearches"
+$m->print( ':</span>
+' );
+#line 54 "/var/www/localhost/htdocs/rt/Search/Elements/EditSearches"
+$m->comp(   'SelectSearchObject', Name => 'SavedSearchOwner', Objects => \@Objects, Object => ( $Object && $Object->id ) ? $Object->Object : ''   
+); #line 54 "/var/www/localhost/htdocs/rt/Search/Elements/EditSearches"
+$m->print( '
+<br />
+<span class="label">' );
+#line 56 "/var/www/localhost/htdocs/rt/Search/Elements/EditSearches"
+$m->comp( { content => sub {
+#line 56 "/var/www/localhost/htdocs/rt/Search/Elements/EditSearches"
+$m->print( 'Description' );
+#line 56 "/var/www/localhost/htdocs/rt/Search/Elements/EditSearches"
+} }, '/l'
+ );
+#line 56 "/var/www/localhost/htdocs/rt/Search/Elements/EditSearches"
+$m->print( ':</span>
+<input size="25" name="SavedSearchDescription" value="' );
+#line 57 "/var/www/localhost/htdocs/rt/Search/Elements/EditSearches"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $Description || '' )) );
+#line 57 "/var/www/localhost/htdocs/rt/Search/Elements/EditSearches"
+$m->print( '" />
+
+' );
+#line 59 "/var/www/localhost/htdocs/rt/Search/Elements/EditSearches"
+ if ($Id ne 'new') {
+$m->print( '<nobr>
+' );
+#line 61 "/var/www/localhost/htdocs/rt/Search/Elements/EditSearches"
+ if ( $Dirty ) {
+$m->print( '<input type="submit" class="button" name="SavedSearchRevert" value="' );
+#line 62 "/var/www/localhost/htdocs/rt/Search/Elements/EditSearches"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } (loc('Revert'))) );
+#line 62 "/var/www/localhost/htdocs/rt/Search/Elements/EditSearches"
+$m->print( '" />
+' );
+#line 63 "/var/www/localhost/htdocs/rt/Search/Elements/EditSearches"
+ }
+$m->print( '<input type="submit" class="button" name="SavedSearchDelete" value="' );
+#line 64 "/var/www/localhost/htdocs/rt/Search/Elements/EditSearches"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } (loc('Delete'))) );
+#line 64 "/var/www/localhost/htdocs/rt/Search/Elements/EditSearches"
+$m->print( '" />
+' );
+#line 65 "/var/www/localhost/htdocs/rt/Search/Elements/EditSearches"
+ if ( $AllowCopy ) {
+$m->print( '<input type="submit" class="button" name="SavedSearchCopy"   value="' );
+#line 66 "/var/www/localhost/htdocs/rt/Search/Elements/EditSearches"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } (loc('Save as New'))) );
+#line 66 "/var/www/localhost/htdocs/rt/Search/Elements/EditSearches"
+$m->print( '" />
+' );
+#line 67 "/var/www/localhost/htdocs/rt/Search/Elements/EditSearches"
+ }
+$m->print( '</nobr>
+' );
+#line 69 "/var/www/localhost/htdocs/rt/Search/Elements/EditSearches"
+ }
+ if ( $Object && $Object->Id ) {
+$m->print( '<input type="submit" class="button" id="SavedSearchSave" name="SavedSearchSave"   value="' );
+#line 71 "/var/www/localhost/htdocs/rt/Search/Elements/EditSearches"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } (loc('Update'))) );
+#line 71 "/var/www/localhost/htdocs/rt/Search/Elements/EditSearches"
+$m->print( '" />
+' );
+#line 72 "/var/www/localhost/htdocs/rt/Search/Elements/EditSearches"
+ } else {
+$m->print( '<input type="submit" class="button" id="SavedSearchSave" name="SavedSearchSave"   value="' );
+#line 73 "/var/www/localhost/htdocs/rt/Search/Elements/EditSearches"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } (loc('Save'))) );
+#line 73 "/var/www/localhost/htdocs/rt/Search/Elements/EditSearches"
+$m->print( '" />
+' );
+#line 74 "/var/www/localhost/htdocs/rt/Search/Elements/EditSearches"
+}
+ }
+$m->print( '<br />
+<hr />
+<span class="label">' );
+#line 78 "/var/www/localhost/htdocs/rt/Search/Elements/EditSearches"
+$m->comp( { content => sub {
+#line 78 "/var/www/localhost/htdocs/rt/Search/Elements/EditSearches"
+$m->print( 'Load saved search' );
+#line 78 "/var/www/localhost/htdocs/rt/Search/Elements/EditSearches"
+} }, '/l'
+ );
+#line 78 "/var/www/localhost/htdocs/rt/Search/Elements/EditSearches"
+$m->print( ':</span>
+' );
+#line 79 "/var/www/localhost/htdocs/rt/Search/Elements/EditSearches"
+$m->comp(   'SelectSearchesForObjects', Name => 'SavedSearchLoad', Objects => \@Objects, SearchType => $Type   
+); #line 79 "/var/www/localhost/htdocs/rt/Search/Elements/EditSearches"
+$m->print( '
+<input type="submit" value="' );
+#line 80 "/var/www/localhost/htdocs/rt/Search/Elements/EditSearches"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( loc('Load') )) );
+#line 80 "/var/www/localhost/htdocs/rt/Search/Elements/EditSearches"
+$m->print( '" id="SavedSearchLoadSubmit" name="SavedSearchLoadSubmit" class="button" />
+
+' );
+#line 82 "/var/www/localhost/htdocs/rt/Search/Elements/EditSearches"
+} }, '/Widgets/TitleBox', title => loc($Title)
+ );
+#line 82 "/var/www/localhost/htdocs/rt/Search/Elements/EditSearches"
+$m->print( '
+</div>
+' );
+#line 127 "/var/www/localhost/htdocs/rt/Search/Elements/EditSearches"
+$m->print( '
+' );
+#line 138 "/var/www/localhost/htdocs/rt/Search/Elements/EditSearches"
+$m->print( '
+' );
+#line 222 "/var/www/localhost/htdocs/rt/Search/Elements/EditSearches"
+$m->print( '
+' );
+;return;
+},
+'declared_args' => {
+  '$AllowCopy' => { default => ' 1' },
+  '$CurrentSearch' => { default => ' {}' },
+  '$Description' => { default => ' \'\'' },
+  '$Id' => { default => ' \'new\'' },
+  '$Object' => { default => ' undef' },
+  '$Title' => { default => ' loc(\'Saved searches\')' },
+  '$Type' => { default => ' \'Ticket\'' },
+  '@SearchFields' => { default => ' ()' }
+},
+'load_time' => 1434746455,
+'methods' => \%_method,
+
+)
+;

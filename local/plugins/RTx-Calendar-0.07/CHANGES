@@ -1,0 +1,36 @@
+Changes for 0.07
+
+  * add documentation on how to enable plugin in rt 3.8 and later
+  * add configuration to show owner in calendar (Shawn M Moore)
+  * make the popup display fields configurable (Shawn M Moore)
+  * tickets and reminders types (todo/event) are configurable in ical feed
+
+Changes for 0.06
+
+  * rt 3.8 compatibility
+
+Changes for 0.05
+  * fix a bug in ics feeds when showing reminders
+  * use Module::Install::RTx 0.21
+
+Changes for 0.04
+
+  * should work with rt 3.6.0 and seems to work with 3.7.2
+  * display Starts date by default
+  * you can use Format to display dates you want (Created, Started, Due, Starts, ...)
+  * if a saved search is named "calendar", use it for the default Calendar.html and for the portlet
+  * fix a bug in Prefs
+
+Changes for 0.03
+
+  * now uses Query Builder to find tickets
+  * ics (ICal) feeds available for each personal search with magic number authentication method
+  * default calendars and feeds show reminders
+  * Calendar.html move in Search
+  * MyCalendar links to your own tickets and Nobody's tickets for the
+    current month
+  * fix a problem with localtime and gmtime
+
+Changes for 0.02
+
+  * First release

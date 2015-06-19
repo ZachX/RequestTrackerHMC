@@ -1,0 +1,48 @@
+This file contains message digests of all files listed in MANIFEST,
+signed via the Module::Signature module, version 0.73.
+
+To verify the content in this distribution, first make sure you have
+Module::Signature installed, then type:
+
+    % cpansign -v
+
+It will check each file's integrity, as well as the signature's
+validity.  If "==> Signature verified OK! <==" is not displayed,
+the distribution may already have been compromised, and you should
+not run its Makefile.PL or Build.PL.
+
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+SHA1 7b8973b29fda6cc0d03edab31d415297e93495a4 Changes
+SHA1 00a12c9cccceb9b5daf03d36f3a137d62f28973c MANIFEST
+SHA1 2155657e663a4bf4380f17b07eeea600eafd8a6d META.yml
+SHA1 54e35e12c5faec939caee1afee0a350cc2c70ade Makefile.PL
+SHA1 2fc758084d8b70850f456866a8825d9faa8377fa README
+SHA1 f81f39099aa57f7da680b4a31a3e85f7216a3c00 html/Elements/QuickCalls
+SHA1 f9a9320008a400725f43f8ec102822fcf19d5ab7 html/Helpers/QuickCalls
+SHA1 9b5001bfa9cf8607b3b3935284d9253e0391c9f1 inc/Module/Install.pm
+SHA1 cab0e564f9bdf658535f683aa197157e06d0dcea inc/Module/Install/Base.pm
+SHA1 a1559b5b3b40f68efbbd256f4fef85970891b3ae inc/Module/Install/Can.pm
+SHA1 f15c1ba85f6d52e70c48c64bf0752c90a4ad66f9 inc/Module/Install/Fetch.pm
+SHA1 d44d96acd20793306dd201030c688e2a7d3083ee inc/Module/Install/Include.pm
+SHA1 eb48df8bafd07c6a862126d9b274df42b4395742 inc/Module/Install/Makefile.pm
+SHA1 95c73873c6c3cb7024614c225c53863e1e90c134 inc/Module/Install/Metadata.pm
+SHA1 6e010ba20a9d0ae23d8d0ff516868c1e571c2d44 inc/Module/Install/RTx.pm
+SHA1 3fdf4c0cffdb1a2e23e5cd26bf95be553f1f9590 inc/Module/Install/RTx/Runtime.pm
+SHA1 79f5b4199f622e8b05aac266b0c39f6a85bb303f inc/Module/Install/ReadmeFromPod.pm
+SHA1 f8b2ae3386f6ba26c33408968a953d450842eade inc/Module/Install/Win32.pm
+SHA1 f302bc703d76299cff243e5b44cecd61aac27b76 inc/Module/Install/WriteAll.pm
+SHA1 4e09b598c2626e08cec2bed5e981492fa9e90967 inc/YAML/Tiny.pm
+SHA1 034d0f3a7401dae4be3eee279258181f51a4ad81 inc/unicore/Name.pm
+SHA1 a50fc407086bc7e06ff1021398064777abb966d2 lib/RT/Extension/QuickCalls.pm
+SHA1 fb0aa0e05e64c181af97956633fc396ae6c19525 xt/00.load.t
+SHA1 6da39b48ce64b584e4c3274bff96fc76ff484820 xt/pod-coverage.t
+SHA1 0190346d7072d458c8a10a45c19f86db641dcc48 xt/pod.t
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iEYEARECAAYFAlSPc8IACgkQMflWJZZAbqDXHgCdHhSBJSfOGlV7oXmV3LIxqARY
+Pb0AnRcEnQ4f2ZFCMgRUF5Xe4Ho7y5qh
+=lGcl
+-----END PGP SIGNATURE-----

@@ -1,0 +1,168 @@
+package HTML::Mason::Commands;
+use strict;
+use vars qw($m $DECODED_ARGS $r %session);
+HTML::Mason::Component::FileBased->new(
+'code' => sub {
+HTML::Mason::Exception::Params->throw
+    ( error =>
+      "Odd number of parameters passed to component expecting name/value pairs"
+    ) if @_ % 2;
+my %ARGS = @_;
+my ( $id );
+{
+    my %pos;
+    for ( my $x = 0; $x < @_; $x += 2 )
+    {
+        $pos{ $_[$x] } = $x + 1;
+    }
+#line 89 "/var/www/localhost/htdocs/rt/Ticket/ModifyLinks.html"
+     $id = exists $pos{'id'} ? $_[ $pos{'id'} ] :  undef;
+}
+$m->debug_hook( $m->current_comp->path ) if ( HTML::Mason::Compiler::IN_PERL_DB() );
+
+#line 72 "/var/www/localhost/htdocs/rt/Ticket/ModifyLinks.html"
+
+my $Ticket = LoadTicket($id);
+
+my @results;  
+$m->callback( TicketObj => $Ticket, ARGSRef => \%ARGS, Results => \@results );
+push @results, ProcessTicketLinks( TicketObj => $Ticket, ARGSRef => \%ARGS );
+push @results, ProcessObjectCustomFieldUpdates( TicketObj => $Ticket, ARGSRef => \%ARGS );
+$Ticket->ApplyTransactionBatch;
+
+MaybeRedirectForResults(
+    Actions     => \@results,
+    Arguments   => { id => $id },
+);
+#line 1 "/var/www/localhost/htdocs/rt/Ticket/ModifyLinks.html"
+# BEGIN BPS TAGGED BLOCK {{{
+#
+# COPYRIGHT:
+#
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
+#                                          <sales@bestpractical.com>
+#
+# (Except where explicitly superseded by other copyright notices)
+#
+#
+# LICENSE:
+#
+# This work is made available to you under the terms of Version 2 of
+# the GNU General Public License. A copy of that license should have
+# been provided with this software, but in any event can be snarfed
+# from www.gnu.org.
+#
+# This work is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
+#
+#
+# CONTRIBUTION SUBMISSION POLICY:
+#
+# (The following paragraph is not intended to limit the rights granted
+# to you to modify and distribute this software under the terms of
+# the GNU General Public License and is only of importance to you if
+# you choose to contribute your changes and enhancements to the
+# community by submitting them to Best Practical Solutions, LLC.)
+#
+# By intentionally submitting any modifications, corrections or
+# derivatives to this work, or any other work intended for use with
+# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+# you are the copyright holder for those contributions and you grant
+# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+# royalty-free, perpetual, license to use, copy, create derivative
+# works based on those contributions, and sublicense and distribute
+# those contributions and any derivatives thereof.
+#
+# END BPS TAGGED BLOCK }}}
+$m->comp(   '/Elements/Header', Title => loc("Link ticket #[_1]", $Ticket->Id)   
+); #line 48 "/var/www/localhost/htdocs/rt/Ticket/ModifyLinks.html"
+$m->print( '
+' );
+#line 49 "/var/www/localhost/htdocs/rt/Ticket/ModifyLinks.html"
+$m->comp(   '/Elements/Tabs'  
+); #line 49 "/var/www/localhost/htdocs/rt/Ticket/ModifyLinks.html"
+$m->print( '
+
+' );
+#line 51 "/var/www/localhost/htdocs/rt/Ticket/ModifyLinks.html"
+ $m->callback(CallbackName => 'BeforeActionList', Actions => \@results, ARGSRef => \%ARGS, Ticket => $Ticket);
+$m->comp(   '/Elements/ListActions', actions => \@results   
+); #line 52 "/var/www/localhost/htdocs/rt/Ticket/ModifyLinks.html"
+$m->print( '
+
+<form action="ModifyLinks.html" name="ModifyLinks" method="post">
+<input type="hidden" class="hidden" name="id" value="' );
+#line 55 "/var/www/localhost/htdocs/rt/Ticket/ModifyLinks.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($Ticket->id)) );
+#line 55 "/var/www/localhost/htdocs/rt/Ticket/ModifyLinks.html"
+$m->print( '" />
+' );
+#line 56 "/var/www/localhost/htdocs/rt/Ticket/ModifyLinks.html"
+ $m->callback( CallbackName => 'FormStart', ARGSRef => \%ARGS );
+ my (@extra);
+ push @extra, titleright_raw => '<a href="'. RT->Config->Get('WebPath') . '/Ticket/Graphs/index.html?id='.$Ticket->id.'">'.loc('Graph').'</a>' unless RT->Config->Get('DisableGraphViz');
+$m->comp( { content => sub {
+#line 59 "/var/www/localhost/htdocs/rt/Ticket/ModifyLinks.html"
+$m->print( '
+' );
+#line 60 "/var/www/localhost/htdocs/rt/Ticket/ModifyLinks.html"
+$m->comp(   '/Elements/EditLinks', Object => $Ticket   
+); #line 60 "/var/www/localhost/htdocs/rt/Ticket/ModifyLinks.html"
+$m->print( '
+' );
+#line 61 "/var/www/localhost/htdocs/rt/Ticket/ModifyLinks.html"
+} }, '/Widgets/TitleBox', title => loc('Edit Links'), class=>'ticket-info-links', @extra
+ );
+#line 61 "/var/www/localhost/htdocs/rt/Ticket/ModifyLinks.html"
+$m->print( '
+
+' );
+#line 63 "/var/www/localhost/htdocs/rt/Ticket/ModifyLinks.html"
+$m->comp( { content => sub {
+#line 63 "/var/www/localhost/htdocs/rt/Ticket/ModifyLinks.html"
+$m->print( '
+' );
+#line 64 "/var/www/localhost/htdocs/rt/Ticket/ModifyLinks.html"
+$m->comp(   'Elements/EditMerge', Ticket => $Ticket, %ARGS   
+); #line 64 "/var/www/localhost/htdocs/rt/Ticket/ModifyLinks.html"
+$m->print( '
+' );
+#line 65 "/var/www/localhost/htdocs/rt/Ticket/ModifyLinks.html"
+} }, '/Widgets/TitleBox', title => loc('Merge'), class=>'ticket-info-merge'
+ );
+#line 65 "/var/www/localhost/htdocs/rt/Ticket/ModifyLinks.html"
+$m->print( '
+
+' );
+#line 67 "/var/www/localhost/htdocs/rt/Ticket/ModifyLinks.html"
+$m->comp(   '/Elements/Submit', Name => 'SubmitTicket', Label => loc('Save Changes')   
+); #line 67 "/var/www/localhost/htdocs/rt/Ticket/ModifyLinks.html"
+$m->print( '
+</form>
+
+' );
+#line 70 "/var/www/localhost/htdocs/rt/Ticket/ModifyLinks.html"
+ $m->callback(CallbackName => 'AfterForm', ARGSRef => \%ARGS, Ticket => $Ticket);
+$m->print( '
+' );
+#line 86 "/var/www/localhost/htdocs/rt/Ticket/ModifyLinks.html"
+$m->print( '      
+      
+' );
+;return;
+},
+'declared_args' => {
+  '$id' => { default => ' undef' }
+},
+'load_time' => 1433312874,
+
+)
+;

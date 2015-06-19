@@ -1,0 +1,17 @@
+# A log of all the change made to RT.
+#
+# Format:
+# Name + Comments + Changes made (include Filename + line number/section).
+
+1. June17; Zach; getting priority to work on quick create by making a
+SelectNewTicketPriority object; Adding a new DefaultInitialPriority section in
+RT__SiteConfig.pm.
+
+2. June17; Zach; getting priority to work on quick create by making a
+SelectNewTicketPriority object; Adding a new SelectNewTicketPriority.obj file
+in var/mason_data/obj/34*/standard/Elements/.
+
+3. June17; Zach; getting priority to work on quick create by making a
+SelectNewTicketPriority object; Add a Priority Block in
+var/mason_data/obj/34*/standard/Elements/QuickCreate.
+
