@@ -136,7 +136,7 @@ instead of the package name (C<RT::Extension::SLA>).
 
 Set(@Plugins, ());
 Plugin( "RT::Extension::PriorityAsString" );
-Set(%PriorityAsString, (Low => 0, Medium => 50, High => 75, Urgent => 100));
+Set(%PriorityAsString, ( "Minor Issue" => 0, "Inconveniences" => 50, "Preventing Work" => 75, Urgent => 100));
 Plugin('RT::Extension::QuickCalls');
 
 =item C<@StaticRoots>

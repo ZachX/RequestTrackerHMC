@@ -114,7 +114,7 @@ $m->print( 'Priority' );
 } }, '/l'
  );
 $m->print( ':</td><td class="value">' );
-$m->comp(   '/Elements/SelectPriority', Name => "InitialPriority", Default => $args->{InitialPriority}, 
+$m->comp(   '/Elements/SelectPriority', Name => "InitialPriority", Default => 0, 
 ); #line 60 "/var/www/localhost/htdocs/rt/Elements/QuickCreate"
 $m->print( '
 </td>
