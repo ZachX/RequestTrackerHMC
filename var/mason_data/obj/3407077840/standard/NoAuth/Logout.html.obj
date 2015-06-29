@@ -1,0 +1,143 @@
+package HTML::Mason::Commands;
+use strict;
+use vars qw($m $DECODED_ARGS $r %session);
+HTML::Mason::Component::FileBased->new(
+'code' => sub {
+my %ARGS;
+{ local $^W; %ARGS = @_ unless (@_ % 2); }
+$m->debug_hook( $m->current_comp->path ) if ( HTML::Mason::Compiler::IN_PERL_DB() );
+
+#line 69 "/var/www/localhost/htdocs/rt/NoAuth/Logout.html"
+
+my $URL = RT->Config->Get('WebPath')."/";
+
+# Allow a callback to modify the URL we redirect to, which is useful for
+# external webauth systems
+$m->callback( %ARGS, CallbackName => 'ModifyLoginRedirect', URL => \$URL );
+
+$m->callback( %ARGS, CallbackName => 'BeforeSessionDelete' );
+
+if (keys %session) {
+    RT::Interface::Web::InstantiateNewSession();
+    $session{'CurrentUser'} = RT::CurrentUser->new;
+}
+
+$m->callback( %ARGS, CallbackName => 'AfterSessionDelete' );
+$m->notes->{RefreshURL} = $URL;
+#line 1 "/var/www/localhost/htdocs/rt/NoAuth/Logout.html"
+# BEGIN BPS TAGGED BLOCK {{{
+#
+# COPYRIGHT:
+#
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
+#                                          <sales@bestpractical.com>
+#
+# (Except where explicitly superseded by other copyright notices)
+#
+#
+# LICENSE:
+#
+# This work is made available to you under the terms of Version 2 of
+# the GNU General Public License. A copy of that license should have
+# been provided with this software, but in any event can be snarfed
+# from www.gnu.org.
+#
+# This work is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
+#
+#
+# CONTRIBUTION SUBMISSION POLICY:
+#
+# (The following paragraph is not intended to limit the rights granted
+# to you to modify and distribute this software under the terms of
+# the GNU General Public License and is only of importance to you if
+# you choose to contribute your changes and enhancements to the
+# community by submitting them to Best Practical Solutions, LLC.)
+#
+# By intentionally submitting any modifications, corrections or
+# derivatives to this work, or any other work intended for use with
+# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+# you are the copyright holder for those contributions and you grant
+# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+# royalty-free, perpetual, license to use, copy, create derivative
+# works based on those contributions, and sublicense and distribute
+# those contributions and any derivatives thereof.
+#
+# END BPS TAGGED BLOCK }}}
+$m->comp(   '/Elements/Header', Title => loc('Logout'), Refresh => RT->Config->Get('LogoutRefresh')   
+); #line 48 "/var/www/localhost/htdocs/rt/NoAuth/Logout.html"
+$m->print( '
+</div>
+
+<div id="body" class="login-body">
+<div id="login-box">
+
+' );
+#line 54 "/var/www/localhost/htdocs/rt/NoAuth/Logout.html"
+$m->comp( { content => sub {
+#line 54 "/var/www/localhost/htdocs/rt/NoAuth/Logout.html"
+$m->print( '
+<p>' );
+#line 55 "/var/www/localhost/htdocs/rt/NoAuth/Logout.html"
+$m->comp( { content => sub {
+#line 55 "/var/www/localhost/htdocs/rt/NoAuth/Logout.html"
+$m->print( 'You have been logged out of RT.' );
+#line 55 "/var/www/localhost/htdocs/rt/NoAuth/Logout.html"
+} }, '/l'
+ );
+#line 55 "/var/www/localhost/htdocs/rt/NoAuth/Logout.html"
+$m->print( '
+
+<br />
+<br />
+<a href="' );
+#line 59 "/var/www/localhost/htdocs/rt/NoAuth/Logout.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( RT->Config->Get('WebPath') )) );
+#line 59 "/var/www/localhost/htdocs/rt/NoAuth/Logout.html"
+$m->print( '/">' );
+#line 59 "/var/www/localhost/htdocs/rt/NoAuth/Logout.html"
+$m->comp( { content => sub {
+#line 59 "/var/www/localhost/htdocs/rt/NoAuth/Logout.html"
+$m->print( 'You\'re welcome to login again' );
+#line 59 "/var/www/localhost/htdocs/rt/NoAuth/Logout.html"
+} }, '/l'
+ );
+#line 59 "/var/www/localhost/htdocs/rt/NoAuth/Logout.html"
+$m->print( '</a>.
+' );
+#line 60 "/var/www/localhost/htdocs/rt/NoAuth/Logout.html"
+} }, '/Widgets/TitleBox', title => loc('Logged out'), hideable => 0
+ );
+#line 60 "/var/www/localhost/htdocs/rt/NoAuth/Logout.html"
+$m->print( '
+
+' );
+#line 62 "/var/www/localhost/htdocs/rt/NoAuth/Logout.html"
+ $m->callback( %ARGS );
+$m->print( '
+</div></div>
+' );
+#line 65 "/var/www/localhost/htdocs/rt/NoAuth/Logout.html"
+$m->comp(   '/Elements/Footer', Menu => 0   
+); #line 65 "/var/www/localhost/htdocs/rt/NoAuth/Logout.html"
+$m->print( '
+
+' );
+#line 67 "/var/www/localhost/htdocs/rt/NoAuth/Logout.html"
+ $m->abort();
+$m->print( '
+' );
+;return;
+},
+'load_time' => 1435182126,
+
+)
+;

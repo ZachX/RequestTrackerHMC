@@ -1,0 +1,181 @@
+package HTML::Mason::Commands;
+use strict;
+use vars qw($m $DECODED_ARGS $r %session);
+HTML::Mason::Component::FileBased->new(
+'code' => sub {
+$m->debug_hook( $m->current_comp->path ) if ( HTML::Mason::Compiler::IN_PERL_DB() );
+
+#line 71 "/var/www/localhost/htdocs/rt/Articles/Elements/NewestArticles"
+
+my $rows = 10;
+my $i;
+my $MyArticles;
+$MyArticles = RT::Articles->new($session{'CurrentUser'});
+$MyArticles->UnLimit;
+$MyArticles->RowsPerPage($rows);
+$MyArticles->OrderBy(FIELD => 'LastUpdated', ORDER => 'DESC');
+
+#line 1 "/var/www/localhost/htdocs/rt/Articles/Elements/NewestArticles"
+# BEGIN BPS TAGGED BLOCK {{{
+#
+# COPYRIGHT:
+#
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
+#                                          <sales@bestpractical.com>
+#
+# (Except where explicitly superseded by other copyright notices)
+#
+#
+# LICENSE:
+#
+# This work is made available to you under the terms of Version 2 of
+# the GNU General Public License. A copy of that license should have
+# been provided with this software, but in any event can be snarfed
+# from www.gnu.org.
+#
+# This work is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
+#
+#
+# CONTRIBUTION SUBMISSION POLICY:
+#
+# (The following paragraph is not intended to limit the rights granted
+# to you to modify and distribute this software under the terms of
+# the GNU General Public License and is only of importance to you if
+# you choose to contribute your changes and enhancements to the
+# community by submitting them to Best Practical Solutions, LLC.)
+#
+# By intentionally submitting any modifications, corrections or
+# derivatives to this work, or any other work intended for use with
+# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+# you are the copyright holder for those contributions and you grant
+# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+# royalty-free, perpetual, license to use, copy, create derivative
+# works based on those contributions, and sublicense and distribute
+# those contributions and any derivatives thereof.
+#
+# END BPS TAGGED BLOCK }}}
+$m->comp(   '/Widgets/TitleBoxStart', title => loc("[_1] newest articles", $rows), bodyclass=> ''   
+); #line 48 "/var/www/localhost/htdocs/rt/Articles/Elements/NewestArticles"
+$m->print( '
+<table border="0" cellspacing="0" cellpadding="1" width="100%">
+<tr>
+<th align="right">' );
+#line 51 "/var/www/localhost/htdocs/rt/Articles/Elements/NewestArticles"
+$m->comp( { content => sub {
+#line 51 "/var/www/localhost/htdocs/rt/Articles/Elements/NewestArticles"
+$m->print( '#' );
+#line 51 "/var/www/localhost/htdocs/rt/Articles/Elements/NewestArticles"
+} }, '/l'
+ );
+#line 51 "/var/www/localhost/htdocs/rt/Articles/Elements/NewestArticles"
+$m->print( '</th>
+<th align="left">' );
+#line 52 "/var/www/localhost/htdocs/rt/Articles/Elements/NewestArticles"
+$m->comp( { content => sub {
+#line 52 "/var/www/localhost/htdocs/rt/Articles/Elements/NewestArticles"
+$m->print( 'Name' );
+#line 52 "/var/www/localhost/htdocs/rt/Articles/Elements/NewestArticles"
+} }, '/l'
+ );
+#line 52 "/var/www/localhost/htdocs/rt/Articles/Elements/NewestArticles"
+$m->print( '</th>
+<th align="left" width="20%">' );
+#line 53 "/var/www/localhost/htdocs/rt/Articles/Elements/NewestArticles"
+$m->comp( { content => sub {
+#line 53 "/var/www/localhost/htdocs/rt/Articles/Elements/NewestArticles"
+$m->print( 'Created by' );
+#line 53 "/var/www/localhost/htdocs/rt/Articles/Elements/NewestArticles"
+} }, '/l'
+ );
+#line 53 "/var/www/localhost/htdocs/rt/Articles/Elements/NewestArticles"
+$m->print( '</th>
+<th align="left">&nbsp;</th>
+</tr>
+' );
+#line 56 "/var/www/localhost/htdocs/rt/Articles/Elements/NewestArticles"
+ while (my $Article = $MyArticles->Next) {
+ $i++;
+$m->print( '<tr class="' );
+#line 58 "/var/www/localhost/htdocs/rt/Articles/Elements/NewestArticles"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $i%2 ? 'oddline' : 'evenline')) );
+#line 58 "/var/www/localhost/htdocs/rt/Articles/Elements/NewestArticles"
+$m->print( '">                                
+<td align="right">' );
+#line 59 "/var/www/localhost/htdocs/rt/Articles/Elements/NewestArticles"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($Article->Id)) );
+#line 59 "/var/www/localhost/htdocs/rt/Articles/Elements/NewestArticles"
+$m->print( '</td>
+<td><a href="' );
+#line 60 "/var/www/localhost/htdocs/rt/Articles/Elements/NewestArticles"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( RT->Config->Get('WebPath') )) );
+#line 60 "/var/www/localhost/htdocs/rt/Articles/Elements/NewestArticles"
+$m->print( '/Articles/Article/Display.html?id=' );
+#line 60 "/var/www/localhost/htdocs/rt/Articles/Elements/NewestArticles"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($Article->Id)) );
+#line 60 "/var/www/localhost/htdocs/rt/Articles/Elements/NewestArticles"
+$m->print( '">' );
+#line 60 "/var/www/localhost/htdocs/rt/Articles/Elements/NewestArticles"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($Article->Name || loc('(no name)'))) );
+#line 60 "/var/www/localhost/htdocs/rt/Articles/Elements/NewestArticles"
+$m->print( '</a></td>
+<td>' );
+#line 61 "/var/www/localhost/htdocs/rt/Articles/Elements/NewestArticles"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($Article->CreatorObj->Name)) );
+#line 61 "/var/www/localhost/htdocs/rt/Articles/Elements/NewestArticles"
+$m->print( '</td>
+<td align="right">[<a href="' );
+#line 62 "/var/www/localhost/htdocs/rt/Articles/Elements/NewestArticles"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( RT->Config->Get('WebPath') )) );
+#line 62 "/var/www/localhost/htdocs/rt/Articles/Elements/NewestArticles"
+$m->print( '/Articles/Article/Edit.html?id=' );
+#line 62 "/var/www/localhost/htdocs/rt/Articles/Elements/NewestArticles"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($Article->Id)) );
+#line 62 "/var/www/localhost/htdocs/rt/Articles/Elements/NewestArticles"
+$m->print( '">' );
+#line 62 "/var/www/localhost/htdocs/rt/Articles/Elements/NewestArticles"
+$m->comp( { content => sub {
+#line 62 "/var/www/localhost/htdocs/rt/Articles/Elements/NewestArticles"
+$m->print( 'Update' );
+#line 62 "/var/www/localhost/htdocs/rt/Articles/Elements/NewestArticles"
+} }, '/l'
+ );
+#line 62 "/var/www/localhost/htdocs/rt/Articles/Elements/NewestArticles"
+$m->print( '</a>]</td>
+</tr>
+<tr class="' );
+#line 64 "/var/www/localhost/htdocs/rt/Articles/Elements/NewestArticles"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $i%2 ? 'oddline' : 'evenline')) );
+#line 64 "/var/www/localhost/htdocs/rt/Articles/Elements/NewestArticles"
+$m->print( '">
+<td>&nbsp;</td>
+<td colspan="3"><small>' );
+#line 66 "/var/www/localhost/htdocs/rt/Articles/Elements/NewestArticles"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($Article->Summary || loc('(no Summary)'))) );
+#line 66 "/var/www/localhost/htdocs/rt/Articles/Elements/NewestArticles"
+$m->print( '</small></td>
+</tr>
+' );
+#line 68 "/var/www/localhost/htdocs/rt/Articles/Elements/NewestArticles"
+ }
+$m->print( '</table>
+' );
+#line 70 "/var/www/localhost/htdocs/rt/Articles/Elements/NewestArticles"
+$m->comp(   '/Widgets/TitleBoxEnd'  
+); #line 70 "/var/www/localhost/htdocs/rt/Articles/Elements/NewestArticles"
+$m->print( '
+' );
+;return;
+},
+'load_time' => 1435178678,
+
+)
+;

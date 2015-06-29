@@ -42,7 +42,6 @@ otherwise, mail for existing tickets won't get put in the right place.
 =cut
 
 Set($rtname, "cs.hmc.edu");
-# MAY REALLY WANT TO CHANGE THE DOMAIN NAME LATER
 
 
 =item C<$Organization>

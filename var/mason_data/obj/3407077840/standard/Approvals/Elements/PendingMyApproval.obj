@@ -1,0 +1,215 @@
+package HTML::Mason::Commands;
+use strict;
+use vars qw($m $DECODED_ARGS $r %session);
+HTML::Mason::Component::FileBased->new(
+'code' => sub {
+my %ARGS;
+{ local $^W; %ARGS = @_ unless (@_ % 2); }
+$m->debug_hook( $m->current_comp->path ) if ( HTML::Mason::Compiler::IN_PERL_DB() );
+
+#line 78 "/var/www/localhost/htdocs/rt/Approvals/Elements/PendingMyApproval"
+
+my $tickets = RT::Tickets->new( $session{'CurrentUser'} );
+$tickets->LimitOwner( VALUE => $session{'CurrentUser'}->Id );
+
+# also consider AdminCcs as potential approvers.
+my $group_tickets = RT::Tickets->new( $session{'CurrentUser'} );
+$group_tickets->LimitWatcher( VALUE => $session{'CurrentUser'}->EmailAddress, TYPE => 'AdminCc' );
+
+my $created_before = RT::Date->new( $session{'CurrentUser'} );
+my $created_after = RT::Date->new( $session{'CurrentUser'} );
+
+foreach ($tickets, $group_tickets) {
+    $_->LimitType( VALUE => 'approval' );
+
+    if ( $ARGS{'ShowResolved'} ) {
+        $_->LimitStatus( VALUE => 'resolved' );
+    }
+    if ( $ARGS{'ShowRejected'} ) {
+        $_->LimitStatus( VALUE => 'rejected' );
+    }
+    if ( $ARGS{'ShowPending'} || ( !$ARGS{'ShowRejected'} && !$ARGS{'Resolved'} ) ) {
+        $_->LimitStatus( VALUE => 'open' );
+        $_->LimitStatus( VALUE => 'new' );
+        $_->LimitStatus( VALUE => 'stalled' );
+    }
+
+    if ( $ARGS{'CreatedBefore'} ) {
+        $created_before->Set( Format => 'unknown', Value => $ARGS{'CreatedBefore'} );
+        $_->LimitCreated( OPERATOR => "<=", VALUE => $created_before->ISO );
+    }
+    if ( $ARGS{'CreatedAfter'} ) {
+        $created_after->Set( Format => 'unknown', Value => $ARGS{'CreatedAfter'} );
+        $_->LimitCreated( OPERATOR => ">=", VALUE => $created_after->ISO );
+    }
+    $_->OrderBy( FIELD => 'id' );
+}
+
+#line 1 "/var/www/localhost/htdocs/rt/Approvals/Elements/PendingMyApproval"
+# BEGIN BPS TAGGED BLOCK {{{
+#
+# COPYRIGHT:
+#
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
+#                                          <sales@bestpractical.com>
+#
+# (Except where explicitly superseded by other copyright notices)
+#
+#
+# LICENSE:
+#
+# This work is made available to you under the terms of Version 2 of
+# the GNU General Public License. A copy of that license should have
+# been provided with this software, but in any event can be snarfed
+# from www.gnu.org.
+#
+# This work is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
+#
+#
+# CONTRIBUTION SUBMISSION POLICY:
+#
+# (The following paragraph is not intended to limit the rights granted
+# to you to modify and distribute this software under the terms of
+# the GNU General Public License and is only of importance to you if
+# you choose to contribute your changes and enhancements to the
+# community by submitting them to Best Practical Solutions, LLC.)
+#
+# By intentionally submitting any modifications, corrections or
+# derivatives to this work, or any other work intended for use with
+# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+# you are the copyright holder for those contributions and you grant
+# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+# royalty-free, perpetual, license to use, copy, create derivative
+# works based on those contributions, and sublicense and distribute
+# those contributions and any derivatives thereof.
+#
+# END BPS TAGGED BLOCK }}}
+ my %done;
+ foreach ($tickets, $group_tickets) {
+   while (my $ticket = $_->Next() ) {
+     next if !$ARGS{'ShowDependent'} and $ticket->HasUnresolvedDependencies( Type => 'approval' );
+     next if $done{$ticket->Id}++; # don't show duplicate tickets
+$m->comp(   'Approve', ticket => $ticket   
+); #line 53 "/var/www/localhost/htdocs/rt/Approvals/Elements/PendingMyApproval"
+$m->print( '
+' );
+#line 54 "/var/www/localhost/htdocs/rt/Approvals/Elements/PendingMyApproval"
+   }
+ }
+$m->print( '
+' );
+#line 57 "/var/www/localhost/htdocs/rt/Approvals/Elements/PendingMyApproval"
+$m->comp( { content => sub {
+#line 57 "/var/www/localhost/htdocs/rt/Approvals/Elements/PendingMyApproval"
+$m->print( '
+<input type="checkbox" class="checkbox" value="1" id="ShowPending" name="ShowPending"
+        ' );
+#line 61 "/var/www/localhost/htdocs/rt/Approvals/Elements/PendingMyApproval"
+$m->print( ((!$ARGS{'ShowRejected'} && !$ARGS{'ShowResolved'}) ||
+         $ARGS{'ShowPending'})
+        && qq[checked="checked"] );
+#line 61 "/var/www/localhost/htdocs/rt/Approvals/Elements/PendingMyApproval"
+$m->print( ' />
+<label for="ShowPending">' );
+#line 62 "/var/www/localhost/htdocs/rt/Approvals/Elements/PendingMyApproval"
+$m->comp( { content => sub {
+#line 62 "/var/www/localhost/htdocs/rt/Approvals/Elements/PendingMyApproval"
+$m->print( 'Show pending requests' );
+#line 62 "/var/www/localhost/htdocs/rt/Approvals/Elements/PendingMyApproval"
+} }, '/l'
+ );
+#line 62 "/var/www/localhost/htdocs/rt/Approvals/Elements/PendingMyApproval"
+$m->print( '</label><br />
+
+<input type="checkbox" class="checkbox" value="1" id="ShowResolved" name="ShowResolved" ' );
+#line 64 "/var/www/localhost/htdocs/rt/Approvals/Elements/PendingMyApproval"
+$m->print(  defined($ARGS{'ShowResolved'}) && $ARGS{'ShowResolved'} && qq[checked="checked"] );
+#line 64 "/var/www/localhost/htdocs/rt/Approvals/Elements/PendingMyApproval"
+$m->print( ' />
+<label for="ShowResolved">' );
+#line 65 "/var/www/localhost/htdocs/rt/Approvals/Elements/PendingMyApproval"
+$m->comp( { content => sub {
+#line 65 "/var/www/localhost/htdocs/rt/Approvals/Elements/PendingMyApproval"
+$m->print( 'Show approved requests' );
+#line 65 "/var/www/localhost/htdocs/rt/Approvals/Elements/PendingMyApproval"
+} }, '/l'
+ );
+#line 65 "/var/www/localhost/htdocs/rt/Approvals/Elements/PendingMyApproval"
+$m->print( '</label><br />
+
+<input type="checkbox" class="checkbox" value="1" id="ShowRejected" name="ShowRejected" ' );
+#line 67 "/var/www/localhost/htdocs/rt/Approvals/Elements/PendingMyApproval"
+$m->print(  defined($ARGS{'ShowRejected'}) && $ARGS{'ShowRejected'} && qq[checked="checked"] );
+#line 67 "/var/www/localhost/htdocs/rt/Approvals/Elements/PendingMyApproval"
+$m->print( ' />
+<label for="ShowRejected">' );
+#line 68 "/var/www/localhost/htdocs/rt/Approvals/Elements/PendingMyApproval"
+$m->comp( { content => sub {
+#line 68 "/var/www/localhost/htdocs/rt/Approvals/Elements/PendingMyApproval"
+$m->print( 'Show denied requests' );
+#line 68 "/var/www/localhost/htdocs/rt/Approvals/Elements/PendingMyApproval"
+} }, '/l'
+ );
+#line 68 "/var/www/localhost/htdocs/rt/Approvals/Elements/PendingMyApproval"
+$m->print( '</label><br />
+
+<input type="checkbox" class="checkbox" value="1" id="ShowDependent" name="ShowDependent" ' );
+#line 70 "/var/www/localhost/htdocs/rt/Approvals/Elements/PendingMyApproval"
+$m->print(  defined($ARGS{'ShowDependent'}) && $ARGS{'ShowDependent'} && qq[checked="checked"] );
+#line 70 "/var/www/localhost/htdocs/rt/Approvals/Elements/PendingMyApproval"
+$m->print( ' />
+<label for="ShowDependent">' );
+#line 71 "/var/www/localhost/htdocs/rt/Approvals/Elements/PendingMyApproval"
+$m->comp( { content => sub {
+#line 71 "/var/www/localhost/htdocs/rt/Approvals/Elements/PendingMyApproval"
+$m->print( 'Show requests awaiting other approvals' );
+#line 71 "/var/www/localhost/htdocs/rt/Approvals/Elements/PendingMyApproval"
+} }, '/l'
+ );
+#line 71 "/var/www/localhost/htdocs/rt/Approvals/Elements/PendingMyApproval"
+$m->print( '</label><br />
+
+' );
+#line 73 "/var/www/localhost/htdocs/rt/Approvals/Elements/PendingMyApproval"
+$m->comp( { content => sub {
+#line 73 "/var/www/localhost/htdocs/rt/Approvals/Elements/PendingMyApproval"
+$m->print( 'Only show approvals for requests created before [_1]' );
+#line 73 "/var/www/localhost/htdocs/rt/Approvals/Elements/PendingMyApproval"
+} }, '/l_unsafe', qq{<input size='15' class="datepicker" value='}.($created_before->IsSet &&$created_before->ISO(Timezone => 'user'))."' name='CreatedBefore' id='CreatedBefore' />"
+ );
+#line 73 "/var/www/localhost/htdocs/rt/Approvals/Elements/PendingMyApproval"
+$m->print( '<br />
+
+' );
+#line 75 "/var/www/localhost/htdocs/rt/Approvals/Elements/PendingMyApproval"
+$m->comp( { content => sub {
+#line 75 "/var/www/localhost/htdocs/rt/Approvals/Elements/PendingMyApproval"
+$m->print( 'Only show approvals for requests created after [_1]' );
+#line 75 "/var/www/localhost/htdocs/rt/Approvals/Elements/PendingMyApproval"
+} }, '/l_unsafe', qq{<input size='15' class="datepicker" value='}.( $created_after->IsSet && $created_after->ISO(Timezone => 'user'))."' name='CreatedAfter' id='CreatedAfter' />"
+ );
+#line 75 "/var/www/localhost/htdocs/rt/Approvals/Elements/PendingMyApproval"
+$m->print( '
+' );
+#line 76 "/var/www/localhost/htdocs/rt/Approvals/Elements/PendingMyApproval"
+} }, '/Widgets/TitleBox', title => loc("Search for approvals")
+ );
+#line 76 "/var/www/localhost/htdocs/rt/Approvals/Elements/PendingMyApproval"
+$m->print( '
+
+' );
+;return;
+},
+'load_time' => 1434991083,
+
+)
+;
