@@ -1,0 +1,232 @@
+package HTML::Mason::Commands;
+use strict;
+use vars qw($m $DECODED_ARGS $r %session);
+HTML::Mason::Component::FileBased->new(
+'code' => sub {
+my %ARGS;
+{ local $^W; %ARGS = @_ unless (@_ % 2); }
+$m->debug_hook( $m->current_comp->path ) if ( HTML::Mason::Compiler::IN_PERL_DB() );
+
+#line 75 "/var/www/localhost/htdocs/rt/Tools/MyDay.html"
+
+my $title = loc("What I did today");
+
+my $i = 0;
+my @results;
+foreach my $arg ( keys %ARGS ) {
+    next unless ( $arg =~ /^UpdateStatus-(\d*)$/ );
+    my $id     = $1;
+    my $ticket = LoadTicket($id);
+    next unless ( $ticket->id );
+    if ( my $content = $ARGS{'UpdateContent-'.$id} ) {
+        my ( $val, $msg ) = $ticket->Comment(
+            Content   => $content,
+            TimeTaken => $ARGS{ 'UpdateTimeWorked-' . $id }
+        );
+        push @results, loc( "Ticket [_1]: [_2]", $id, $msg );
+    } elsif ( my $worked = $ARGS{ 'UpdateTimeWorked-' . $id } ) {
+        my ( $val, $msg ) = $ticket->SetTimeWorked( $worked + $ticket->TimeWorked );
+            push @results, loc( "Ticket [_1]: [_2]", $id, $msg );
+    }
+
+    if ( my $status = $ARGS{ 'UpdateStatus-' . $id } ) {
+        if ( $status ne $ticket->Status ) {
+            my ( $val, $msg ) = $ticket->SetStatus($status);
+            push @results, loc( "Ticket [_1]: [_2]", $id, $msg );
+
+        }
+    }
+
+}
+
+my $Tickets = RT::Tickets->new($session{'CurrentUser'});
+$Tickets->LimitOwner(VALUE => $session{'CurrentUser'}->Id);
+$Tickets->LimitToActiveStatus;
+$Tickets->OrderBy ( FIELD => 'Priority', ORDER => 'DESC');
+
+
+#line 1 "/var/www/localhost/htdocs/rt/Tools/MyDay.html"
+# BEGIN BPS TAGGED BLOCK {{{
+#
+# COPYRIGHT:
+#
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
+#                                          <sales@bestpractical.com>
+#
+# (Except where explicitly superseded by other copyright notices)
+#
+#
+# LICENSE:
+#
+# This work is made available to you under the terms of Version 2 of
+# the GNU General Public License. A copy of that license should have
+# been provided with this software, but in any event can be snarfed
+# from www.gnu.org.
+#
+# This work is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
+#
+#
+# CONTRIBUTION SUBMISSION POLICY:
+#
+# (The following paragraph is not intended to limit the rights granted
+# to you to modify and distribute this software under the terms of
+# the GNU General Public License and is only of importance to you if
+# you choose to contribute your changes and enhancements to the
+# community by submitting them to Best Practical Solutions, LLC.)
+#
+# By intentionally submitting any modifications, corrections or
+# derivatives to this work, or any other work intended for use with
+# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+# you are the copyright holder for those contributions and you grant
+# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+# royalty-free, perpetual, license to use, copy, create derivative
+# works based on those contributions, and sublicense and distribute
+# those contributions and any derivatives thereof.
+#
+# END BPS TAGGED BLOCK }}}
+$m->comp(   '/Elements/Header', Title => $title   
+); #line 48 "/var/www/localhost/htdocs/rt/Tools/MyDay.html"
+$m->print( '
+' );
+#line 49 "/var/www/localhost/htdocs/rt/Tools/MyDay.html"
+$m->comp(   '/Elements/Tabs'  
+); #line 49 "/var/www/localhost/htdocs/rt/Tools/MyDay.html"
+$m->print( '
+
+' );
+#line 51 "/var/www/localhost/htdocs/rt/Tools/MyDay.html"
+$m->comp(   '/Elements/ListActions', actions => \@results   
+); #line 51 "/var/www/localhost/htdocs/rt/Tools/MyDay.html"
+$m->print( '
+
+<h2>' );
+#line 53 "/var/www/localhost/htdocs/rt/Tools/MyDay.html"
+$m->comp( { content => sub {
+#line 53 "/var/www/localhost/htdocs/rt/Tools/MyDay.html"
+$m->print( 'Active tickets for [_1]' );
+#line 53 "/var/www/localhost/htdocs/rt/Tools/MyDay.html"
+} }, '/l', $session{'CurrentUser'}->Name
+ );
+#line 53 "/var/www/localhost/htdocs/rt/Tools/MyDay.html"
+$m->print( '</h2>
+<form method="post" action="MyDay.html">
+<table width="100%" cellpadding="0" cellspacing="0" class="myday">
+' );
+#line 56 "/var/www/localhost/htdocs/rt/Tools/MyDay.html"
+ while ( my $Ticket = $Tickets->Next()) {
+ $i++;
+ my $class =  $i % 2  ? 'class="evenline"' : 'class="oddline"';
+$m->print( '<tr ' );
+#line 59 "/var/www/localhost/htdocs/rt/Tools/MyDay.html"
+$m->print( $class );
+#line 59 "/var/www/localhost/htdocs/rt/Tools/MyDay.html"
+$m->print( '><td colspan="2"><h2><a
+href="' );
+#line 60 "/var/www/localhost/htdocs/rt/Tools/MyDay.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } (RT->Config->Get('WebPath'))) );
+#line 60 "/var/www/localhost/htdocs/rt/Tools/MyDay.html"
+$m->print( '/Ticket/Display.html?id=' );
+#line 60 "/var/www/localhost/htdocs/rt/Tools/MyDay.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($Ticket->Id)) );
+#line 60 "/var/www/localhost/htdocs/rt/Tools/MyDay.html"
+$m->print( '">' );
+#line 60 "/var/www/localhost/htdocs/rt/Tools/MyDay.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($Ticket->Id)) );
+#line 60 "/var/www/localhost/htdocs/rt/Tools/MyDay.html"
+$m->print( ':
+' );
+#line 61 "/var/www/localhost/htdocs/rt/Tools/MyDay.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($Ticket->Subject)) );
+#line 61 "/var/www/localhost/htdocs/rt/Tools/MyDay.html"
+$m->print( '</a></h2></td></tr>
+<tr ' );
+#line 62 "/var/www/localhost/htdocs/rt/Tools/MyDay.html"
+$m->print( $class );
+#line 62 "/var/www/localhost/htdocs/rt/Tools/MyDay.html"
+$m->print( '><td><span class="label">' );
+#line 62 "/var/www/localhost/htdocs/rt/Tools/MyDay.html"
+$m->comp( { content => sub {
+#line 62 "/var/www/localhost/htdocs/rt/Tools/MyDay.html"
+$m->print( 'Worked' );
+#line 62 "/var/www/localhost/htdocs/rt/Tools/MyDay.html"
+} }, '/l'
+ );
+#line 62 "/var/www/localhost/htdocs/rt/Tools/MyDay.html"
+$m->print( ':</span><input size="3" name="UpdateTimeWorked-' );
+#line 62 "/var/www/localhost/htdocs/rt/Tools/MyDay.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($Ticket->Id)) );
+#line 62 "/var/www/localhost/htdocs/rt/Tools/MyDay.html"
+$m->print( '" /> ' );
+#line 62 "/var/www/localhost/htdocs/rt/Tools/MyDay.html"
+$m->comp( { content => sub {
+#line 62 "/var/www/localhost/htdocs/rt/Tools/MyDay.html"
+$m->print( 'minutes' );
+#line 62 "/var/www/localhost/htdocs/rt/Tools/MyDay.html"
+} }, '/l'
+ );
+#line 62 "/var/www/localhost/htdocs/rt/Tools/MyDay.html"
+$m->print( '
+</td>
+<td rowspan="2"><span class="label">' );
+#line 64 "/var/www/localhost/htdocs/rt/Tools/MyDay.html"
+$m->comp( { content => sub {
+#line 64 "/var/www/localhost/htdocs/rt/Tools/MyDay.html"
+$m->print( 'Comments' );
+#line 64 "/var/www/localhost/htdocs/rt/Tools/MyDay.html"
+} }, '/l'
+ );
+#line 64 "/var/www/localhost/htdocs/rt/Tools/MyDay.html"
+$m->print( ':<br /></span><textarea name="UpdateContent-' );
+#line 64 "/var/www/localhost/htdocs/rt/Tools/MyDay.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($Ticket->Id)) );
+#line 64 "/var/www/localhost/htdocs/rt/Tools/MyDay.html"
+$m->print( '" rows="5"
+cols="60"></textarea></td></tr>
+<tr ' );
+#line 66 "/var/www/localhost/htdocs/rt/Tools/MyDay.html"
+$m->print( $class );
+#line 66 "/var/www/localhost/htdocs/rt/Tools/MyDay.html"
+$m->print( '>
+<td><span class="label">' );
+#line 67 "/var/www/localhost/htdocs/rt/Tools/MyDay.html"
+$m->comp( { content => sub {
+#line 67 "/var/www/localhost/htdocs/rt/Tools/MyDay.html"
+$m->print( 'Status' );
+#line 67 "/var/www/localhost/htdocs/rt/Tools/MyDay.html"
+} }, '/l'
+ );
+#line 67 "/var/www/localhost/htdocs/rt/Tools/MyDay.html"
+$m->print( ':</span> ' );
+#line 67 "/var/www/localhost/htdocs/rt/Tools/MyDay.html"
+$m->comp(   '/Ticket/Elements/SelectStatus', Name=> 'UpdateStatus-'.$Ticket->Id, TicketObj => $Ticket   
+); #line 67 "/var/www/localhost/htdocs/rt/Tools/MyDay.html"
+$m->print( '</td>
+                  </tr>
+
+' );
+#line 70 "/var/www/localhost/htdocs/rt/Tools/MyDay.html"
+ }
+$m->print( '</table>
+' );
+#line 72 "/var/www/localhost/htdocs/rt/Tools/MyDay.html"
+$m->comp(   '/Elements/Submit', Label => loc('Record all updates') ,  Reset => 1, ResetLabel => loc('Clear')  
+); #line 72 "/var/www/localhost/htdocs/rt/Tools/MyDay.html"
+$m->print( '
+</form>
+</html>
+' );
+;return;
+},
+'load_time' => 1435622166,
+
+)
+;

@@ -1,0 +1,285 @@
+package HTML::Mason::Commands;
+use strict;
+use vars qw($m $DECODED_ARGS $r %session);
+HTML::Mason::Component::FileBased->new(
+'code' => sub {
+HTML::Mason::Exception::Params->throw
+    ( error =>
+      "Odd number of parameters passed to component expecting name/value pairs"
+    ) if @_ % 2;
+my %ARGS = @_;
+my ( $Create, $Name, $id, $Delete );
+{
+    my %pos;
+    for ( my $x = 0; $x < @_; $x += 2 )
+    {
+        $pos{ $_[$x] } = $x + 1;
+    }
+#line 171 "/var/www/localhost/htdocs/rt/Dashboards/Modify.html"
+     $Create = exists $pos{'Create'} ? $_[ $pos{'Create'} ] :  undef;
+#line 172 "/var/www/localhost/htdocs/rt/Dashboards/Modify.html"
+     $Name = exists $pos{'Name'} ? $_[ $pos{'Name'} ] :  undef;
+#line 173 "/var/www/localhost/htdocs/rt/Dashboards/Modify.html"
+     $id = exists $pos{'id'} ? $_[ $pos{'id'} ] :  '' unless defined $id;
+#line 174 "/var/www/localhost/htdocs/rt/Dashboards/Modify.html"
+     $Delete = exists $pos{'Delete'} ? $_[ $pos{'Delete'} ] :  undef;
+}
+$m->debug_hook( $m->current_comp->path ) if ( HTML::Mason::Compiler::IN_PERL_DB() );
+
+#line 78 "/var/www/localhost/htdocs/rt/Dashboards/Modify.html"
+
+
+my ($title, @results);
+my $tried_create = 0;
+
+# user went directly to Modify.html
+$Create = 1 if !$id;
+
+
+my $redirect_to ='/Dashboards/Modify.html';
+
+use RT::Dashboard;
+
+my $Dashboard = RT::Dashboard->new($session{'CurrentUser'});
+my $method = $Create ? 'ObjectsForCreating' : 'ObjectsForModifying';
+my @privacies = $Dashboard->$method;
+
+Abort(loc("Permission Denied")) if @privacies == 0;
+
+if ($Create) {
+    $title = loc("Create a new dashboard");
+}
+else {
+    if ($id eq 'new') {
+        $tried_create = 1;
+
+        my ($val, $msg) = $Dashboard->Save(
+            Name    => $ARGS{'Name'},
+            Privacy => $ARGS{'Privacy'},
+        );
+
+        if (!$val) {
+            Abort(loc("Dashboard could not be created: [_1]", $msg));
+        }
+
+        push @results, $msg;
+        $id = $Dashboard->Id;
+        if (!$Dashboard->id || ! $Dashboard->CurrentUserCanSee) {
+            $redirect_to='/Dashboards/index.html';
+
+        }
+    }
+    else {
+        my ($ok, $msg) = $Dashboard->LoadById($id);
+        $ok || Abort(loc("Couldn't load dashboard [_1]: [_2]", $id, $msg));
+    }
+
+    if ($id) {
+        $title = loc("Modify the dashboard [_1]", $Dashboard->Name);
+    }
+    # If the create failed
+    else {
+        $Create = 1;
+        $title = loc("Create a new dashboard");
+    }
+}
+
+if (!$Create && !$tried_create && $id && $ARGS{'Save'}) {
+    my ($ok, $msg) = $Dashboard->Update(Privacy  => $ARGS{'Privacy'},
+                                        Name     => $ARGS{'Name'});
+
+    if ($ok) {
+        push @results, loc("Dashboard [_1] updated", $Dashboard->Name);
+    }
+    else {
+        push @results, loc("Dashboard [_1] could not be updated: [_2]", $Dashboard->Name, $msg);
+    }
+
+}
+
+
+my $can_delete = $Dashboard->CurrentUserCanDelete;
+
+if (!$Create && !$tried_create && $id && $ARGS{'Delete'}) {
+    my ($ok, $msg) = $Dashboard->Delete();
+    if (!$ok) {
+             Abort(loc("Couldn't delete dashboard [_1]: [_2]", $id, $msg));
+             }
+
+    push @results, $msg;
+    $redirect_to = '/Dashboards/index.html';
+}
+
+# This code does automatic redirection if any updates happen.
+MaybeRedirectForResults(
+    Actions   => \@results,
+    Path      => $redirect_to,
+    Arguments => { id => $id },
+);
+
+#line 1 "/var/www/localhost/htdocs/rt/Dashboards/Modify.html"
+# BEGIN BPS TAGGED BLOCK {{{
+#
+# COPYRIGHT:
+#
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
+#                                          <sales@bestpractical.com>
+#
+# (Except where explicitly superseded by other copyright notices)
+#
+#
+# LICENSE:
+#
+# This work is made available to you under the terms of Version 2 of
+# the GNU General Public License. A copy of that license should have
+# been provided with this software, but in any event can be snarfed
+# from www.gnu.org.
+#
+# This work is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
+#
+#
+# CONTRIBUTION SUBMISSION POLICY:
+#
+# (The following paragraph is not intended to limit the rights granted
+# to you to modify and distribute this software under the terms of
+# the GNU General Public License and is only of importance to you if
+# you choose to contribute your changes and enhancements to the
+# community by submitting them to Best Practical Solutions, LLC.)
+#
+# By intentionally submitting any modifications, corrections or
+# derivatives to this work, or any other work intended for use with
+# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+# you are the copyright holder for those contributions and you grant
+# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+# royalty-free, perpetual, license to use, copy, create derivative
+# works based on those contributions, and sublicense and distribute
+# those contributions and any derivatives thereof.
+#
+# END BPS TAGGED BLOCK }}}
+$m->comp(   '/Elements/Header', Title => $title   
+); #line 48 "/var/www/localhost/htdocs/rt/Dashboards/Modify.html"
+$m->print( '
+' );
+#line 49 "/var/www/localhost/htdocs/rt/Dashboards/Modify.html"
+$m->comp(   '/Elements/Tabs'  
+); #line 49 "/var/www/localhost/htdocs/rt/Dashboards/Modify.html"
+$m->print( '
+' );
+#line 50 "/var/www/localhost/htdocs/rt/Dashboards/Modify.html"
+$m->comp(   '/Elements/ListActions', actions => \@results   
+); #line 50 "/var/www/localhost/htdocs/rt/Dashboards/Modify.html"
+$m->print( '
+
+<form action="' );
+#line 52 "/var/www/localhost/htdocs/rt/Dashboards/Modify.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } (RT->Config->Get('WebPath'))) );
+#line 52 "/var/www/localhost/htdocs/rt/Dashboards/Modify.html"
+$m->print( '/Dashboards/Modify.html" method="post" enctype="multipart/form-data" name="ModifyDashboard" id="ModifyDashboard">
+
+' );
+#line 54 "/var/www/localhost/htdocs/rt/Dashboards/Modify.html"
+unless ($Dashboard->Id) {
+$m->print( '<input type="hidden" class="hidden" name="id" value="new" />
+' );
+#line 56 "/var/www/localhost/htdocs/rt/Dashboards/Modify.html"
+ } else {
+$m->print( '<input type="hidden" class="hidden" name="id" value="' );
+#line 57 "/var/www/localhost/htdocs/rt/Dashboards/Modify.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($Dashboard->Id)) );
+#line 57 "/var/www/localhost/htdocs/rt/Dashboards/Modify.html"
+$m->print( '" />
+' );
+#line 58 "/var/www/localhost/htdocs/rt/Dashboards/Modify.html"
+ }
+$m->print( '
+' );
+#line 60 "/var/www/localhost/htdocs/rt/Dashboards/Modify.html"
+$m->comp( { content => sub {
+#line 60 "/var/www/localhost/htdocs/rt/Dashboards/Modify.html"
+$m->print( '
+<table>
+    <tr>
+     <td class="label">' );
+#line 63 "/var/www/localhost/htdocs/rt/Dashboards/Modify.html"
+$m->comp( { content => sub {
+#line 63 "/var/www/localhost/htdocs/rt/Dashboards/Modify.html"
+$m->print( 'Name' );
+#line 63 "/var/www/localhost/htdocs/rt/Dashboards/Modify.html"
+} }, '/l'
+ );
+#line 63 "/var/www/localhost/htdocs/rt/Dashboards/Modify.html"
+$m->print( ':</td>
+     <td class="value"><input name="Name" value="' );
+#line 64 "/var/www/localhost/htdocs/rt/Dashboards/Modify.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($Dashboard->Name)) );
+#line 64 "/var/www/localhost/htdocs/rt/Dashboards/Modify.html"
+$m->print( '" /></td>
+    </tr>
+    <tr>
+    <td class="label">' );
+#line 67 "/var/www/localhost/htdocs/rt/Dashboards/Modify.html"
+$m->comp( { content => sub {
+#line 67 "/var/www/localhost/htdocs/rt/Dashboards/Modify.html"
+$m->print( 'Privacy' );
+#line 67 "/var/www/localhost/htdocs/rt/Dashboards/Modify.html"
+} }, '/l'
+ );
+#line 67 "/var/www/localhost/htdocs/rt/Dashboards/Modify.html"
+$m->print( ':</td>
+    <td>' );
+#line 68 "/var/www/localhost/htdocs/rt/Dashboards/Modify.html"
+$m->comp(   '/Dashboards/Elements/SelectPrivacy', Name => "Privacy", Objects => \@privacies, Default => $Dashboard->Privacy   
+); #line 68 "/var/www/localhost/htdocs/rt/Dashboards/Modify.html"
+$m->print( '</td>
+</tr>
+</table>
+' );
+#line 71 "/var/www/localhost/htdocs/rt/Dashboards/Modify.html"
+} }, '/Widgets/TitleBox', title => loc('Basics')
+ );
+#line 71 "/var/www/localhost/htdocs/rt/Dashboards/Modify.html"
+$m->print( '
+' );
+#line 72 "/var/www/localhost/htdocs/rt/Dashboards/Modify.html"
+$m->comp(   '/Elements/Submit', Name => 'Save', Label =>( $Create ? loc('Create') : loc('Save Changes') )   
+); #line 72 "/var/www/localhost/htdocs/rt/Dashboards/Modify.html"
+$m->print( '
+
+' );
+#line 74 "/var/www/localhost/htdocs/rt/Dashboards/Modify.html"
+ if ($Dashboard->Id && $can_delete) {
+$m->comp(   '/Elements/Submit', Name => 'Delete', Label => loc('Delete')   
+); #line 75 "/var/www/localhost/htdocs/rt/Dashboards/Modify.html"
+$m->print( '
+' );
+#line 76 "/var/www/localhost/htdocs/rt/Dashboards/Modify.html"
+ }
+$m->print( '</form>
+' );
+#line 169 "/var/www/localhost/htdocs/rt/Dashboards/Modify.html"
+$m->print( '
+' );
+#line 176 "/var/www/localhost/htdocs/rt/Dashboards/Modify.html"
+$m->print( '
+' );
+;return;
+},
+'declared_args' => {
+  '$Create' => { default => ' undef' },
+  '$Delete' => { default => ' undef' },
+  '$Name' => { default => ' undef' },
+  '$id' => { default => ' \'\' unless defined $id' }
+},
+'load_time' => 1435622163,
+
+)
+;

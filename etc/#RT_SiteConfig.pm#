@@ -1,5 +1,5 @@
 #
-# RT was configured with: Summer Staff
+# RT was configured with:
 #
 #   $ ./configure --enable-layout=Gentoo --with-bin-owner=rt --with-libs-owner=rt --with-libs-group=rt --with-rt-group=rt --with-web-user=apache --with-web-group=apache --with-db-type=Pg --with-db-dba=postgres --with-web-handler=modperl2
 #
@@ -18,7 +18,7 @@ package RT;
 
 #QuickCalls Tickets
 Set($QuickCalls, [{Name => 'Bump up my quota', Queue => '1. General', Status => 'open'},
-		  {Name => 'Update an alias (not working yet)', Queue => '3. Student', Status => 'open'},
+		  {Name => 'Update an alias', Queue => '3. Student', Status => 'open'},
                   {Name => 'Create a new account', Queue => '3. Student', Status => 'open'}]);
 
 

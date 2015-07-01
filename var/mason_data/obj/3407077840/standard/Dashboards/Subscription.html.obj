@@ -1,0 +1,746 @@
+package HTML::Mason::Commands;
+use strict;
+use vars qw($m $DECODED_ARGS $r %session);
+HTML::Mason::Component::FileBased->new(
+'code' => sub {
+HTML::Mason::Exception::Params->throw
+    ( error =>
+      "Odd number of parameters passed to component expecting name/value pairs"
+    ) if @_ % 2;
+my %ARGS = @_;
+my ( $id, $Frequency, $Hour, $Dow, $Dom, $Rows, $Recipient );
+{
+    my %pos;
+    for ( my $x = 0; $x < @_; $x += 2 )
+    {
+        $pos{ $_[$x] } = $x + 1;
+    }
+#line 291 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+     $id = exists $pos{'id'} ? $_[ $pos{'id'} ] :  undef;
+#line 292 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+     $Frequency = exists $pos{'Frequency'} ? $_[ $pos{'Frequency'} ] :  undef;
+#line 293 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+     $Hour = exists $pos{'Hour'} ? $_[ $pos{'Hour'} ] :  undef;
+#line 294 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+     $Dow = exists $pos{'Dow'} ? $_[ $pos{'Dow'} ] :  undef;
+#line 295 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+     $Dom = exists $pos{'Dom'} ? $_[ $pos{'Dom'} ] :  undef;
+#line 296 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+     $Rows = exists $pos{'Rows'} ? $_[ $pos{'Rows'} ] :  undef;
+#line 297 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+     $Recipient = exists $pos{'Recipient'} ? $_[ $pos{'Recipient'} ] :  undef;
+}
+$m->debug_hook( $m->current_comp->path ) if ( HTML::Mason::Compiler::IN_PERL_DB() );
+
+#line 192 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+
+
+my ($title, @results);
+my $Loaded = 0;
+my $timezone = $session{'CurrentUser'}->UserObj->Timezone || RT->Config->Get('Timezone');
+
+use RT::Dashboard;
+my $Dashboard = RT::Dashboard->new($session{'CurrentUser'});
+my ($ok, $msg) = $Dashboard->LoadById($id);
+$ok || Abort(loc("Couldn't load dashboard [_1]: [_2]", $id, $msg));
+
+my $SubscriptionObj = $Dashboard->Subscription;
+
+$id = $SubscriptionObj ? $SubscriptionObj->SubValue('DashboardId') : $ARGS{'id'};
+
+my %fields = (
+    DashboardId => $id,
+    Frequency   => 'daily',
+    Hour        => '06:00',
+    Dow         => 'Monday',
+    Dom         => 1,
+    Rows        => 20,
+    Recipient   => '',
+    Fow         => 1,
+    Counter     => 0,
+);
+
+# update any fields with the values from the subscription object
+if ($SubscriptionObj) {
+    for my $field (keys %fields) {
+        $fields{$field} = $SubscriptionObj->SubValue($field);
+    }
+}
+
+# finally, update any fields with arguments passed in by the user
+for my $field (keys %fields) {
+    next if $field eq 'DashboardId'; # but this one is immutable
+    $fields{$field} = $ARGS{$field}
+        if defined($ARGS{$field});
+}
+
+
+# this'll be defined on submit
+if (defined $ARGS{Save}) {
+    my $ok = 1;
+
+    # validation
+    if ($fields{Recipient}) {
+        my @addresses = Email::Address->parse($fields{Recipient});
+        if (@addresses == 0) {
+            push @results, loc('Recipient must be an email address');
+            $ok = 0;
+        }
+    }
+
+    if ($ok) {
+        # update
+        if ($SubscriptionObj) {
+            $id = delete $fields{'DashboardId'}; # immutable
+            ($ok, $msg) = $SubscriptionObj->SetSubValues(%fields);
+            $fields{'DashboardId'} = $id;
+
+            $msg = loc("Subscription updated") if $ok;
+            push @results, $msg;
+        }
+        # create
+        else {
+            Abort(loc("Unable to subscribe to dashboard [_1]: Permission Denied", $id))
+                unless $Dashboard->CurrentUserCanSubscribe;
+
+            $SubscriptionObj = RT::Attribute->new($session{CurrentUser});
+            ($ok, $msg) = $SubscriptionObj->Create(
+                Name        => 'Subscription',
+                Description => 'Subscription to dashboard ' . $id,
+                ContentType => 'storable',
+                Object      => $session{'CurrentUser'}->UserObj,
+                Content     => \%fields,
+            );
+            if ($ok) {
+                push @results, loc("Subscribed to dashboard [_1]", $Dashboard->Name);
+                push @results, loc("Warning: you have no email address set, so you will not receive this dashboard until you have it set")
+                    unless $session{'CurrentUser'}->EmailAddress || $fields{Recipient};
+            }
+            else {
+                push @results, loc('Subscription could not be created: [_1]', $msg);
+            }
+        }
+    }
+}
+
+if ($SubscriptionObj) {
+    $title = loc("Modify the subscription to dashboard [_1]", $Dashboard->Name);
+}
+else {
+    $title = loc("Subscribe to dashboard [_1]", $Dashboard->Name);
+}
+
+#line 1 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+# BEGIN BPS TAGGED BLOCK {{{
+#
+# COPYRIGHT:
+#
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
+#                                          <sales@bestpractical.com>
+#
+# (Except where explicitly superseded by other copyright notices)
+#
+#
+# LICENSE:
+#
+# This work is made available to you under the terms of Version 2 of
+# the GNU General Public License. A copy of that license should have
+# been provided with this software, but in any event can be snarfed
+# from www.gnu.org.
+#
+# This work is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
+#
+#
+# CONTRIBUTION SUBMISSION POLICY:
+#
+# (The following paragraph is not intended to limit the rights granted
+# to you to modify and distribute this software under the terms of
+# the GNU General Public License and is only of importance to you if
+# you choose to contribute your changes and enhancements to the
+# community by submitting them to Best Practical Solutions, LLC.)
+#
+# By intentionally submitting any modifications, corrections or
+# derivatives to this work, or any other work intended for use with
+# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+# you are the copyright holder for those contributions and you grant
+# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+# royalty-free, perpetual, license to use, copy, create derivative
+# works based on those contributions, and sublicense and distribute
+# those contributions and any derivatives thereof.
+#
+# END BPS TAGGED BLOCK }}}
+$m->comp(   '/Elements/Header', Title => $title   
+); #line 48 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( '
+' );
+#line 49 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->comp(   '/Elements/Tabs'  
+); #line 49 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( '
+
+' );
+#line 51 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->comp(   '/Elements/ListActions', actions => \@results   
+); #line 51 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( '
+
+<form action="' );
+#line 53 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } (RT->Config->Get('WebPath'))) );
+#line 53 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( '/Dashboards/Subscription.html" method="post" enctype="multipart/form-data" name="SubscribeDashboard">
+<input type="hidden" class="hidden" name="id" value="' );
+#line 54 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $fields{'DashboardId'} )) );
+#line 54 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( '" />
+<table width="100%" border="0">
+<tr>
+
+<td valign="top" class="boxcontainer">
+' );
+#line 59 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->comp( { content => sub {
+#line 59 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( '
+
+<table>
+<tr><td class="label">
+' );
+#line 63 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->comp( { content => sub {
+#line 63 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( 'Dashboard' );
+#line 63 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+} }, '/l'
+ );
+#line 63 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( ':
+</td><td class="value">
+' );
+#line 65 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $Dashboard->Name )) );
+#line 65 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( '
+</td></tr>
+
+<tr><td class="label">
+' );
+#line 69 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->comp( { content => sub {
+#line 69 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( 'Queries' );
+#line 69 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+} }, '/l'
+ );
+#line 69 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( ':
+</td><td class="value">
+' );
+#line 71 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+ my @portlets = grep { defined } $Dashboard->Portlets;
+ if (!@portlets) {
+$m->print( '(' );
+#line 73 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->comp( { content => sub {
+#line 73 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( 'none' );
+#line 73 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+} }, '/l'
+ );
+#line 73 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( ')
+' );
+#line 74 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+ } else {
+$m->print( '<ol class="dashboard-queries">
+' );
+#line 76 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+    for my $portlet (@portlets) {
+$m->print( '        <li class="dashboard-query">
+            ' );
+#line 78 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( loc($portlet->{description}, $fields{'Rows'}) )) );
+#line 78 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( '
+        </li>
+' );
+#line 80 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+    }
+$m->print( '</ol>
+' );
+#line 82 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+ }
+$m->print( '</td></tr>
+
+</table>
+' );
+#line 86 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+} }, '/Widgets/TitleBox', title => loc('Dashboard')
+ );
+#line 86 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( '
+
+' );
+#line 88 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->comp( { content => sub {
+#line 88 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( '
+
+<table>
+<tr><td class="label">
+' );
+#line 92 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->comp( { content => sub {
+#line 92 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( 'Frequency' );
+#line 92 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+} }, '/l'
+ );
+#line 92 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( ':
+</td><td class="value">
+
+<input type="radio" id="Frequency-daily" name="Frequency" value="daily" ' );
+#line 95 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print(  $fields{'Frequency'} eq 'daily' ? 'checked="checked"' : "" );
+#line 95 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( '></input>
+<label for="Frequency-daily">' );
+#line 96 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->comp( { content => sub {
+#line 96 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( 'daily' );
+#line 96 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+} }, '/l'
+ );
+#line 96 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( '</label>
+<br />
+
+<input type="radio" id="Frequency-m-f" name="Frequency" value="m-f" ' );
+#line 99 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print(  $fields{'Frequency'} eq 'm-f' ? 'checked="checked"' : "" );
+#line 99 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( '></input>
+<label for="Frequency-m-f">' );
+#line 100 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->comp( { content => sub {
+#line 100 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( 'Monday through Friday' );
+#line 100 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+} }, '/l'
+ );
+#line 100 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( '</label>
+<br />
+
+<input type="radio" id="Frequency-weekly" name="Frequency" value="weekly"' );
+#line 103 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print(  $fields{'Frequency'} eq 'weekly' ? 'checked="checked"' : "" );
+#line 103 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( '></input>
+<label for="Frequency-weekly">
+' );
+#line 105 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->comp( { content => sub {
+#line 105 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( 'weekly' );
+#line 105 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+} }, '/l'
+ );
+#line 105 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( ', ' );
+#line 105 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->comp( { content => sub {
+#line 105 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( 'on' );
+#line 105 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+} }, '/l'
+ );
+#line 105 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( '
+<select name="Dow">
+    <option value="Monday" ' );
+#line 107 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print(  $fields{'Dow'} eq 'Monday' ? 'selected="selected"' : '' );
+#line 107 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( '>' );
+#line 107 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->comp( { content => sub {
+#line 107 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( 'Monday' );
+#line 107 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+} }, '/l'
+ );
+#line 107 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( '</option>
+    <option value="Tuesday" ' );
+#line 108 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print(  $fields{'Dow'} eq 'Tuesday' ? 'selected="selected"' : '' );
+#line 108 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( '>' );
+#line 108 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->comp( { content => sub {
+#line 108 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( 'Tuesday' );
+#line 108 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+} }, '/l'
+ );
+#line 108 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( '</option>
+    <option value="Wednesday" ' );
+#line 109 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print(  $fields{'Dow'} eq 'Wednesday' ? 'selected="selected"' : '' );
+#line 109 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( '>' );
+#line 109 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->comp( { content => sub {
+#line 109 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( 'Wednesday' );
+#line 109 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+} }, '/l'
+ );
+#line 109 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( '</option>
+    <option value="Thursday" ' );
+#line 110 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print(  $fields{'Dow'} eq 'Thursday' ? 'selected="selected"' : '' );
+#line 110 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( '>' );
+#line 110 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->comp( { content => sub {
+#line 110 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( 'Thursday' );
+#line 110 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+} }, '/l'
+ );
+#line 110 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( '</option>
+    <option value="Friday" ' );
+#line 111 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print(  $fields{'Dow'} eq 'Friday' ? 'selected="selected"' : '' );
+#line 111 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( '>' );
+#line 111 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->comp( { content => sub {
+#line 111 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( 'Friday' );
+#line 111 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+} }, '/l'
+ );
+#line 111 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( '</option>
+    <option value="Saturday" ' );
+#line 112 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print(  $fields{'Dow'} eq 'Saturday' ? 'selected="selected"' : '' );
+#line 112 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( '>' );
+#line 112 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->comp( { content => sub {
+#line 112 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( 'Saturday' );
+#line 112 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+} }, '/l'
+ );
+#line 112 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( '</option>
+    <option value="Sunday" ' );
+#line 113 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print(  $fields{'Dow'} eq 'Sunday' ? 'selected="selected"' : '' );
+#line 113 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( '>' );
+#line 113 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->comp( { content => sub {
+#line 113 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( 'Sunday' );
+#line 113 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+} }, '/l'
+ );
+#line 113 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( '</option>
+</select>
+' );
+#line 115 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->comp( { content => sub {
+#line 115 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( 'every' );
+#line 115 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+} }, '/l'
+ );
+#line 115 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( '
+<select name="Fow">
+' );
+#line 117 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+ for my $f ( qw/1 2 3 4/ ) {
+$m->print( '    <option value="' );
+#line 118 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($f)) );
+#line 118 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( '" ' );
+#line 118 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print(  $fields{'Fow'} == $f ? 'selected="selected"' : '' );
+#line 118 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( '>' );
+#line 118 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $f )) );
+#line 118 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( '</option>
+' );
+#line 119 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+ }
+$m->print( '</select>
+' );
+#line 121 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->comp( { content => sub {
+#line 121 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( 'weeks' );
+#line 121 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+} }, '/l'
+ );
+#line 121 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( '
+</label>
+<br />
+
+<input type="radio" id="Frequency-monthly" name="Frequency" value="monthly"' );
+#line 125 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print(  $fields{'Frequency'} eq 'monthly' ? 'checked="checked"' : "" );
+#line 125 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( '></input>
+<label for="Frequency-monthly">
+' );
+#line 127 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->comp( { content => sub {
+#line 127 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( 'monthly' );
+#line 127 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+} }, '/l'
+ );
+#line 127 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( ', ' );
+#line 127 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->comp( { content => sub {
+#line 127 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( 'on day' );
+#line 127 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+} }, '/l'
+ );
+#line 127 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( '
+<select name="Dom">
+' );
+#line 129 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+   for my $dom (1..31) {
+$m->print( '    <option value="' );
+#line 130 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $dom )) );
+#line 130 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( '" ' );
+#line 130 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print(  $fields{'Dom'} == $dom ? 'selected="selected"' : '' );
+#line 130 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( '>' );
+#line 130 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( loc($dom) )) );
+#line 130 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( '</option>
+' );
+#line 131 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+   }
+$m->print( '</select>
+</label>
+<br />
+
+<input type="radio" id="Frequency-never" name="Frequency" value="never" ' );
+#line 136 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print(  $fields{'Frequency'} eq 'never' ? 'checked="checked"' : "" );
+#line 136 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( '></input>
+<label for="Frequency-never">' );
+#line 137 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->comp( { content => sub {
+#line 137 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( 'never' );
+#line 137 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+} }, '/l'
+ );
+#line 137 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( '</label>
+
+</td></tr>
+<tr><td class="label">
+' );
+#line 141 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->comp( { content => sub {
+#line 141 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( 'Hour' );
+#line 141 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+} }, '/l'
+ );
+#line 141 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( ':
+</td><td class="value">
+<select name="Hour">
+' );
+#line 144 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+ my $formatter = RT::Date->new($session{CurrentUser})->LocaleObj;
+ my $dt = DateTime->now;
+ $dt->set_minute(0);
+ $dt->set_second(0);
+$m->print( '
+' );
+#line 149 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+ for my $hour (0..23) {
+     $dt->set_hour($hour);
+     my $formatted = $dt->format_cldr($formatter->time_format_short);
+$m->print( '
+' );
+#line 153 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+     my $value = sprintf '%02d:00', $hour;
+     my $selected = $value eq $fields{'Hour'}
+                  ? 'selected="selected"'
+                  : '';
+$m->print( '
+    <option value="' );
+#line 158 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $value )) );
+#line 158 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( '" ' );
+#line 158 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( $selected );
+#line 158 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( '>' );
+#line 158 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $formatted )) );
+#line 158 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( '</option>
+' );
+#line 159 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+ }
+$m->print( '</select>
+(' );
+#line 161 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($timezone)) );
+#line 161 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( ')
+</td></tr>
+<tr><td class="label">
+' );
+#line 164 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->comp( { content => sub {
+#line 164 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( 'Rows' );
+#line 164 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+} }, '/l'
+ );
+#line 164 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( ':
+</td><td class="value">
+<select name="Rows">
+' );
+#line 167 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+   for my $rows (1, 2, 5, 10, 15, 20, 25, 50, 75, 100, 0) {
+$m->print( '    <option value="' );
+#line 168 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $rows )) );
+#line 168 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( '" ' );
+#line 168 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print(  $fields{'Rows'} eq $rows ? 'selected="selected"' : '' );
+#line 168 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( '>' );
+#line 168 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( loc($rows || 'Unlimited') )) );
+#line 168 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( '</option>
+' );
+#line 169 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+   }
+$m->print( '</select>
+</td></tr>
+
+<tr><td class="label">
+' );
+#line 174 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->comp( { content => sub {
+#line 174 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( 'Recipient' );
+#line 174 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+} }, '/l'
+ );
+#line 174 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( ':
+</td><td class="value">
+<input name="Recipient" id="Recipient" size="30" value="' );
+#line 176 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($fields{Recipient} ? $fields{Recipient} : '')) );
+#line 176 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( '" />
+<div class="hints">' );
+#line 177 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( loc("Leave blank to send to your current email address ([_1])", $session{'CurrentUser'}->EmailAddress) )) );
+#line 177 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( '</div>
+</td></tr>
+</table>
+' );
+#line 180 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+} }, '/Widgets/TitleBox', title => loc('Subscription')
+ );
+#line 180 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( '
+</td>
+</tr>
+</table>
+
+' );
+#line 185 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+ if ($SubscriptionObj) {
+$m->print( '    ' );
+#line 186 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->comp(   '/Elements/Submit', Name => "Save", Label => loc('Save Changes')   
+); #line 186 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( '
+' );
+#line 187 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+ } else {
+$m->print( '    ' );
+#line 188 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->comp(   '/Elements/Submit', Name => "Save", Label => loc('Subscribe')   
+); #line 188 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( '
+' );
+#line 189 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+ }
+$m->print( '</form>
+
+' );
+#line 299 "/var/www/localhost/htdocs/rt/Dashboards/Subscription.html"
+$m->print( '
+' );
+;return;
+},
+'declared_args' => {
+  '$Dom' => { default => ' undef' },
+  '$Dow' => { default => ' undef' },
+  '$Frequency' => { default => ' undef' },
+  '$Hour' => { default => ' undef' },
+  '$Recipient' => { default => ' undef' },
+  '$Rows' => { default => ' undef' },
+  '$id' => { default => ' undef' }
+},
+'load_time' => 1435774869,
+
+)
+;

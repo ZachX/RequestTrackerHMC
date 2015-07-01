@@ -109,7 +109,7 @@ if ($CloneTicket) {
 
 my @results;
 
-my $title = loc("Create a new ticket");
+my $title = loc("Create New Ticket");
 
 my $QueueObj = RT::Queue->new($current_user);
 $QueueObj->Load($Queue) || Abort(loc("Queue [_1] could not be loaded.", $Queue||''));

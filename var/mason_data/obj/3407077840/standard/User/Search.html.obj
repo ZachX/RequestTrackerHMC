@@ -1,0 +1,184 @@
+package HTML::Mason::Commands;
+use strict;
+use vars qw($m $DECODED_ARGS $r %session);
+HTML::Mason::Component::FileBased->new(
+'code' => sub {
+HTML::Mason::Exception::Params->throw
+    ( error =>
+      "Odd number of parameters passed to component expecting name/value pairs"
+    ) if @_ % 2;
+my %ARGS = @_;
+my ( $UserString );
+{
+    my %pos;
+    for ( my $x = 0; $x < @_; $x += 2 )
+    {
+        $pos{ $_[$x] } = $x + 1;
+    }
+#line 100 "/var/www/localhost/htdocs/rt/User/Search.html"
+     $UserString = exists $pos{'UserString'} ? $_[ $pos{'UserString'} ] :  undef;
+}
+$m->debug_hook( $m->current_comp->path ) if ( HTML::Mason::Compiler::IN_PERL_DB() );
+
+#line 76 "/var/www/localhost/htdocs/rt/User/Search.html"
+
+
+my $users;
+my $Format;
+if ( $UserString ) {
+    my $exclude = [RT->Nobody->Id, RT->System->Id];
+    $users = RT::Users->new($session{'CurrentUser'});
+    $users->SimpleSearch( Return    => 'Name',
+                          Term      => $UserString,
+                          Max       => 100,
+                          Exclude   => $exclude );
+    my $first = $users->First;
+    RT::Interface::Web::Redirect(RT->Config->Get('WebURL')."User/Summary.html?id=".$first->Id)
+        if $users->Count == 1;
+    $users->GotoFirstItem;
+    $Format = RT->Config->Get('UserSearchResultFormat');
+}
+
+my $search_fields = join ", ",
+  sort map {s/^CF\.(?:\{(.*)}|(.*))/$1 || $2/e; loc($_)}
+  keys %{RT->Config->Get('UserSearchFields')};
+
+#line 1 "/var/www/localhost/htdocs/rt/User/Search.html"
+# BEGIN BPS TAGGED BLOCK {{{
+#
+# COPYRIGHT:
+#
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
+#                                          <sales@bestpractical.com>
+#
+# (Except where explicitly superseded by other copyright notices)
+#
+#
+# LICENSE:
+#
+# This work is made available to you under the terms of Version 2 of
+# the GNU General Public License. A copy of that license should have
+# been provided with this software, but in any event can be snarfed
+# from www.gnu.org.
+#
+# This work is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
+#
+#
+# CONTRIBUTION SUBMISSION POLICY:
+#
+# (The following paragraph is not intended to limit the rights granted
+# to you to modify and distribute this software under the terms of
+# the GNU General Public License and is only of importance to you if
+# you choose to contribute your changes and enhancements to the
+# community by submitting them to Best Practical Solutions, LLC.)
+#
+# By intentionally submitting any modifications, corrections or
+# derivatives to this work, or any other work intended for use with
+# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+# you are the copyright holder for those contributions and you grant
+# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+# royalty-free, perpetual, license to use, copy, create derivative
+# works based on those contributions, and sublicense and distribute
+# those contributions and any derivatives thereof.
+#
+# END BPS TAGGED BLOCK }}}
+$m->comp(   '/Elements/Header', Title => loc('User Search'), Focus => '#autocomplete-UserString'   
+); #line 48 "/var/www/localhost/htdocs/rt/User/Search.html"
+$m->print( '
+' );
+#line 49 "/var/www/localhost/htdocs/rt/User/Search.html"
+$m->comp(   '/Elements/Tabs'  
+); #line 49 "/var/www/localhost/htdocs/rt/User/Search.html"
+$m->print( '
+    
+' );
+#line 51 "/var/www/localhost/htdocs/rt/User/Search.html"
+$m->comp(   '/Elements/GotoUser', Default => $UserString||''   
+); #line 51 "/var/www/localhost/htdocs/rt/User/Search.html"
+$m->print( '
+
+<p> ' );
+#line 53 "/var/www/localhost/htdocs/rt/User/Search.html"
+$m->comp( { content => sub {
+#line 53 "/var/www/localhost/htdocs/rt/User/Search.html"
+$m->print( 'This will search for users by looking in the following fields:' );
+#line 53 "/var/www/localhost/htdocs/rt/User/Search.html"
+} }, '/l'
+ );
+#line 53 "/var/www/localhost/htdocs/rt/User/Search.html"
+$m->print( ' ' );
+#line 53 "/var/www/localhost/htdocs/rt/User/Search.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $search_fields )) );
+#line 53 "/var/www/localhost/htdocs/rt/User/Search.html"
+$m->print( '</p>
+
+' );
+#line 55 "/var/www/localhost/htdocs/rt/User/Search.html"
+ if ($UserString) {
+$m->print( '
+' );
+#line 57 "/var/www/localhost/htdocs/rt/User/Search.html"
+ unless ( $users->Count ) {
+$m->print( '<p>' );
+#line 58 "/var/www/localhost/htdocs/rt/User/Search.html"
+$m->comp( { content => sub {
+#line 58 "/var/www/localhost/htdocs/rt/User/Search.html"
+$m->print( 'No users matching search criteria found.' );
+#line 58 "/var/www/localhost/htdocs/rt/User/Search.html"
+} }, '/l'
+ );
+#line 58 "/var/www/localhost/htdocs/rt/User/Search.html"
+$m->print( '</p>
+' );
+#line 59 "/var/www/localhost/htdocs/rt/User/Search.html"
+ } else {
+$m->print( '<p>' );
+#line 60 "/var/www/localhost/htdocs/rt/User/Search.html"
+$m->comp( { content => sub {
+#line 60 "/var/www/localhost/htdocs/rt/User/Search.html"
+$m->print( 'Select a user' );
+#line 60 "/var/www/localhost/htdocs/rt/User/Search.html"
+} }, '/l'
+ );
+#line 60 "/var/www/localhost/htdocs/rt/User/Search.html"
+$m->print( ':</p>
+
+' );
+#line 62 "/var/www/localhost/htdocs/rt/User/Search.html"
+$m->comp(   '/Elements/CollectionList',
+    OrderBy => 'Name',
+    Order => 'ASC',
+    Rows  => 100,
+    %ARGS,
+    Format => $Format,
+    Collection => $users,
+    AllowSorting => 1,
+    PassArguments => [qw(Format Rows Page Order OrderBy UserString)],
+  
+); #line 71 "/var/www/localhost/htdocs/rt/User/Search.html"
+$m->print( '
+
+' );
+#line 73 "/var/www/localhost/htdocs/rt/User/Search.html"
+ }
+ }
+$m->print( '
+' );
+;return;
+},
+'declared_args' => {
+  '$UserString' => { default => ' undef' }
+},
+'load_time' => 1435616202,
+
+)
+;

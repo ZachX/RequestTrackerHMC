@@ -1,0 +1,757 @@
+package HTML::Mason::Commands;
+use strict;
+use vars qw($m $DECODED_ARGS $r %session);
+HTML::Mason::Component::FileBased->new(
+'code' => sub {
+HTML::Mason::Exception::Params->throw
+    ( error =>
+      "Odd number of parameters passed to component expecting name/value pairs"
+    ) if @_ % 2;
+my %ARGS = @_;
+my ( $id, $Name, $Comments, $Signature, $EmailAddress, $FreeformContactInfo, $Organization, $RealName, $NickName, $Privileged, $SetPrivileged, $Enabled, $SetEnabled, $Lang, $EmailEncoding, $WebEncoding, $ExternalContactInfoId, $ContactInfoSystem, $Gecos, $ExternalAuthId, $AuthSystem, $HomePhone, $WorkPhone, $MobilePhone, $PagerPhone, $Address1, $Address2, $City, $State, $Zip, $Country, $CurrentPass, $Pass1, $Pass2, $Create );
+{
+    my %pos;
+    for ( my $x = 0; $x < @_; $x += 2 )
+    {
+        $pos{ $_[$x] } = $x + 1;
+    }
+#line 276 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+     $id = exists $pos{'id'} ? $_[ $pos{'id'} ] :  $session{'CurrentUser'}->Id;
+#line 277 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+     $Name = exists $pos{'Name'} ? $_[ $pos{'Name'} ] :  undef;
+#line 278 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+     $Comments = exists $pos{'Comments'} ? $_[ $pos{'Comments'} ] :  undef;
+#line 279 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+     $Signature = exists $pos{'Signature'} ? $_[ $pos{'Signature'} ] :  undef;
+#line 280 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+     $EmailAddress = exists $pos{'EmailAddress'} ? $_[ $pos{'EmailAddress'} ] :  undef;
+#line 281 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+     $FreeformContactInfo = exists $pos{'FreeformContactInfo'} ? $_[ $pos{'FreeformContactInfo'} ] :  undef;
+#line 282 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+     $Organization = exists $pos{'Organization'} ? $_[ $pos{'Organization'} ] :  undef;
+#line 283 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+     $RealName = exists $pos{'RealName'} ? $_[ $pos{'RealName'} ] :  undef;
+#line 284 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+     $NickName = exists $pos{'NickName'} ? $_[ $pos{'NickName'} ] :  undef;
+#line 285 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+     $Privileged = exists $pos{'Privileged'} ? $_[ $pos{'Privileged'} ] :  undef;
+#line 286 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+     $SetPrivileged = exists $pos{'SetPrivileged'} ? $_[ $pos{'SetPrivileged'} ] :  undef;
+#line 287 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+     $Enabled = exists $pos{'Enabled'} ? $_[ $pos{'Enabled'} ] :  undef;
+#line 288 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+     $SetEnabled = exists $pos{'SetEnabled'} ? $_[ $pos{'SetEnabled'} ] :  undef;
+#line 289 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+     $Lang = exists $pos{'Lang'} ? $_[ $pos{'Lang'} ] :  undef;
+#line 290 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+     $EmailEncoding = exists $pos{'EmailEncoding'} ? $_[ $pos{'EmailEncoding'} ] :  undef;
+#line 291 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+     $WebEncoding = exists $pos{'WebEncoding'} ? $_[ $pos{'WebEncoding'} ] :  undef;
+#line 292 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+     $ExternalContactInfoId = exists $pos{'ExternalContactInfoId'} ? $_[ $pos{'ExternalContactInfoId'} ] :  undef;
+#line 293 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+     $ContactInfoSystem = exists $pos{'ContactInfoSystem'} ? $_[ $pos{'ContactInfoSystem'} ] :  undef;
+#line 294 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+     $Gecos = exists $pos{'Gecos'} ? $_[ $pos{'Gecos'} ] :  undef;
+#line 295 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+     $ExternalAuthId = exists $pos{'ExternalAuthId'} ? $_[ $pos{'ExternalAuthId'} ] :  undef;
+#line 296 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+     $AuthSystem = exists $pos{'AuthSystem'} ? $_[ $pos{'AuthSystem'} ] :  undef;
+#line 297 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+     $HomePhone = exists $pos{'HomePhone'} ? $_[ $pos{'HomePhone'} ] :  undef;
+#line 298 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+     $WorkPhone = exists $pos{'WorkPhone'} ? $_[ $pos{'WorkPhone'} ] :  undef;
+#line 299 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+     $MobilePhone = exists $pos{'MobilePhone'} ? $_[ $pos{'MobilePhone'} ] :  undef;
+#line 300 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+     $PagerPhone = exists $pos{'PagerPhone'} ? $_[ $pos{'PagerPhone'} ] :  undef;
+#line 301 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+     $Address1 = exists $pos{'Address1'} ? $_[ $pos{'Address1'} ] :  undef;
+#line 302 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+     $Address2 = exists $pos{'Address2'} ? $_[ $pos{'Address2'} ] :  undef;
+#line 303 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+     $City = exists $pos{'City'} ? $_[ $pos{'City'} ] :  undef;
+#line 304 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+     $State = exists $pos{'State'} ? $_[ $pos{'State'} ] :  undef;
+#line 305 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+     $Zip = exists $pos{'Zip'} ? $_[ $pos{'Zip'} ] :  undef;
+#line 306 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+     $Country = exists $pos{'Country'} ? $_[ $pos{'Country'} ] :  undef;
+#line 307 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+     $CurrentPass = exists $pos{'CurrentPass'} ? $_[ $pos{'CurrentPass'} ] :  undef;
+#line 308 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+     $Pass1 = exists $pos{'Pass1'} ? $_[ $pos{'Pass1'} ] :  undef;
+#line 309 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+     $Pass2 = exists $pos{'Pass2'} ? $_[ $pos{'Pass2'} ] :  undef;
+#line 310 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+     $Create = exists $pos{'Create'} ? $_[ $pos{'Create'} ] :  undef;
+}
+$m->debug_hook( $m->current_comp->path ) if ( HTML::Mason::Compiler::IN_PERL_DB() );
+
+#line 203 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+
+
+my $UserObj = RT::User->new( $session{'CurrentUser'} );
+$UserObj->Load($id) if $id;
+$UserObj->Load($Name) if $Name && !$UserObj->id;
+unless ( $UserObj->id ) {
+    Abort(loc("Couldn't load user #[_1] or user '[_2]'", $id, $Name))
+        if $id && $Name;
+    Abort(loc("Couldn't load user #[_1]", $id))
+        if $id;
+    Abort(loc("Couldn't load user '[_1]'", $Name))
+        if $Name;
+    Abort(loc("Couldn't load user"));
+}
+$id = $UserObj->id;
+
+my @results;
+
+if ( $ARGS{'ResetAuthToken'} ) {
+    my ($status, $msg) = $UserObj->GenerateAuthToken;
+    push @results, $msg;
+}
+else {
+    my @fields = qw(
+        Name Comments Signature EmailAddress FreeformContactInfo 
+        Organization RealName NickName Lang EmailEncoding WebEncoding 
+        ExternalContactInfoId ContactInfoSystem Gecos ExternalAuthId 
+        AuthSystem HomePhone WorkPhone MobilePhone PagerPhone Address1
+        Address2 City State Zip Country Timezone
+    );
+
+    $m->callback(
+        CallbackName => 'UpdateLogic',
+        fields       => \@fields,
+        results      => \@results,
+        UserObj      => $UserObj,
+        ARGSRef      => \%ARGS,
+    );
+
+    push @results, UpdateRecordObject (
+        AttributesRef => \@fields,
+        Object => $UserObj,
+        ARGSRef => \%ARGS,
+    );
+
+    push @results, ProcessObjectCustomFieldUpdates( ARGSRef => \%ARGS, Object => $UserObj );
+
+    # Deal with special fields: Privileged, Enabled, and Password
+    if  ( $SetPrivileged and $Privileged != $UserObj->Privileged ) {
+        my ($code, $msg) = $UserObj->SetPrivileged( $Privileged );
+        push @results, loc('Privileged status: [_1]', loc_fuzzy($msg));
+    }
+
+    my %password_cond = $UserObj->CurrentUserRequireToSetPassword;
+    if (defined $Pass1 && length $Pass1 ) {
+        my ($status, $msg) = $UserObj->SafeSetPassword(
+            Current      => $CurrentPass,
+            New          => $Pass1,
+            Confirmation => $Pass2,
+        );
+        push @results, loc("Password: [_1]", $msg);
+    }
+}
+
+
+MaybeRedirectForResults(
+    Actions   => \@results,
+);
+
+#line 1 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+# BEGIN BPS TAGGED BLOCK {{{
+#
+# COPYRIGHT:
+#
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
+#                                          <sales@bestpractical.com>
+#
+# (Except where explicitly superseded by other copyright notices)
+#
+#
+# LICENSE:
+#
+# This work is made available to you under the terms of Version 2 of
+# the GNU General Public License. A copy of that license should have
+# been provided with this software, but in any event can be snarfed
+# from www.gnu.org.
+#
+# This work is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
+#
+#
+# CONTRIBUTION SUBMISSION POLICY:
+#
+# (The following paragraph is not intended to limit the rights granted
+# to you to modify and distribute this software under the terms of
+# the GNU General Public License and is only of importance to you if
+# you choose to contribute your changes and enhancements to the
+# community by submitting them to Best Practical Solutions, LLC.)
+#
+# By intentionally submitting any modifications, corrections or
+# derivatives to this work, or any other work intended for use with
+# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+# you are the copyright holder for those contributions and you grant
+# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+# royalty-free, perpetual, license to use, copy, create derivative
+# works based on those contributions, and sublicense and distribute
+# those contributions and any derivatives thereof.
+#
+# END BPS TAGGED BLOCK }}}
+$m->comp(   '/Elements/Header', Title=>loc("Preferences")   
+); #line 48 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->print( '
+' );
+#line 49 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->comp(   '/Elements/Tabs'  
+); #line 49 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->print( '
+
+' );
+#line 51 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->comp(   '/Elements/ListActions', actions => \@results   
+); #line 51 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->print( '
+
+<form action="' );
+#line 53 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } (RT->Config->Get('WebPath'))) );
+#line 53 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->print( '/User/Prefs.html" method="post">
+<input type="hidden" class="hidden" name="id" value="' );
+#line 54 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($UserObj->Id)) );
+#line 54 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->print( '" />
+
+<table width="100%" border="0">
+<tr>
+
+<td valign="top" class="boxcontainer">
+' );
+#line 60 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->comp( { content => sub {
+#line 60 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->print( '
+
+<input type="hidden" class="hidden" name="Name" value="' );
+#line 62 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($UserObj->Name)) );
+#line 62 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->print( '" />
+<table cellspacing="0" cellpadding="0">
+  <tr>
+    <td class="label">' );
+#line 65 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->comp( { content => sub {
+#line 65 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->print( 'Email' );
+#line 65 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+} }, '/l'
+ );
+#line 65 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->print( ': </td>
+    <td class="value"><input name="EmailAddress" value="' );
+#line 66 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($UserObj->EmailAddress)) );
+#line 66 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->print( '" /></td>
+  </tr>
+  <tr>
+    <td class="label">' );
+#line 69 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->comp( { content => sub {
+#line 69 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->print( 'Real Name' );
+#line 69 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+} }, '/l'
+ );
+#line 69 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->print( ':</td>
+    <td class="value"><input name="RealName" value="' );
+#line 70 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($UserObj->RealName)) );
+#line 70 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->print( '" /></td>  </tr>
+  <tr>
+    <td class="label">' );
+#line 72 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->comp( { content => sub {
+#line 72 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->print( 'Nickname' );
+#line 72 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+} }, '/l'
+ );
+#line 72 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->print( ':</td>
+    <td class="value"><input name="NickName" value="' );
+#line 73 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($UserObj->NickName || '')) );
+#line 73 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->print( '" /></td>
+  </tr>
+  <tr>
+    <td class="label">' );
+#line 76 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->comp( { content => sub {
+#line 76 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->print( 'Language' );
+#line 76 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+} }, '/l'
+ );
+#line 76 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->print( ':</td>
+    <td class="value">' );
+#line 77 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->comp(   '/Elements/SelectLang', Name => 'Lang', Default => $UserObj->Lang   
+); #line 77 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->print( '</td>
+  </tr>
+  <tr>
+    <td class="label">' );
+#line 80 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->comp( { content => sub {
+#line 80 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->print( 'Timezone' );
+#line 80 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+} }, '/l'
+ );
+#line 80 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->print( ':</td>
+    <td class="value">' );
+#line 81 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->comp(   '/Elements/SelectTimezone', Name => 'Timezone', Default => $UserObj->Timezone   
+); #line 81 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->print( '</td>
+  </tr>
+' );
+#line 83 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->comp(   '/Elements/EditCustomFields', Object => $UserObj, Grouping => 'Identity', InTable => 1   
+); #line 83 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->print( '
+</table>
+' );
+#line 85 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+} }, '/Widgets/TitleBox', title => loc('Identity'), id => "user-prefs-identity"
+ );
+#line 85 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->print( '
+' );
+#line 86 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->comp( { content => sub {
+#line 86 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->print( '
+<table cellspacing="0" cellpadding="0">
+  <tr>
+    <td class="label">' );
+#line 89 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->comp( { content => sub {
+#line 89 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->print( 'Residence' );
+#line 89 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+} }, '/l'
+ );
+#line 89 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->print( ':</td>
+    <td class="value"><input name="HomePhone" value="' );
+#line 90 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($UserObj->HomePhone || '')) );
+#line 90 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->print( '" size="13" /></td>
+  </tr>
+  <tr>
+    <td class="label">' );
+#line 93 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->comp( { content => sub {
+#line 93 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->print( 'Work' );
+#line 93 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+} }, '/l'
+ );
+#line 93 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->print( ':</td>
+    <td class="value"><input name="WorkPhone" value="' );
+#line 94 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($UserObj->WorkPhone || '')) );
+#line 94 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->print( '" size="13" /></td>
+  </tr>
+  <tr>
+    <td class="label">' );
+#line 97 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->comp( { content => sub {
+#line 97 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->print( 'Mobile' );
+#line 97 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+} }, '/l'
+ );
+#line 97 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->print( ':</td>
+    <td class="value"><input name="MobilePhone" value="' );
+#line 98 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($UserObj->MobilePhone || '')) );
+#line 98 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->print( '" size="13" /></td>
+  </tr>
+  <tr>
+    <td class="label">' );
+#line 101 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->comp( { content => sub {
+#line 101 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->print( 'Pager' );
+#line 101 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+} }, '/l'
+ );
+#line 101 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->print( ':</td>
+    <td class="value"><input name="PagerPhone" value="' );
+#line 102 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($UserObj->PagerPhone || '')) );
+#line 102 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->print( '" size="13" /></td>
+  </tr>
+' );
+#line 104 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->comp(   '/Elements/EditCustomFields', Object => $UserObj, Grouping => 'Phones', InTable => 1   
+); #line 104 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->print( '
+</table>
+' );
+#line 106 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+} }, '/Widgets/TitleBox', title => loc('Phone numbers'), id => "user-prefs-phone"
+ );
+#line 106 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->print( '
+
+' );
+#line 108 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+if ($UserObj->Privileged) {
+$m->comp( { content => sub {
+#line 109 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->print( '
+<textarea cols="80" rows="5" name="Signature" class="signature" wrap="hard">
+' );
+#line 111 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($UserObj->Signature || '')) );
+#line 111 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->print( '</textarea>
+' );
+#line 112 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+} }, '/Widgets/TitleBox', title => loc('Signature'), id => "user-prefs-signature"
+ );
+#line 112 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->print( '
+' );
+#line 113 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+ }
+$m->print( '
+' );
+#line 115 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+ $m->callback( %ARGS, UserObj => $UserObj, CallbackName => 'FormLeftColumn' );
+$m->print( '</td>
+<td valign="top" class="boxcontainer">
+
+' );
+#line 119 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->comp( { content => sub {
+#line 119 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->print( '
+' );
+#line 120 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->comp(   '/Elements/EditPassword',
+    User => $UserObj,
+    Name => [qw(CurrentPass Pass1 Pass2)],
+  
+); #line 123 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->print( '
+
+' );
+#line 125 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->comp(   '/Elements/EditCustomFields', Object => $UserObj, Grouping => 'Access control'   
+); #line 125 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->print( '
+
+' );
+#line 127 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+} }, '/Widgets/TitleBox', title => loc('Password'), id => "user-prefs-password"
+ );
+#line 127 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->print( '
+
+' );
+#line 129 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->comp( { content => sub {
+#line 129 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->print( '
+<table cellspacing="0" cellpadding="0">
+  <tr>
+    <td class="label">' );
+#line 132 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->comp( { content => sub {
+#line 132 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->print( 'Organization' );
+#line 132 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+} }, '/l'
+ );
+#line 132 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->print( ':</td>
+    <td class="value"><input name="Organization" value="' );
+#line 133 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($UserObj->Organization || '')) );
+#line 133 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->print( '" /></td>
+  </tr>
+  <tr>
+    <td class="label">' );
+#line 136 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->comp( { content => sub {
+#line 136 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->print( 'Address1' );
+#line 136 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+} }, '/l'
+ );
+#line 136 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->print( ':</td>
+    <td class="value"><input name="Address1" value="' );
+#line 137 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($UserObj->Address1 || '')) );
+#line 137 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->print( '" /></td>
+  </tr>
+  <tr>
+    <td class="label">' );
+#line 140 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->comp( { content => sub {
+#line 140 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->print( 'Address2' );
+#line 140 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+} }, '/l'
+ );
+#line 140 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->print( ':</td>
+    <td class="value"><input name="Address2" value="' );
+#line 141 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($UserObj->Address2 || '')) );
+#line 141 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->print( '" /></td>
+  </tr>
+  <tr>
+    <td class="label">' );
+#line 144 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->comp( { content => sub {
+#line 144 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->print( 'City' );
+#line 144 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+} }, '/l'
+ );
+#line 144 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->print( ':</td>
+    <td><input name="City" value="' );
+#line 145 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($UserObj->City || '')) );
+#line 145 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->print( '" size="14" /></td>
+  </tr>
+  <tr>
+    <td class="label">' );
+#line 148 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->comp( { content => sub {
+#line 148 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->print( 'State' );
+#line 148 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+} }, '/l'
+ );
+#line 148 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->print( ':</td>
+    <td class="value"><input name="State" value="' );
+#line 149 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($UserObj->State || '')) );
+#line 149 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->print( '" size="3" /></td>
+  </tr>
+  <tr>
+    <td class="label">' );
+#line 152 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->comp( { content => sub {
+#line 152 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->print( 'Zip' );
+#line 152 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+} }, '/l'
+ );
+#line 152 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->print( ':</td>
+    <td class="value"><input name="Zip" value="' );
+#line 153 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($UserObj->Zip || '')) );
+#line 153 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->print( '" size="9" /></td>
+  </tr>
+  <tr>
+    <td class="label">' );
+#line 156 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->comp( { content => sub {
+#line 156 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->print( 'Country' );
+#line 156 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+} }, '/l'
+ );
+#line 156 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->print( ':</td>
+    <td class="value"><input name="Country" value="' );
+#line 157 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($UserObj->Country || '')) );
+#line 157 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->print( '" /></td>
+  </tr>
+' );
+#line 159 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->comp(   '/Elements/EditCustomFields', Object => $UserObj, Grouping => 'Location', InTable => 1   
+); #line 159 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->print( '
+</table>
+' );
+#line 161 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+} }, '/Widgets/TitleBox', title => loc('Location'), id => "user-prefs-location"
+ );
+#line 161 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->print( '
+
+
+
+' );
+#line 165 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->comp(   '/Elements/EditCustomFieldCustomGroupings', Object => $UserObj   
+); #line 165 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->print( '
+
+
+
+' );
+#line 169 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->comp(   '/Elements/Submit', Label => loc('Save Preferences')   
+); #line 169 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->print( '
+
+' );
+#line 171 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->comp( { content => sub {
+#line 171 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->print( '
+
+' );
+#line 173 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->comp( { content => sub {
+#line 173 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->print( 'All iCal feeds embed a secret token which authorizes you.  If the URL for one of your iCal feeds was exposed to the outside world, you can get a new secret, <b>breaking all existing iCal feeds</b>, below.' );
+#line 173 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+} }, '/l'
+ );
+#line 173 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->print( '
+
+<a href="#" id="ResetAuthTokenPrompt" style="display: none">
+  ' );
+#line 176 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->comp( { content => sub {
+#line 176 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->print( 'I want to reset my secret token.' );
+#line 176 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+} }, '/l'
+ );
+#line 176 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->print( '
+</a>
+' );
+#line 178 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->comp(   '/Elements/Submit',
+    Label       => loc('Reset secret authentication token'),
+    Name        => "ResetAuthToken",
+    id          => "ResetAuthTokenContainer"   
+); #line 181 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->print( '
+<script>
+    jQuery("#ResetAuthTokenContainer").hide();
+    jQuery("#ResetAuthTokenPrompt").show().click(function(ev){
+        jQuery(this).slideUp();
+        jQuery("#ResetAuthTokenContainer").slideDown();
+        ev.preventDefault();
+    });
+</script>
+' );
+#line 190 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+} }, '/Widgets/TitleBox', title => loc('Secret authentication token'), id => "user-prefs-feeds"
+ );
+#line 190 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->print( '
+
+' );
+#line 192 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+ $m->callback( %ARGS, UserObj => $UserObj, CallbackName => 'FormRightColumn' );
+$m->print( '</td>
+</tr>
+
+</table>
+
+' );
+#line 198 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+ $m->callback( %ARGS, UserObj => $UserObj, CallbackName => 'FormEnd' );
+$m->print( '
+</form>
+
+
+' );
+#line 273 "/var/www/localhost/htdocs/rt/User/Prefs.html"
+$m->print( '
+
+' );
+;return;
+},
+'declared_args' => {
+  '$Address1' => { default => ' undef' },
+  '$Address2' => { default => ' undef' },
+  '$AuthSystem' => { default => ' undef' },
+  '$City' => { default => ' undef' },
+  '$Comments' => { default => ' undef' },
+  '$ContactInfoSystem' => { default => ' undef' },
+  '$Country' => { default => ' undef' },
+  '$Create' => { default => ' undef' },
+  '$CurrentPass' => { default => ' undef' },
+  '$EmailAddress' => { default => ' undef' },
+  '$EmailEncoding' => { default => ' undef' },
+  '$Enabled' => { default => ' undef' },
+  '$ExternalAuthId' => { default => ' undef' },
+  '$ExternalContactInfoId' => { default => ' undef' },
+  '$FreeformContactInfo' => { default => ' undef' },
+  '$Gecos' => { default => ' undef' },
+  '$HomePhone' => { default => ' undef' },
+  '$Lang' => { default => ' undef' },
+  '$MobilePhone' => { default => ' undef' },
+  '$Name' => { default => ' undef' },
+  '$NickName' => { default => ' undef' },
+  '$Organization' => { default => ' undef' },
+  '$PagerPhone' => { default => ' undef' },
+  '$Pass1' => { default => ' undef' },
+  '$Pass2' => { default => ' undef' },
+  '$Privileged' => { default => ' undef' },
+  '$RealName' => { default => ' undef' },
+  '$SetEnabled' => { default => ' undef' },
+  '$SetPrivileged' => { default => ' undef' },
+  '$Signature' => { default => ' undef' },
+  '$State' => { default => ' undef' },
+  '$WebEncoding' => { default => ' undef' },
+  '$WorkPhone' => { default => ' undef' },
+  '$Zip' => { default => ' undef' },
+  '$id' => { default => ' $session{\'CurrentUser\'}->Id' }
+},
+'load_time' => 1435691992,
+
+)
+;

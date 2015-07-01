@@ -1,0 +1,460 @@
+package HTML::Mason::Commands;
+use strict;
+use vars qw($m $DECODED_ARGS $r %session);
+HTML::Mason::Component::FileBased->new(
+'code' => sub {
+HTML::Mason::Exception::Params->throw
+    ( error =>
+      "Odd number of parameters passed to component expecting name/value pairs"
+    ) if @_ % 2;
+my %ARGS = @_;
+my ( $CreatedBefore, $CreatedAfter, $LastUpdatedBefore, $LastUpdatedAfter, $RefersTo, $ReferredToBy, $CurrentSearch, @OrderBy, @Order );
+{
+    my %pos;
+    for ( my $x = 0; $x < @_; $x += 2 )
+    {
+        $pos{ $_[$x] } = $x + 1;
+    }
+#line 273 "/var/www/localhost/htdocs/rt/Articles/Article/Search.html"
+     $CreatedBefore = exists $pos{'CreatedBefore'} ? $_[ $pos{'CreatedBefore'} ] :  '';
+#line 274 "/var/www/localhost/htdocs/rt/Articles/Article/Search.html"
+     $CreatedAfter = exists $pos{'CreatedAfter'} ? $_[ $pos{'CreatedAfter'} ] :  '';
+#line 275 "/var/www/localhost/htdocs/rt/Articles/Article/Search.html"
+     $LastUpdatedBefore = exists $pos{'LastUpdatedBefore'} ? $_[ $pos{'LastUpdatedBefore'} ] :  '';
+#line 276 "/var/www/localhost/htdocs/rt/Articles/Article/Search.html"
+     $LastUpdatedAfter = exists $pos{'LastUpdatedAfter'} ? $_[ $pos{'LastUpdatedAfter'} ] :  '';
+#line 277 "/var/www/localhost/htdocs/rt/Articles/Article/Search.html"
+     $RefersTo = exists $pos{'RefersTo'} ? $_[ $pos{'RefersTo'} ] :  undef;
+#line 278 "/var/www/localhost/htdocs/rt/Articles/Article/Search.html"
+     $ReferredToBy = exists $pos{'ReferredToBy'} ? $_[ $pos{'ReferredToBy'} ] :  undef;
+#line 279 "/var/www/localhost/htdocs/rt/Articles/Article/Search.html"
+     $CurrentSearch = exists $pos{'CurrentSearch'} ? $_[ $pos{'CurrentSearch'} ] :  'new';
+#line 280 "/var/www/localhost/htdocs/rt/Articles/Article/Search.html"
+     @OrderBy = exists $pos{'OrderBy'} ? HTML::Mason::Tools::coerce_to_array( $_[ $pos{'OrderBy'} ], '@OrderBy') :  ();
+#line 281 "/var/www/localhost/htdocs/rt/Articles/Article/Search.html"
+     @Order = exists $pos{'Order'} ? HTML::Mason::Tools::coerce_to_array( $_[ $pos{'Order'} ], '@Order') :  ();
+}
+$m->debug_hook( $m->current_comp->path ) if ( HTML::Mason::Compiler::IN_PERL_DB() );
+
+#line 113 "/var/www/localhost/htdocs/rt/Articles/Article/Search.html"
+
+my $Classes = RT::Classes->new($session{'CurrentUser'});
+$Classes->LimitToEnabled();
+
+# This is a COUNT(), which doesn't apply ACLs; as such, we don't display
+# the warning if there are classes, but the user can't see them.
+my $classes_configured = $Classes->Count;
+my @classes = @{ $Classes->ItemsArrayRef };
+$ARGS{Class} = $classes[0]->id if @classes == 1;
+
+use RT::SavedSearch;
+my @results;
+my $articles = RT::Articles->new( $session{'CurrentUser'} );
+my $format = q{
+    '<a href="__WebPath__/Articles/Article/Display.html?id=__id__">__id__</a>/TITLE:#',
+    '<a href="__WebPath__/Articles/Article/Display.html?id=__id__">__Name__</a>/TITLE:Name',
+    '__ClassName__',
+    '__CreatedRelative__',
+    '__LastUpdatedRelative__',
+    '__Summary__',
+    '__Topics__', };
+
+# {{{ Quicksearch logic
+
+# If it is a number, load the article with that ID.  Otherwise, search
+# on name and summary.
+if ($ARGS{'q'} && $ARGS{'q'} =~ /^(\d+)$/) {
+    return $m->comp("/Articles/Article/Display.html", id => $1);
+}
+# }}}
+
+# {{{ Saved search logic
+
+my $search;
+
+# The keys in %ARGS that are not saved and loaded with named searches.
+# These need to be treated specially.
+my @metakeys = qw/NewSearchName CurrentSearch SearchPrivacy Save Load
+    Update Delete/;
+
+if ($CurrentSearch =~ /^(.*-\d+)-SavedSearch-(\d+)$/) {
+    $search = RT::SavedSearch->new($session{'CurrentUser'});
+    $search->Load($1, $2);
+}
+
+# Have we been asked to load a search?
+
+if ($ARGS{'Load'}) {
+    if ($ARGS{'LoadSavedSearch'} =~ /^(.*-\d+)-SavedSearch-(\d+)$/ ) {
+        my $privacy = $1;
+        my $search_id = $2;
+        
+        $search = RT::SavedSearch->new($session{'CurrentUser'});
+        my ($ret, $msg) = $search->Load($privacy, $search_id);
+        if ($ret) {
+            my $searchargs = $search->GetParameter('args');
+            # Clean out ARGS and fill it in with the saved args from the 
+            # loaded search.
+            foreach my $key (@metakeys) {
+                $searchargs->{$key} = $ARGS{$key};
+            }
+            %ARGS = %{$searchargs};
+            $CurrentSearch = "$privacy-SavedSearch-$search_id";
+        } else {
+            push(@results, loc("Error: could not load saved search [_1]: [_2]",
+                               $ARGS{'LoadSavedSearch'}, $msg));
+        }
+    } else {
+        push(@results, loc("Invalid [_1] argument", 'LoadSavedSearch'));
+    }
+}
+
+# ...or have we been asked to save, update, or delete a search?
+
+if ($ARGS{'Save'}) {
+    my %searchargs = %ARGS;
+    foreach my $key (@metakeys) {
+        delete $searchargs{$key};
+    }
+
+    $search = RT::SavedSearch->new($session{'CurrentUser'});
+    unless ($ARGS{'SearchPrivacy'} =~ /^(.*)-(\d+)$/) {
+        # This shouldn't really happen, but hey.
+        push(@results, loc("WARNING: Saving search to user-level privacy"));
+        $ARGS{'SearchPrivacy'} = 'RT::User-'.$session{'CurrentUser'}->Id;
+    }
+    my ($ret, $msg) = $search->Save(Privacy => $ARGS{'SearchPrivacy'},
+                                    Type => 'Article',
+                                    Name => $ARGS{'NewSearchName'},
+                                    SearchParams => {'args' => \%searchargs});
+    if ($ret) {
+        $CurrentSearch = $ARGS{'SearchPrivacy'} . "-SavedSearch-" .
+            $search->Id;
+        push(@results, loc("Created search [_1]", $search->Name));
+    } else {
+        undef $search; # if we bomb out creating a search
+                        # we don't want to have the empty object hang around
+        push(@results, loc("Could not create search: [_1]", $msg));
+    }
+} elsif ($ARGS{'Update'}) {
+    if ($ARGS{'SearchPrivacy'} != $search->Privacy) {
+        push(@results,
+             loc("Error: cannot change privacy value of existing search"));
+    } else {
+        my %searchargs = %ARGS;
+        foreach my $key (@metakeys) {
+            delete $searchargs{$key};
+        }
+
+        # We already have a search loaded, because CurrentSearch is set,
+        # or else we would not have gotten here.
+        my ($ret, $msg) = $search->Update(Name => $ARGS{'NewSearchName'},
+                                          SearchParams => \%searchargs);
+        if ($ret) {
+            push(@results, loc("Search [_1] updated", $search->Name));
+        } else {
+            push(@results, loc("Error: search [_1] not updated: [_2]",
+                               $search->Name, $msg));
+        }
+    }
+} elsif ($ARGS{'Delete'}) {
+    # Keep track of this, as we are about to delete the search.
+    my $searchname = $search->Name;
+    my ($ret, $msg) = $search->Delete;
+    if ($ret) {
+        $ARGS{'CurrentSearch'} = undef;
+        push(@results, loc("Deleted search [_1]", $searchname));
+        # Get rid of all the state.
+        foreach my $key (keys %ARGS) {
+            delete $ARGS{$key};
+        }
+        $CurrentSearch = 'new';
+        $search = undef;
+        $RefersTo = undef;
+        $ReferredToBy = undef;
+    } else {
+        push(@results, loc("Could not delete search [_1]: [_2]",
+             $searchname, $msg));
+    }
+}
+
+# }}}
+
+    # Don't want to search for a null class when there is no class specced
+my $customfields = RT::CustomFields->new( $session{'CurrentUser'} );
+my %dates;
+
+$articles->Search( %ARGS, CustomFields => $customfields, Dates => \%dates,
+    OrderBy => \@OrderBy, Order => \@Order, );
+
+$m->callback( %ARGS, _Search => $articles );
+
+my %filtered = %ARGS;
+delete $filtered{$_} for (@metakeys, "EditTopics", "ExpandTopics");
+delete $filtered{$_} for grep {$filtered{$_} !~ /\S/} keys %filtered;
+@filtered{qw(OrderBy Order)} = (\@OrderBy, \@Order);
+my $QueryString = "?".$m->comp('/Elements/QueryString', %filtered);
+#line 1 "/var/www/localhost/htdocs/rt/Articles/Article/Search.html"
+# BEGIN BPS TAGGED BLOCK {{{
+#
+# COPYRIGHT:
+#
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
+#                                          <sales@bestpractical.com>
+#
+# (Except where explicitly superseded by other copyright notices)
+#
+#
+# LICENSE:
+#
+# This work is made available to you under the terms of Version 2 of
+# the GNU General Public License. A copy of that license should have
+# been provided with this software, but in any event can be snarfed
+# from www.gnu.org.
+#
+# This work is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
+#
+#
+# CONTRIBUTION SUBMISSION POLICY:
+#
+# (The following paragraph is not intended to limit the rights granted
+# to you to modify and distribute this software under the terms of
+# the GNU General Public License and is only of importance to you if
+# you choose to contribute your changes and enhancements to the
+# community by submitting them to Best Practical Solutions, LLC.)
+#
+# By intentionally submitting any modifications, corrections or
+# derivatives to this work, or any other work intended for use with
+# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+# you are the copyright holder for those contributions and you grant
+# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+# royalty-free, perpetual, license to use, copy, create derivative
+# works based on those contributions, and sublicense and distribute
+# those contributions and any derivatives thereof.
+#
+# END BPS TAGGED BLOCK }}}
+$m->comp(   '/Elements/Header', Title => loc("Search for articles")   
+); #line 48 "/var/www/localhost/htdocs/rt/Articles/Article/Search.html"
+$m->print( '
+' );
+#line 49 "/var/www/localhost/htdocs/rt/Articles/Article/Search.html"
+$m->comp(   '/Elements/Tabs'  
+); #line 49 "/var/www/localhost/htdocs/rt/Articles/Article/Search.html"
+$m->print( '
+
+' );
+#line 51 "/var/www/localhost/htdocs/rt/Articles/Article/Search.html"
+ unless ( keys %ARGS ) {
+$m->print( '<table width="100%" border="0">
+<tr>
+<td valign="top" width="50%">
+' );
+#line 55 "/var/www/localhost/htdocs/rt/Articles/Article/Search.html"
+ if (not $classes_configured) {
+$m->comp(   '/Articles/Elements/NeedsSetup'  
+); #line 56 "/var/www/localhost/htdocs/rt/Articles/Article/Search.html"
+$m->print( '
+' );
+#line 57 "/var/www/localhost/htdocs/rt/Articles/Article/Search.html"
+ } elsif (not @classes) {
+$m->print( '<i>' );
+#line 58 "/var/www/localhost/htdocs/rt/Articles/Article/Search.html"
+$m->comp( { content => sub {
+#line 58 "/var/www/localhost/htdocs/rt/Articles/Article/Search.html"
+$m->print( 'You don\'t have permission to view Articles in any Class' );
+#line 58 "/var/www/localhost/htdocs/rt/Articles/Article/Search.html"
+} }, '/l'
+ );
+#line 58 "/var/www/localhost/htdocs/rt/Articles/Article/Search.html"
+$m->print( '</i>
+' );
+#line 59 "/var/www/localhost/htdocs/rt/Articles/Article/Search.html"
+ } else {
+$m->print( '<ul>
+' );
+#line 61 "/var/www/localhost/htdocs/rt/Articles/Article/Search.html"
+ for my $class (@classes) {
+$m->print( '<li><a href="' );
+#line 62 "/var/www/localhost/htdocs/rt/Articles/Article/Search.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } (RT->Config->Get('WebPath'))) );
+#line 62 "/var/www/localhost/htdocs/rt/Articles/Article/Search.html"
+$m->print( '/Articles/Article/Search.html?' );
+#line 62 "/var/www/localhost/htdocs/rt/Articles/Article/Search.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $m->comp('/Elements/QueryString', %filtered, Class => $class->id) )) );
+#line 62 "/var/www/localhost/htdocs/rt/Articles/Article/Search.html"
+$m->print( '">' );
+#line 62 "/var/www/localhost/htdocs/rt/Articles/Article/Search.html"
+$m->comp( { content => sub {
+#line 62 "/var/www/localhost/htdocs/rt/Articles/Article/Search.html"
+$m->print( 'in class [_1]' );
+#line 62 "/var/www/localhost/htdocs/rt/Articles/Article/Search.html"
+} }, '/l', $class->Name
+ );
+#line 62 "/var/www/localhost/htdocs/rt/Articles/Article/Search.html"
+$m->print( '</a></li>
+' );
+#line 63 "/var/www/localhost/htdocs/rt/Articles/Article/Search.html"
+ }
+$m->print( '</ul>
+' );
+#line 65 "/var/www/localhost/htdocs/rt/Articles/Article/Search.html"
+ }
+$m->print( '</td>
+<td valign="top" width="50%">
+<form action="Search.html" method="get">
+' );
+#line 69 "/var/www/localhost/htdocs/rt/Articles/Article/Search.html"
+$m->comp(   '/Widgets/TitleBoxStart', title => loc('Saved searches')   
+); #line 69 "/var/www/localhost/htdocs/rt/Articles/Article/Search.html"
+$m->print( '
+' );
+#line 70 "/var/www/localhost/htdocs/rt/Articles/Article/Search.html"
+$m->comp( { content => sub {
+#line 70 "/var/www/localhost/htdocs/rt/Articles/Article/Search.html"
+$m->print( 'Load saved search:' );
+#line 70 "/var/www/localhost/htdocs/rt/Articles/Article/Search.html"
+} }, '/l'
+ );
+#line 70 "/var/www/localhost/htdocs/rt/Articles/Article/Search.html"
+$m->print( '<br />
+' );
+#line 71 "/var/www/localhost/htdocs/rt/Articles/Article/Search.html"
+$m->comp(   'Elements/SelectSavedSearches', Name => 'LoadSavedSearch', Default => $CurrentSearch   
+); #line 71 "/var/www/localhost/htdocs/rt/Articles/Article/Search.html"
+$m->print( '
+<input value="' );
+#line 72 "/var/www/localhost/htdocs/rt/Articles/Article/Search.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } (loc('Load'))) );
+#line 72 "/var/www/localhost/htdocs/rt/Articles/Article/Search.html"
+$m->print( '" name="Load" type="submit" />
+' );
+#line 73 "/var/www/localhost/htdocs/rt/Articles/Article/Search.html"
+$m->comp(   '/Widgets/TitleBoxEnd'  
+); #line 73 "/var/www/localhost/htdocs/rt/Articles/Article/Search.html"
+$m->print( '
+</form>
+</td>
+</tr>
+</table>
+' );
+#line 78 "/var/www/localhost/htdocs/rt/Articles/Article/Search.html"
+  return;
+ }
+$m->print( '
+' );
+#line 81 "/var/www/localhost/htdocs/rt/Articles/Article/Search.html"
+$m->comp(   '/Elements/ListActions', actions => \@results   
+); #line 81 "/var/www/localhost/htdocs/rt/Articles/Article/Search.html"
+$m->print( '
+<div style="float:right;margin-top:15px"><a href="#criteria">' );
+#line 82 "/var/www/localhost/htdocs/rt/Articles/Article/Search.html"
+$m->comp( { content => sub {
+#line 82 "/var/www/localhost/htdocs/rt/Articles/Article/Search.html"
+$m->print( 'Modify this search...' );
+#line 82 "/var/www/localhost/htdocs/rt/Articles/Article/Search.html"
+} }, '/l'
+ );
+#line 82 "/var/www/localhost/htdocs/rt/Articles/Article/Search.html"
+$m->print( '</a></div>
+
+' );
+#line 84 "/var/www/localhost/htdocs/rt/Articles/Article/Search.html"
+ if ($articles->BuildSelectCountQuery =~ /WHERE/i) {
+$m->print( '<h2>' );
+#line 85 "/var/www/localhost/htdocs/rt/Articles/Article/Search.html"
+$m->comp( { content => sub {
+#line 85 "/var/www/localhost/htdocs/rt/Articles/Article/Search.html"
+$m->print( 'Search results' );
+#line 85 "/var/www/localhost/htdocs/rt/Articles/Article/Search.html"
+} }, '/l'
+ );
+#line 85 "/var/www/localhost/htdocs/rt/Articles/Article/Search.html"
+$m->print( '</h2>
+' );
+#line 86 "/var/www/localhost/htdocs/rt/Articles/Article/Search.html"
+$m->comp(   '/Elements/CollectionList',
+    Collection => $articles, 
+    AllowSorting => 1,
+    OrderBy => \@OrderBy,
+    Order => \@Order,
+    Format => $format,
+    GenericQueryArgs => { %filtered, Format => $format, },
+      
+); #line 93 "/var/www/localhost/htdocs/rt/Articles/Article/Search.html"
+$m->print( '
+' );
+#line 94 "/var/www/localhost/htdocs/rt/Articles/Article/Search.html"
+ }
+$m->print( '
+<br />
+<br />
+<br />
+<a name="criteria"></a>
+<form action="Search.html" method="get">
+' );
+#line 101 "/var/www/localhost/htdocs/rt/Articles/Article/Search.html"
+$m->comp(   'Elements/ShowSearchCriteria', dates => \%dates, RefersTo => $RefersTo, customfields => $customfields,  ReferredToBy => $ReferredToBy, %ARGS   
+); #line 101 "/var/www/localhost/htdocs/rt/Articles/Article/Search.html"
+$m->print( '
+<br />
+<br />
+' );
+#line 104 "/var/www/localhost/htdocs/rt/Articles/Article/Search.html"
+$m->comp(   'Elements/ShowSavedSearches', CurrentSearch => $CurrentSearch, 
+    Name => ($search ? $search->Name : undef),
+    Privacy => ($search ? $search->Privacy : undef)   
+); #line 106 "/var/www/localhost/htdocs/rt/Articles/Article/Search.html"
+$m->print( '
+
+</form>
+
+<div align=right>
+<a href="' );
+#line 111 "/var/www/localhost/htdocs/rt/Articles/Article/Search.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } (RT->Config->Get('WebPath'))) );
+#line 111 "/var/www/localhost/htdocs/rt/Articles/Article/Search.html"
+$m->print( '/Articles/Article/Search.html' );
+#line 111 "/var/www/localhost/htdocs/rt/Articles/Article/Search.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($QueryString)) );
+#line 111 "/var/www/localhost/htdocs/rt/Articles/Article/Search.html"
+$m->print( '">' );
+#line 111 "/var/www/localhost/htdocs/rt/Articles/Article/Search.html"
+$m->comp( { content => sub {
+#line 111 "/var/www/localhost/htdocs/rt/Articles/Article/Search.html"
+$m->print( 'Bookmarkable link for this search' );
+#line 111 "/var/www/localhost/htdocs/rt/Articles/Article/Search.html"
+} }, '/l'
+ );
+#line 111 "/var/www/localhost/htdocs/rt/Articles/Article/Search.html"
+$m->print( '</a><br />
+</div>
+' );
+#line 271 "/var/www/localhost/htdocs/rt/Articles/Article/Search.html"
+$m->print( '
+' );
+;return;
+},
+'declared_args' => {
+  '$CreatedAfter' => { default => ' \'\'' },
+  '$CreatedBefore' => { default => ' \'\'' },
+  '$CurrentSearch' => { default => ' \'new\'' },
+  '$LastUpdatedAfter' => { default => ' \'\'' },
+  '$LastUpdatedBefore' => { default => ' \'\'' },
+  '$ReferredToBy' => { default => ' undef' },
+  '$RefersTo' => { default => ' undef' },
+  '@Order' => { default => ' ()' },
+  '@OrderBy' => { default => ' ()' }
+},
+'load_time' => 1435622158,
+
+)
+;

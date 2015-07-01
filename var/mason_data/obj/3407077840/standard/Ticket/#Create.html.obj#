@@ -70,7 +70,7 @@ if ($CloneTicket) {
     };
     my (@refers, @refers_by);
     my $refers = $CloneTicketObj->RefersTo;
-    while ( my $refer = $refers->Next ) {
+e    while ( my $refer = $refers->Next ) {
         my $refer_value = $get_link_value->($refer, 'Target');
         push @refers, $refer_value if defined $refer_value;
     }
@@ -109,7 +109,7 @@ if ($CloneTicket) {
 
 my @results;
 
-my $title = loc("Create a new ticket");
+my $title = loc("Creat New Ticket");
 
 my $QueueObj = RT::Queue->new($current_user);
 $QueueObj->Load($Queue) || Abort(loc("Queue [_1] could not be loaded.", $Queue||''));
@@ -183,9 +183,9 @@ if ((!exists $ARGS{'AddMoreAttach'}) and (defined($ARGS{'id'}) and $ARGS{'id'} e
         $RT::Logger->crit("After display call; error is $@");
         $m->abort();
     }
-  }
-<!-- Button for Basics -->  
-PageMenu->child( basics => raw_html =>  q[<a href="#basics" onclick="return switchVisibility('Ticket-Create-basics','Ticket-Create-details');">] . loc('Basics') . q[</a>])
+}
+
+PageMenu->child( basics => raw_html =>  q[<a href="#basics" onclick="return switchVisibility('Ticket-Create-basics','Ticket-Create-details');">] . loc('Basics') . q[</a>]);
 
 #line 1 "/var/www/localhost/htdocs/rt/Ticket/Create.html"
 #BEGIN BPS TAGGED BLOCK {{{

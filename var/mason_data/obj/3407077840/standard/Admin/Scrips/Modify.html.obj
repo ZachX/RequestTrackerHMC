@@ -1,0 +1,273 @@
+package HTML::Mason::Commands;
+use strict;
+use vars qw($m $DECODED_ARGS $r %session);
+HTML::Mason::Component::FileBased->new(
+'code' => sub {
+HTML::Mason::Exception::Params->throw
+    ( error =>
+      "Odd number of parameters passed to component expecting name/value pairs"
+    ) if @_ % 2;
+my %ARGS = @_;
+my ( $id, $Update, $From );
+{
+    my %pos;
+    for ( my $x = 0; $x < @_; $x += 2 )
+    {
+        $pos{ $_[$x] } = $x + 1;
+    }
+#line 98 "/var/www/localhost/htdocs/rt/Admin/Scrips/Modify.html"
+     $id = exists $pos{'id'} ? $_[ $pos{'id'} ] :  undef;
+#line 99 "/var/www/localhost/htdocs/rt/Admin/Scrips/Modify.html"
+     $Update = exists $pos{'Update'} ? $_[ $pos{'Update'} ] :  undef;
+#line 100 "/var/www/localhost/htdocs/rt/Admin/Scrips/Modify.html"
+     $From = exists $pos{'From'} ? $_[ $pos{'From'} ] :  undef;
+}
+$m->debug_hook( $m->current_comp->path ) if ( HTML::Mason::Compiler::IN_PERL_DB() );
+
+#line 102 "/var/www/localhost/htdocs/rt/Admin/Scrips/Modify.html"
+
+my $scrip = RT::Scrip->new( $session{'CurrentUser'} );
+$scrip->Load( $id );
+Abort(loc("Couldn't load scrip #[_1]", $id))
+    unless $scrip->id;
+
+my $disabled = $scrip->Disabled;
+
+if ( $Update ) {
+    my @attribs = qw(
+        Description
+        ScripAction ScripCondition
+        CustomPrepareCode CustomCommitCode CustomIsApplicableCode
+    );
+    push @attribs, "Template" if defined $ARGS{Template} and length $ARGS{Template};
+    if ($ARGS{"SetEnabled"}) {
+        push @attribs, "Disabled";
+        $ARGS{"Disabled"} = not $ARGS{"Enabled"};
+    }
+    my @results = UpdateRecordObject(
+        AttributesRef   => \@attribs,
+        Object          => $scrip,
+        ARGSRef         => \%ARGS
+    );
+    MaybeRedirectForResults(
+        Actions   => \@results,
+        Arguments => {
+            id => $scrip->id,
+            From => $From,
+        },
+    );
+}
+
+my $EnabledChecked = qq[checked="checked"];
+$EnabledChecked = '' if $disabled;
+
+my @results;
+my ($ok, $msg) = $scrip->CompileCheck;
+push @results, $msg if !$ok;
+#line 1 "/var/www/localhost/htdocs/rt/Admin/Scrips/Modify.html"
+# BEGIN BPS TAGGED BLOCK {{{
+#
+# COPYRIGHT:
+#
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
+#                                          <sales@bestpractical.com>
+#
+# (Except where explicitly superseded by other copyright notices)
+#
+#
+# LICENSE:
+#
+# This work is made available to you under the terms of Version 2 of
+# the GNU General Public License. A copy of that license should have
+# been provided with this software, but in any event can be snarfed
+# from www.gnu.org.
+#
+# This work is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
+#
+#
+# CONTRIBUTION SUBMISSION POLICY:
+#
+# (The following paragraph is not intended to limit the rights granted
+# to you to modify and distribute this software under the terms of
+# the GNU General Public License and is only of importance to you if
+# you choose to contribute your changes and enhancements to the
+# community by submitting them to Best Practical Solutions, LLC.)
+#
+# By intentionally submitting any modifications, corrections or
+# derivatives to this work, or any other work intended for use with
+# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+# you are the copyright holder for those contributions and you grant
+# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+# royalty-free, perpetual, license to use, copy, create derivative
+# works based on those contributions, and sublicense and distribute
+# those contributions and any derivatives thereof.
+#
+# END BPS TAGGED BLOCK }}}
+$m->comp(   '/Admin/Elements/Header', Title => loc("Modify scrip #[_1]", $id)   
+); #line 48 "/var/www/localhost/htdocs/rt/Admin/Scrips/Modify.html"
+$m->print( '
+' );
+#line 49 "/var/www/localhost/htdocs/rt/Admin/Scrips/Modify.html"
+$m->comp(   '/Elements/Tabs'  
+); #line 49 "/var/www/localhost/htdocs/rt/Admin/Scrips/Modify.html"
+$m->print( '
+' );
+#line 50 "/var/www/localhost/htdocs/rt/Admin/Scrips/Modify.html"
+$m->comp(   '/Elements/ListActions', actions => \@results   
+); #line 50 "/var/www/localhost/htdocs/rt/Admin/Scrips/Modify.html"
+$m->print( '
+
+<form method="post" action="Modify.html" id="ModifyScrip" name="ModifyScrip">
+<input type="hidden" class="hidden" name="id" value="' );
+#line 53 "/var/www/localhost/htdocs/rt/Admin/Scrips/Modify.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $id )) );
+#line 53 "/var/www/localhost/htdocs/rt/Admin/Scrips/Modify.html"
+$m->print( '" />
+<input type="hidden" class="hidden" name="From" value="' );
+#line 54 "/var/www/localhost/htdocs/rt/Admin/Scrips/Modify.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $From || q{} )) );
+#line 54 "/var/www/localhost/htdocs/rt/Admin/Scrips/Modify.html"
+$m->print( '" />
+
+' );
+#line 56 "/var/www/localhost/htdocs/rt/Admin/Scrips/Modify.html"
+$m->comp( { content => sub {
+#line 56 "/var/www/localhost/htdocs/rt/Admin/Scrips/Modify.html"
+$m->print( '
+<table>
+
+' );
+#line 59 "/var/www/localhost/htdocs/rt/Admin/Scrips/Modify.html"
+$m->comp(   'Elements/EditBasics', %ARGS, Scrip => $scrip   
+); #line 59 "/var/www/localhost/htdocs/rt/Admin/Scrips/Modify.html"
+$m->print( '
+
+' );
+#line 61 "/var/www/localhost/htdocs/rt/Admin/Scrips/Modify.html"
+ if ( not $disabled ) {
+$m->print( '<tr><td class="label"><a href="Objects.html?id=' );
+#line 62 "/var/www/localhost/htdocs/rt/Admin/Scrips/Modify.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $id )) );
+#line 62 "/var/www/localhost/htdocs/rt/Admin/Scrips/Modify.html"
+$m->print( '">' );
+#line 62 "/var/www/localhost/htdocs/rt/Admin/Scrips/Modify.html"
+$m->comp( { content => sub {
+#line 62 "/var/www/localhost/htdocs/rt/Admin/Scrips/Modify.html"
+$m->print( 'Applies to' );
+#line 62 "/var/www/localhost/htdocs/rt/Admin/Scrips/Modify.html"
+} }, '/l'
+ );
+#line 62 "/var/www/localhost/htdocs/rt/Admin/Scrips/Modify.html"
+$m->print( '</a>:</td>
+<td class="value">' );
+#line 64 "/var/www/localhost/htdocs/rt/Admin/Scrips/Modify.html"
+ if ( $scrip->IsGlobal ) {
+$m->print( '<a href="' );
+#line 65 "/var/www/localhost/htdocs/rt/Admin/Scrips/Modify.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( RT->Config->Get('WebPath') )) );
+#line 65 "/var/www/localhost/htdocs/rt/Admin/Scrips/Modify.html"
+$m->print( '/Admin/Global/Scrips.html">' );
+#line 65 "/var/www/localhost/htdocs/rt/Admin/Scrips/Modify.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( loc('Global') )) );
+#line 65 "/var/www/localhost/htdocs/rt/Admin/Scrips/Modify.html"
+$m->print( '</a>
+' );
+#line 66 "/var/www/localhost/htdocs/rt/Admin/Scrips/Modify.html"
+ } else {
+ my $added_to = $scrip->AddedTo;
+ my $found = 0;
+ while ( my $queue = $added_to->Next ) {
+ $m->out(', ') if $found++;
+$m->print( '<a href="' );
+#line 71 "/var/www/localhost/htdocs/rt/Admin/Scrips/Modify.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( RT->Config->Get('WebPath') )) );
+#line 71 "/var/www/localhost/htdocs/rt/Admin/Scrips/Modify.html"
+$m->print( '/Admin/Queues/Scrips.html?id=' );
+#line 71 "/var/www/localhost/htdocs/rt/Admin/Scrips/Modify.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $queue->id )) );
+#line 71 "/var/www/localhost/htdocs/rt/Admin/Scrips/Modify.html"
+$m->print( '">' );
+#line 72 "/var/www/localhost/htdocs/rt/Admin/Scrips/Modify.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $queue->Name )) );
+#line 72 "/var/www/localhost/htdocs/rt/Admin/Scrips/Modify.html"
+$m->print( '</a>' );
+#line 73 "/var/www/localhost/htdocs/rt/Admin/Scrips/Modify.html"
+ last if $found == 10;
+ }
+ $m->out(', ...') if $found == 10;
+ }
+$m->print( '<td></tr>
+' );
+#line 78 "/var/www/localhost/htdocs/rt/Admin/Scrips/Modify.html"
+ }
+$m->print( '
+<tr><td class="label">&nbsp;</td><td>
+<input type="hidden" class="hidden" name="SetEnabled" value="1" />
+<input type="checkbox" class="checkbox" name="Enabled" id="Enabled" value="1" ' );
+#line 82 "/var/www/localhost/htdocs/rt/Admin/Scrips/Modify.html"
+$m->print(  $EnabledChecked );
+#line 82 "/var/www/localhost/htdocs/rt/Admin/Scrips/Modify.html"
+$m->print( ' />
+<label for="Enabled">' );
+#line 83 "/var/www/localhost/htdocs/rt/Admin/Scrips/Modify.html"
+$m->comp( { content => sub {
+#line 83 "/var/www/localhost/htdocs/rt/Admin/Scrips/Modify.html"
+$m->print( 'Enabled (Unchecking this box disables this scrip)' );
+#line 83 "/var/www/localhost/htdocs/rt/Admin/Scrips/Modify.html"
+} }, '/l'
+ );
+#line 83 "/var/www/localhost/htdocs/rt/Admin/Scrips/Modify.html"
+$m->print( '</label>
+</td></tr>
+
+</table>
+' );
+#line 87 "/var/www/localhost/htdocs/rt/Admin/Scrips/Modify.html"
+} }, '/Widgets/TitleBox', title => loc('Basics')
+ );
+#line 87 "/var/www/localhost/htdocs/rt/Admin/Scrips/Modify.html"
+$m->print( '
+
+' );
+#line 89 "/var/www/localhost/htdocs/rt/Admin/Scrips/Modify.html"
+$m->comp(   '/Elements/Submit', Label => loc('Save Changes'), Name => 'Update', Reset => 1   
+); #line 89 "/var/www/localhost/htdocs/rt/Admin/Scrips/Modify.html"
+$m->print( '
+
+' );
+#line 91 "/var/www/localhost/htdocs/rt/Admin/Scrips/Modify.html"
+ if ($session{CurrentUser}->HasRight(Object => $RT::System, Right => 'ExecuteCode')) {
+$m->comp(   'Elements/EditCustomCode', %ARGS, Scrip => $scrip   
+); #line 92 "/var/www/localhost/htdocs/rt/Admin/Scrips/Modify.html"
+$m->print( '
+' );
+#line 93 "/var/www/localhost/htdocs/rt/Admin/Scrips/Modify.html"
+$m->comp(   '/Elements/Submit', Label => loc('Save Changes'), Name => 'Update', Reset => 1   
+); #line 93 "/var/www/localhost/htdocs/rt/Admin/Scrips/Modify.html"
+$m->print( '
+' );
+#line 94 "/var/www/localhost/htdocs/rt/Admin/Scrips/Modify.html"
+ }
+$m->print( '
+</form>
+' );
+;return;
+},
+'declared_args' => {
+  '$From' => { default => ' undef' },
+  '$Update' => { default => ' undef' },
+  '$id' => { default => ' undef' }
+},
+'load_time' => 1435780708,
+
+)
+;

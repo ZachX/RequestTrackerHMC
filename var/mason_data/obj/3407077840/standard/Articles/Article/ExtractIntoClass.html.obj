@@ -1,0 +1,177 @@
+package HTML::Mason::Commands;
+use strict;
+use vars qw($m $DECODED_ARGS $r %session);
+HTML::Mason::Component::FileBased->new(
+'code' => sub {
+HTML::Mason::Exception::Params->throw
+    ( error =>
+      "Odd number of parameters passed to component expecting name/value pairs"
+    ) if @_ % 2;
+my ( $Ticket );
+{
+    my %pos;
+    for ( my $x = 0; $x < @_; $x += 2 )
+    {
+        $pos{ $_[$x] } = $x + 1;
+    }
+#line 75 "/var/www/localhost/htdocs/rt/Articles/Article/ExtractIntoClass.html"
+     $Ticket = exists $pos{'Ticket'} ? $_[ $pos{'Ticket'} ] :  undef;
+}
+$m->debug_hook( $m->current_comp->path ) if ( HTML::Mason::Compiler::IN_PERL_DB() );
+
+#line 1 "/var/www/localhost/htdocs/rt/Articles/Article/ExtractIntoClass.html"
+# BEGIN BPS TAGGED BLOCK {{{
+#
+# COPYRIGHT:
+#
+# This software is Copyright (c) 1996-2015 Best Practical Solutions, LLC
+#                                          <sales@bestpractical.com>
+#
+# (Except where explicitly superseded by other copyright notices)
+#
+#
+# LICENSE:
+#
+# This work is made available to you under the terms of Version 2 of
+# the GNU General Public License. A copy of that license should have
+# been provided with this software, but in any event can be snarfed
+# from www.gnu.org.
+#
+# This work is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
+#
+#
+# CONTRIBUTION SUBMISSION POLICY:
+#
+# (The following paragraph is not intended to limit the rights granted
+# to you to modify and distribute this software under the terms of
+# the GNU General Public License and is only of importance to you if
+# you choose to contribute your changes and enhancements to the
+# community by submitting them to Best Practical Solutions, LLC.)
+#
+# By intentionally submitting any modifications, corrections or
+# derivatives to this work, or any other work intended for use with
+# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+# you are the copyright holder for those contributions and you grant
+# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+# royalty-free, perpetual, license to use, copy, create derivative
+# works based on those contributions, and sublicense and distribute
+# those contributions and any derivatives thereof.
+#
+# END BPS TAGGED BLOCK }}}
+$m->comp(   '/Elements/Header', Title => loc('Extract a new article from ticket #[_1]',$Ticket)   
+); #line 48 "/var/www/localhost/htdocs/rt/Articles/Article/ExtractIntoClass.html"
+$m->print( '
+' );
+#line 49 "/var/www/localhost/htdocs/rt/Articles/Article/ExtractIntoClass.html"
+$m->comp(   '/Elements/Tabs'  
+); #line 49 "/var/www/localhost/htdocs/rt/Articles/Article/ExtractIntoClass.html"
+$m->print( '
+
+
+<h2>' );
+#line 52 "/var/www/localhost/htdocs/rt/Articles/Article/ExtractIntoClass.html"
+$m->comp( { content => sub {
+#line 52 "/var/www/localhost/htdocs/rt/Articles/Article/ExtractIntoClass.html"
+$m->print( 'Create a new article in' );
+#line 52 "/var/www/localhost/htdocs/rt/Articles/Article/ExtractIntoClass.html"
+} }, '/l'
+ );
+#line 52 "/var/www/localhost/htdocs/rt/Articles/Article/ExtractIntoClass.html"
+$m->print( ':</h2>
+<ul>
+' );
+#line 54 "/var/www/localhost/htdocs/rt/Articles/Article/ExtractIntoClass.html"
+ my $Classes = RT::Classes->new($session{'CurrentUser'});
+ $Classes->LimitToEnabled();
+ while (my $Class = $Classes->Next) {
+$m->print( '<li><a href="ExtractIntoTopic.html?Ticket=' );
+#line 57 "/var/www/localhost/htdocs/rt/Articles/Article/ExtractIntoClass.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($Ticket)) );
+#line 57 "/var/www/localhost/htdocs/rt/Articles/Article/ExtractIntoClass.html"
+$m->print( '&Class=' );
+#line 57 "/var/www/localhost/htdocs/rt/Articles/Article/ExtractIntoClass.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($Class->Id)) );
+#line 57 "/var/www/localhost/htdocs/rt/Articles/Article/ExtractIntoClass.html"
+$m->print( '" onclick="document.getElementById(\'topics-\'+' );
+#line 57 "/var/www/localhost/htdocs/rt/Articles/Article/ExtractIntoClass.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'j') } ( $Class->Id)) );
+#line 57 "/var/www/localhost/htdocs/rt/Articles/Article/ExtractIntoClass.html"
+$m->print( ').style.display = (document.getElementById(\'topics-\'+' );
+#line 57 "/var/www/localhost/htdocs/rt/Articles/Article/ExtractIntoClass.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'j') } ( $Class->Id)) );
+#line 57 "/var/www/localhost/htdocs/rt/Articles/Article/ExtractIntoClass.html"
+$m->print( ').style.display == \'block\') ? \'none\' : \'block\'; return false;">' );
+#line 57 "/var/www/localhost/htdocs/rt/Articles/Article/ExtractIntoClass.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($Class->Name)) );
+#line 57 "/var/www/localhost/htdocs/rt/Articles/Article/ExtractIntoClass.html"
+$m->print( '</a>: 
+' );
+#line 58 "/var/www/localhost/htdocs/rt/Articles/Article/ExtractIntoClass.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($Class->Description || '')) );
+#line 58 "/var/www/localhost/htdocs/rt/Articles/Article/ExtractIntoClass.html"
+$m->print( '
+<div id="topics-' );
+#line 59 "/var/www/localhost/htdocs/rt/Articles/Article/ExtractIntoClass.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ($Class->Id)) );
+#line 59 "/var/www/localhost/htdocs/rt/Articles/Article/ExtractIntoClass.html"
+$m->print( '" style="display: none">
+<form action="ExtractFromTicket.html">
+<input type="hidden" name="Ticket" value="' );
+#line 61 "/var/www/localhost/htdocs/rt/Articles/Article/ExtractIntoClass.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $Ticket )) );
+#line 61 "/var/www/localhost/htdocs/rt/Articles/Article/ExtractIntoClass.html"
+$m->print( '" />
+<input type="hidden" name="Class"  value="' );
+#line 62 "/var/www/localhost/htdocs/rt/Articles/Article/ExtractIntoClass.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } ( $Class->id )) );
+#line 62 "/var/www/localhost/htdocs/rt/Articles/Article/ExtractIntoClass.html"
+$m->print( '" />
+' );
+#line 63 "/var/www/localhost/htdocs/rt/Articles/Article/ExtractIntoClass.html"
+$m->comp( { content => sub {
+#line 63 "/var/www/localhost/htdocs/rt/Articles/Article/ExtractIntoClass.html"
+$m->print( 'Select topics for this article' );
+#line 63 "/var/www/localhost/htdocs/rt/Articles/Article/ExtractIntoClass.html"
+} }, '/l'
+ );
+#line 63 "/var/www/localhost/htdocs/rt/Articles/Article/ExtractIntoClass.html"
+$m->print( ':<br />
+' );
+#line 64 "/var/www/localhost/htdocs/rt/Articles/Article/ExtractIntoClass.html"
+$m->comp(   'Elements/EditTopics', Classes => [$Class],
+                        OnlyThisClass => 1,
+                        id => 'new',
+                          
+); #line 67 "/var/www/localhost/htdocs/rt/Articles/Article/ExtractIntoClass.html"
+$m->print( '<br />
+<input type="submit" value="' );
+#line 68 "/var/www/localhost/htdocs/rt/Articles/Article/ExtractIntoClass.html"
+$m->print( (map {; $m->interp->apply_escapes($_, 'h') } (loc('Create'))) );
+#line 68 "/var/www/localhost/htdocs/rt/Articles/Article/ExtractIntoClass.html"
+$m->print( '" />
+</form>
+<br /></div>
+</li>
+' );
+#line 72 "/var/www/localhost/htdocs/rt/Articles/Article/ExtractIntoClass.html"
+ }                                                                             
+$m->print( '</ul>
+' );
+;return;
+},
+'declared_args' => {
+  '$Ticket' => { default => ' undef' }
+},
+'load_time' => 1435686320,
+
+)
+;
